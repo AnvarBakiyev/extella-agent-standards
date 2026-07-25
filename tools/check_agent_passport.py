@@ -86,6 +86,30 @@ def check(doc):
             if not (cap.get("permissions") or cap.get("rules")):
                 errors.append(tag + ": глобальный объект без владения запрещён — при global=true "
                                     "заполни permissions или rules")
+        # Правило 11: ГРАНИЦЫ обязательны. Возможность без честно названного предела нельзя выпускать:
+        # предел клиент узнаёт от нас заранее, а не в работе постфактум (§3.20 стандарта).
+        limits = cap.get("limits")
+        if not isinstance(limits, list) or not [x for x in limits if not is_blank(x)]:
+            errors.append(tag + ": не названы границы (limits) — напиши хотя бы одну честную строку "
+                                "«чего эта возможность НЕ делает»; без границ выпуск запрещён")
+        # Правило 12: пояснение на экране. Пользователь обязан понять возможность сам.
+        # Значение internal допустимо только для служебных способностей без своего экрана.
+        surface = str(cap.get("help_surface") or "").strip()
+        if not surface:
+            errors.append(tag + ": не указано пояснение на экране (help_surface) — где человек прочитает "
+                                "«как это работает». Для служебной способности без экрана напиши internal")
+        elif surface.lower() == "internal":
+            warns.append(tag + ": help_surface=internal — у способности нет пользовательского экрана; "
+                               "убедись, что она действительно служебная")
+
+    # Правило 13: ДВА ЯЗЫКА обязательны. Продукт делается сразу на русском и английском:
+    # интерфейс, пояснения «как это работает», сообщения об ошибках. Доперевод «когда-нибудь»
+    # на практике не наступает, а англоязычный клиент видит полуфабрикат.
+    langs = agent.get("languages")
+    have = {str(x).strip().lower() for x in langs} if isinstance(langs, list) else set()
+    if not {"ru", "en"} <= have:
+        errors.append("agent.languages должен содержать оба языка: [\"ru\", \"en\"] — интерфейс, "
+                      "пояснения и ошибки делаются сразу на двух языках, доперевод потом не считается")
 
     # Правило 8: бюджеты
     budgets = doc.get("budgets")
@@ -149,10 +173,14 @@ def load_passport(path):
 GOOD_JSON = """{
   "agent": {"name": "ET-Tech | Сводка заявок", "owner": "Анвар", "business_goal": "Утренняя сводка заявок",
             "model_profile": "qwen-3.7", "version": "1.0.0", "immutable_bundle_id": "bundle-20260725",
+            "languages": ["ru", "en"],
             "data_classification": "внутренние данные"},
   "capabilities": [{"name": "daily_digest", "version": "1.0.0", "autonomy": "A1", "side_effects": "none",
                     "confirmation": "never", "idempotency": "supported", "global": false,
-                    "rollback": "", "evidence_schema": "", "permissions": [], "rules": []}],
+                    "rollback": "", "evidence_schema": "", "permissions": [], "rules": [],
+                    "help_surface": "карточка процесса → кнопка «? Как это работает»",
+                    "limits": ["не подключается к живой CRM — работает по выгрузке",
+                               "сканы и картинки не читает"]}],
   "budgets": {"max_duration_ms": 30000, "max_llm_tokens": 8000, "max_delegation_depth": 1, "max_external_actions": 0},
   "operations": {"success_metric": "сводка доставлена до 09:00", "owner_on_call": "Анвар"}
 }"""
@@ -164,7 +192,8 @@ BAD_JSON = """{
   "capabilities": [{"name": "send_emails", "version": "1.0.0", "autonomy": "A9", "side_effects": "external",
                     "confirmation": "never", "idempotency": "supported", "global": false,
                     "rollback": "шлём только черновики, отправляет человек",
-                    "evidence_schema": "лог отправки", "permissions": [], "rules": []}],
+                    "evidence_schema": "лог отправки", "permissions": [], "rules": [],
+                    "limits": [], "help_surface": ""}],
   "budgets": {"max_duration_ms": 30000, "max_llm_tokens": null, "max_delegation_depth": 0, "max_external_actions": 1},
   "operations": {"success_metric": "письмо согласовано", "owner_on_call": "Анвар"}
 }"""
@@ -175,6 +204,9 @@ RULE_CHECKS = (
     ("Правило 4 (autonomy строго A0..A4)", "допустимо только A0..A4"),
     ("Правило 5 (external без подтверждения запрещён)", "совсем без подтверждения"),
     ("Правило 8 (null в бюджетах запрещён)", "null не допускается"),
+    ("Правило 11 (границы обязательны)", "не названы границы"),
+    ("Правило 12 (пояснение на экране обязательно)", "не указано пояснение на экране"),
+    ("Правило 13 (русский и английский сразу)", "должен содержать оба языка"),
 )
 
 
