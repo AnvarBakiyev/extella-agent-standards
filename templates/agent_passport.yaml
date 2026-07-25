@@ -9,6 +9,7 @@ agent:
   business_goal: ""
   model_profile: "qwen-3.7"
   version: "0.1.0"
+  languages: ["ru", "en"]   # ОБЯЗАТЕЛЬНО оба: интерфейс и пояснения делаются сразу на двух языках
   immutable_bundle_id: ""
   dependency_lock_sha256: ""
   interfaces: []
@@ -39,6 +40,8 @@ capabilities:
     data_residency: ""
     evidence_schema: ""
     rollback: ""
+    help_surface: ""        # где человек прочитает «как это работает» (экран/кнопка); internal — если экрана нет
+    limits: []              # ОБЯЗАТЕЛЬНО: чего возможность НЕ делает (минимум одна честная строка)
 budgets:
   max_duration_ms: 30000
   max_llm_tokens: 0
