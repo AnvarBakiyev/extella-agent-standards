@@ -1,0 +1,52 @@
+# Паспорт агента Extella — заполни его ПЕРЕД выпуском агента клиенту.
+# Все пустые "" замени своими значениями; способностей (capabilities) может быть несколько — копируй блок, начиная с "- name".
+# Подсказки: autonomy = A0..A4; side_effects = none|local|external|physical; confirmation = never|conditional|always; idempotency = supported|unsupported.
+# Проверка готовности: python3 tools/check_agent_passport.py templates/agent_passport.yaml
+---
+agent:
+  name: ""
+  owner: ""
+  business_goal: ""
+  model_profile: "qwen-3.7"
+  version: "0.1.0"
+  immutable_bundle_id: ""
+  dependency_lock_sha256: ""
+  interfaces: []
+  hosting_profile: ""
+  data_classification: ""
+capabilities:
+  - name: ""
+    version: ""
+    input_schema: {}
+    output_schema: {}
+    autonomy: "A0"
+    expert: ""
+    cspl: ""
+    scope: "agent"
+    global: false
+    rules: []
+    concepts: []
+    permissions: []
+    targets: []
+    side_effects: "none"
+    confirmation: "never"
+    approval_binding: ""
+    idempotency: "unsupported"
+    retry_policy: "none"
+    reconciliation: ""
+    completeness_contract: ""
+    data_fields: []
+    data_residency: ""
+    evidence_schema: ""
+    rollback: ""
+budgets:
+  max_duration_ms: 30000
+  max_llm_tokens: 0
+  max_delegation_depth: 0
+  max_external_actions: 0
+operations:
+  success_metric: ""
+  alerts: []
+  evidence_retention: ""
+  owner_on_call: ""
+---
