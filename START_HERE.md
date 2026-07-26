@@ -68,6 +68,17 @@ python3 tools/check_agent_passport.py мой_агент.yaml --json
 python3 tools/build_agent_cabinet.py мой_агент.yaml --markdown
 ```
 
+Если ты делаешь **автоматизацию** (то, что клиент устанавливает целиком: Агент 1С, юрист,
+турагентство), а не один агент — паспорт другой:
+
+```
+python3 tools/check_automation_passport.py моя_автоматизация.yaml
+python3 tools/build_automation_cabinet.py моя_автоматизация.yaml --markdown
+```
+
+Образец — `templates/automation_passport.yaml`. Платформенные агенты внутри автоматизации
+описываются как **компоненты**, а не как отдельные объекты (§6 стандарта кабинета).
+
 Стандарт кабинета и честное сравнение с Microsoft Agent 365 (что мы умеем, чего пока нет) —
 `AGENT_CABINET_STANDARD.md`. Рендер интерфейса — `templates/cabinet_widget.js`.
 Не заполнил границы и пояснение — кабинет не соберётся: это тот же гейт, что и на выпуске.
