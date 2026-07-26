@@ -10,6 +10,7 @@ var CAB_T = {
     own: 'только этот агент', shared: 'Shared Gene — затронет класс',
     declared: 'Как должен работать (заявлено)', sources: 'Источники доказательств',
     limits: 'Чего Agent Cabinet НЕ показывает', cycle: 'Evolution Loop — цикл управляемого изменения',
+    create: 'Создать в Extella', createGuards: 'Правила создания (обязательны)', createNo: 'Здесь НЕ создаётся',
     guard: 'Защита от массовой поломки', version: 'Активная версия', owner: 'Владелец',
     agentId: 'Platform Agent ID', provider: 'Поставщик / модель', limitsCol: 'Границы', type: 'Тип',
     legacy: 'Legacy capability.global (не используется для точного N)',
@@ -22,6 +23,7 @@ var CAB_T = {
     own: 'this agent only', shared: 'Shared Gene — affects the class',
     declared: 'How it is supposed to work (declared)', sources: 'Evidence sources',
     limits: 'What Agent Cabinet does NOT show', cycle: 'Evolution Loop',
+    create: 'Create in Extella', createGuards: 'Creation rules (mandatory)', createNo: 'NOT created here',
     guard: 'Protection against mass breakage', version: 'Active version', owner: 'Owner',
     agentId: 'Platform Agent ID', provider: 'Provider / model', limitsCol: 'Limits', type: 'Type',
     legacy: 'Legacy capability.global (not used for the exact consumer count)',
@@ -135,6 +137,23 @@ function renderCabinet(cab, hostId, tab){
          (e.cycle || []).map(function(s,n){
            return '<b>' + (n+1) + '.</b> ' + cabEsc(cabLocalized(s, 'what', L));
          }).join('<br>') + '</div></div>';
+    var cr = e.creation || {};
+    if(cr.required){
+      var kinds = (cr.kinds || []).map(function(k){
+        return '<button type="button" class="btn ghost sm" disabled title="' + cabEsc(T.wired) + '">+ ' +
+               cabEsc(cabLocalized(k, 'what', L)) + '</button>';
+      }).join('');
+      var guards = (cr.guards || []).map(function(x){
+        return '• ' + cabEsc(cabLocalized(x, 'must', L));
+      }).join('<br>');
+      var nope = ((L==='en' ? cr.forbidden_en : cr.forbidden_ru) || []).map(cabEsc).join(' · ');
+      h += '<div class="card" style="margin-bottom:12px"><div style="font-weight:700;margin-bottom:8px">' +
+           cabEsc((L==='en' ? cr.title_en : cr.title_ru) || T.create) + '</div>' +
+           '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + kinds + '</div>' +
+           '<div style="font-size:12px;line-height:1.7;color:var(--silver,#8c8c8c)"><b>' +
+           cabEsc(T.createGuards) + ':</b><br>' + guards + '<br><b>' + cabEsc(T.createNo) + ':</b> ' +
+           nope + '</div></div>';
+    }
     var q = String((L==='en' ? g.prompt_en : g.prompt_ru) || '');
     var ch = (L==='en' ? g.choices_en : g.choices_ru) || [];
     q = q.replace('{N}', String(g.affected_count != null ? g.affected_count : 'N'));
