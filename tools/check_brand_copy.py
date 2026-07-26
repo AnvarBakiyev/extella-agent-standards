@@ -27,7 +27,12 @@ PETROL = {"2F6B66", "3D8078", "24544F", "B7CEC9", "5FA8A0", "6BB3AA"}
 INK = {"0A0A0A", "1A1A1A", "2A2A2A", "F0F0F0", "D8D8D8", "B0B0B0"}
 SURFACE = {"8C8C8C", "AAAAAA", "FAFAF8", "F5F3EE", "EBE8E1", "D4B896",
            "0E0E0E", "181818", "222222", "000000"}
-PALETTE = GOLD | LOGO_ONLY | PETROL | INK | SURFACE
+# цвета состояний — утверждены Анваром 26.07.2026, все прошли WCAG AA (BRAND_FOR_AGENTS.md §2)
+SUCCESS = {"1F7A4D", "57B37E"}
+DANGER = {"A63A2E", "E8705F"}
+WARNING = {"A5632A", "E0A85E"}  # существующий золотой, нового оттенка не вводим
+STATUS = SUCCESS | DANGER | WARNING
+PALETTE = GOLD | LOGO_ONLY | PETROL | INK | SURFACE | STATUS
 DARK_BG = {"0A0A0A", "0E0E0E", "181818", "222222", "000000"}
 SILVER = "8C8C8C"
 
@@ -90,10 +95,10 @@ def check_text(name, text, strict=False):
     """Проверяет один текст, возвращает (ошибки, предупреждения).
 
     strict=True — цвета вне палитры считаются ошибкой. По умолчанию это
-    предупреждение: в палитре брендбука нет цветов состояний (успех, ошибка,
-    предупреждение), поэтому продукты вынужденно вводят свои. Пока Анвар не
-    утвердил цвета состояний, делать из этого гейт нельзя — гейт, который
-    невозможно пройти честно, сам является дефектом (BRAND_FOR_AGENTS.md §7).
+    предупреждение: цвета состояний утверждены только 26.07.2026, и в живых
+    поверхностях осталось наследство самодельных оттенков (в визарде — 80).
+    Гейт включаем на НОВЫХ поверхностях (`--strict`), старые переводим
+    постепенно: непроходимый гейт сам является дефектом (BRAND_FOR_AGENTS.md §7).
     """
     errors, warns = [], []
 
@@ -138,6 +143,9 @@ def check_text(name, text, strict=False):
         if (fg & GOLD and bg & PETROL) or (fg & PETROL and bg & GOLD):
             errors.append("%s: Gold и Petrol друг на друге — контраст 1.9:1, запрещено брендбуком "
                           "(разделять нейтральным фоном)" % name)
+        if fg & STATUS and bg & (GOLD | PETROL | STATUS):
+            errors.append("%s: цвет состояния на цветном акценте — контраст 1.0-2.0:1, запрещено; "
+                          "статусы ставятся на Paper, Cream или тёмный фон" % name)
         if SILVER in fg and bg & DARK_BG:
             errors.append("%s: Silver #8C8C8C как текст на тёмном фоне — не проходит WCAG AA; "
                           "для читаемого текста бери Paper #FAFAF8" % name)
@@ -165,6 +173,8 @@ GOOD_TEXT = """
 const RU = "Эксперт выполнен за 1.2 с";
 const EN = "Expert executed in 1.2s";
 const NOTE = "Extella исполняет задачу и оставляет квитанцию";
+.ok  { color: #1F7A4D; background: #FAFAF8; }
+.err { color: #E8705F; background: #0E0E0E; }
 """
 
 BAD_TEXT = """
@@ -172,6 +182,7 @@ BAD_TEXT = """
 .b { color: #8C8C8C; background: #0A0A0A; }
 .c { color: #FF00AA; }
 .d { color: #C49C70; }
+.e { color: #1F7A4D; background: #C57E33; }
 const T1 = "Привет! Я ваш помощник по задачам";
 const T2 = "Умный ассистент разберётся";
 const T3 = "Наш чат-бот ответит";
@@ -204,6 +215,7 @@ RULE_CHECKS = [
     ("цвет вне палитры", "не из палитры Extella"),
     ("Gold на Petrol", "Gold и Petrol друг на друге"),
     ("Silver на тёмном", "Silver #8C8C8C как текст на тёмном"),
+    ("статус на акценте", "цвет состояния на цветном акценте"),
 ]
 
 
