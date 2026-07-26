@@ -1,0 +1,46 @@
+---
+# Паспорт АВТОМАТИЗАЦИИ Extella (§2.3.1 + C-часть ТЗ «автоматизация как главный объект»).
+# Заполняет владелец автоматизации. Проверка: python3 tools/check_automation_passport.py <файл>
+# Отличие от agent_passport.yaml: автоматизация — то, что клиент купил и установил;
+# платформенные агенты внутри неё — технические компоненты, а не самостоятельные объекты.
+
+automation:
+  automation_id: ""          # стабильный id, как в реестре; не имя и не путь; не меняется при переустановке
+  name:
+    ru: ""
+    en: ""
+  owner: ""                  # человек, отвечающий за автоматизацию после запуска
+  business_goal: ""          # какую боль закрывает, словами клиента
+  version: ""                # версия автоматизации (не версия отдельного агента)
+  languages: ["ru", "en"]    # §3.26 — обе обязательны
+  service:                   # контракт состояния (B-часть ТЗ)
+    port: 0
+    health: "/api/health"
+    state: "/api/state"
+  limits: []                 # чего автоматизация НЕ делает — обязательно, хотя бы одна строка
+  help_surface: ""           # где на экране живёт пояснение «? Как это работает»
+
+components:
+  # Платформенные агенты — СКРЫТЫЕ технические компоненты автоматизации.
+  platform_agents:
+    - platform_agent_id: ""  # стабильный id вида agent_...; по имени связывать запрещено
+      role: ""               # зачем этот агент в автоматизации
+      provider_expected: "alibaba"   # канон: клиентские агенты только платформенный Qwen
+  experts: []                # [{name, required}]
+  schedules: []              # [{id, kind: external_cron|internal|in_service, cadence}]
+  integrations: []           # [{kind, external_writes: false|true}]
+  knowledge: []              # знания (Concepts), которыми пользуется автоматизация
+  rules: []                  # правила
+
+budgets:
+  max_duration_ms: 0
+  max_llm_tokens: 0
+  max_delegation_depth: 0
+  max_external_actions: 0
+
+operations:
+  observability: ""          # где видно работу автоматизации
+  owner_on_call: ""          # кто дежурит
+  rollout: ""                # как выкатывается
+  rollback: ""               # как возвращается назад
+  success_metric: ""         # как понять, что работает хорошо
