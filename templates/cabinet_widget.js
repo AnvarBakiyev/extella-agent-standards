@@ -57,7 +57,7 @@ function cabGeneLabel(gene){
   var kind = gene.kind || gene.element_type || 'gene';
   var name = gene.name || gene.capability || '—';
   var id = gene.gene_id || '—';
-  return cabEsc(name) + ' <span style="color:var(--silver,#889)">[' +
+  return cabEsc(name) + ' <span style="color:var(--silver,#8c8c8c)">[' +
     cabEsc(kind) + ' · ' + cabEsc(id) + ']</span>';
 }
 
@@ -72,7 +72,7 @@ function renderCabinet(cab, hostId, tab){
   });
   h += '</div>';
   h += '<div style="font:700 18px var(--sans)">' + cabEsc(i.name || '—') + '</div>' +
-       '<div style="font-size:12.5px;color:var(--silver,#889);margin-bottom:12px">' +
+       '<div style="font-size:12.5px;color:var(--silver,#8c8c8c);margin-bottom:12px">' +
        cabEsc(T.owner) + ': ' + cabEsc(i.owner || '—') + ' · ' +
        cabEsc(T.agentId) + ': ' + cabEsc(i.platform_agent_id || '—') + ' · ' +
        cabEsc(T.version) + ': ' + cabEsc(i.active_version || '—') + ' · ' +
@@ -86,14 +86,14 @@ function renderCabinet(cab, hostId, tab){
       var shared = s.provenance === 'global';
       var effect = s.side_effects ?
         cabEsc(s.side_effects) + ' / ' + cabEsc(s.confirmation || '—') : '—';
-      h += '<tr style="border-top:1px solid var(--line,#e4decf)">' +
+      h += '<tr style="border-top:1px solid var(--line,#ebe8e1)">' +
            '<td style="padding:5px 4px"><b>' + cabEsc(s.name || s.capability || '—') +
            '</b> <span style="color:var(--silver)">v' + cabEsc(s.version || '—') + '</span>' +
            (s.gene_id ? '<br><span style="color:var(--silver)">' + cabEsc(s.gene_id) + '</span>' : '') +
            '</td><td style="padding:5px 4px">' + cabEsc(T.type) + ': ' +
            cabEsc(s.element_type || 'capability') + '</td>' +
            '<td style="padding:5px 4px">' + cabEsc(s.autonomy || '—') + '</td>' +
-           '<td style="padding:5px 4px;color:' + (shared?'#b8862f':'var(--silver)') + '">' +
+           '<td style="padding:5px 4px;color:' + (shared?'#a5632a':'var(--silver)') + '">' +
            cabEsc(shared ? T.shared : T.own) + '</td>' +
            '<td style="padding:5px 4px">' + effect + '</td>' +
            '<td style="padding:5px 4px">' + cabEsc(T.limitsCol) + ': ' +
@@ -102,7 +102,7 @@ function renderCabinet(cab, hostId, tab){
     h += '</table></div>';
     var a = p.attention || {};
     var genes = (a.shared_genes || []).map(cabGeneLabel).join(', ') || '—';
-    h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' +
+    h += '<div class="card" style="border-left:3px solid #a5632a"><div style="font-weight:700;margin-bottom:8px">' +
          cabEsc(T.attention) + '</div><div style="font-size:12.5px;line-height:1.7">' +
          '• ' + cabEsc(T.shared) + ': ' + genes + '<br>' +
          '• ' + cabEsc(T.legacy) + ': ' + (cabList(a.legacy_global_capabilities) || '—') + '<br>' +
@@ -123,7 +123,7 @@ function renderCabinet(cab, hostId, tab){
          (ac.evidence_sources || []).map(function(s){
            return cabEsc(cabLocalized(s, 'what', L));
          }).join('<br>• ') + '</div></div>';
-    h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' +
+    h += '<div class="card" style="border-left:3px solid #a5632a"><div style="font-weight:700;margin-bottom:8px">' +
          cabEsc(T.limits) + '</div><div style="font-size:12.5px;line-height:1.7">• ' +
          ((ac.limits || {})[L] || []).map(cabEsc).join('<br>• ') + '</div></div>';
   }
@@ -139,13 +139,13 @@ function renderCabinet(cab, hostId, tab){
     var ch = (L==='en' ? g.choices_en : g.choices_ru) || [];
     q = q.replace('{N}', String(g.affected_count != null ? g.affected_count : 'N'));
     var candidates = (g.candidates || []).map(cabGeneLabel).join(', ') || '—';
-    h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' +
+    h += '<div class="card" style="border-left:3px solid #a5632a"><div style="font-weight:700;margin-bottom:8px">' +
          cabEsc(T.guard) + '</div><div style="font-size:13px;line-height:1.6;margin-bottom:10px">' +
          cabEsc(q) + '</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
          ch.map(function(c,n){
            return '<button type="button" class="btn ' + (n===0?'gold':'ghost') +
              ' sm" disabled title="' + cabEsc(T.wired) + '">' + cabEsc(c) + '</button>';
-         }).join('') + '</div><div style="font-size:12px;color:var(--silver,#889)">' +
+         }).join('') + '</div><div style="font-size:12px;color:var(--silver,#8c8c8c)">' +
          cabEsc(cabLocalized(g, 'must_show', L)) + '<br><b>' +
          cabEsc(T.sharedOfAgent) + ':</b> ' + candidates + '</div></div>';
   }

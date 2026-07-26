@@ -1,11 +1,12 @@
 // Canonical «? Как это работает / How it works» widget for Extella Evolution.
 // Fill HELP on BOTH languages and add:
-//   <button type="button" onclick="openHelp('my_surface')">? Как это работает</button>
-// Call helpFirstTime('my_surface') when the surface first opens.
+//   <button type="button" data-help-key="my_surface">? Как это работает</button>
+// Bind its click event to openHelp('my_surface') and call
+// helpFirstTime('my_surface') when the surface first opens.
 //
 // Requires el(id) -> document.getElementById and this container:
 //   <div id="xtl_help" style="display:none;position:fixed;inset:0;z-index:9996;background:rgba(12,14,18,.55);overflow:auto;padding:34px 18px">
-//     <div style="max-width:720px;margin:0 auto;background:#f4f1ea;border-radius:16px;padding:26px 28px 22px">
+//     <div style="max-width:720px;margin:0 auto;background:#f5f3ee;border-radius:16px;padding:26px 28px 22px">
 //       <div id="xtl_help_body"></div>
 //     </div>
 //   </div>
@@ -74,17 +75,17 @@ function openHelp(key){
   var h = '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">' +
       '<div style="font-size:26px;line-height:1">' + helpEsc(d.icon) + '</div><div>' +
       '<div style="font:700 19px var(--sans);color:var(--ink,#0a0a0a)">' +
-      helpEsc(d.title) + '</div><div style="font-size:12.5px;color:var(--silver,#889)">' +
+      helpEsc(d.title) + '</div><div style="font-size:12.5px;color:var(--silver,#8c8c8c)">' +
       helpEsc(d.sub) + '</div></div><button type="button" data-help-close ' +
       'class="btn ghost sm" style="margin-left:auto" aria-label="' + helpEsc(T.ok) +
       '">✕</button></div>';
   h += _helpCard('') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">' +
        helpEsc(T.how) + '</div><div style="font-size:12.5px;line-height:1.65;color:var(--ink,#0a0a0a)">' +
        steps.map(function(s,i){ return '<b>' + (i+1) + '.</b> ' + s; }).join('<br>') + '</div></div>';
-  h += _helpCard('#4b7f52') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">' +
+  h += _helpCard('#1f7a4d') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">' +
        helpEsc(T.sure) + '</div><div style="font-size:12.5px;line-height:1.7;color:var(--ink,#0a0a0a)">• ' +
        sure.join('<br>• ') + '</div></div>';
-  h += _helpCard('#b8862f') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">' +
+  h += _helpCard('#a5632a') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">' +
        helpEsc(T.nope) + '</div><div style="font-size:12.5px;line-height:1.7;color:var(--ink,#0a0a0a)">• ' +
        nope.join('<br>• ') + '</div></div>';
   if(d.who){
@@ -93,7 +94,7 @@ function openHelp(key){
       helpItems(d.who.items).join('<br>• ') + '</div></div>';
   }
   if(d.extra){
-    h += '<div style="font-size:11.5px;color:var(--silver,#889);line-height:1.6;margin-bottom:14px">' +
+    h += '<div style="font-size:11.5px;color:var(--silver,#8c8c8c);line-height:1.6;margin-bottom:14px">' +
       helpEsc(d.extra) + '</div>';
   }
   h += '<button type="button" data-help-close class="btn gold">' + helpEsc(T.ok) + '</button>';
