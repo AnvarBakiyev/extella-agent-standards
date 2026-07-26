@@ -5,7 +5,7 @@
 //
 // Требуется: функция el(id) → document.getElementById, и в разметке контейнер:
 //   <div id="xtl_help" style="display:none;position:fixed;inset:0;z-index:9996;background:rgba(12,14,18,.55);overflow:auto;padding:34px 18px">
-//     <div style="max-width:720px;margin:0 auto;background:#f4f1ea;border-radius:16px;padding:26px 28px 22px">
+//     <div style="max-width:720px;margin:0 auto;background:#f5f3ee;border-radius:16px;padding:26px 28px 22px">
 //       <div id="xtl_help_body"></div>
 //       <button onclick="closeHelp()">Понятно / Got it</button>
 //     </div>
@@ -52,18 +52,18 @@ function openHelp(key){
   var h = '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px">' +
       '<div style="font-size:26px;line-height:1">' + d.icon + '</div><div>' +
       '<div style="font:700 19px var(--sans);color:var(--ink,#0a0a0a)">' + d.title + '</div>' +
-      '<div style="font-size:12.5px;color:var(--silver,#889)">' + d.sub + '</div></div>' +
+      '<div style="font-size:12.5px;color:var(--silver,#8c8c8c)">' + d.sub + '</div></div>' +
       '<button class="btn ghost sm" style="margin-left:auto" onclick="closeHelp()">✕</button></div>';
   h += _helpCard('') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">Как это работает</div>' +
        '<div style="font-size:12.5px;line-height:1.65;color:var(--ink,#0a0a0a)">' +
        d.steps.map(function(s,i){ return '<b>' + (i+1) + '.</b> ' + s; }).join('<br>') + '</div></div>';
-  h += _helpCard('#4b7f52') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">Что гарантировано</div>' +
+  h += _helpCard('#2f6b66') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">Что гарантировано</div>' +
        '<div style="font-size:12.5px;line-height:1.7;color:var(--ink,#0a0a0a)">• ' + d.sure.join('<br>• ') + '</div></div>';
-  h += _helpCard('#b8862f') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">Чего мы НЕ обещаем — важно знать</div>' +
+  h += _helpCard('#c57e33') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">Чего мы НЕ обещаем — важно знать</div>' +
        '<div style="font-size:12.5px;line-height:1.7;color:var(--ink,#0a0a0a)">• ' + d.nope.join('<br>• ') + '</div></div>';
   if(d.who) h += _helpCard('') + '<div style="font-weight:700;font-size:13.5px;margin-bottom:8px">' + d.who.title + '</div>' +
        '<div style="font-size:12.5px;line-height:1.7;color:var(--ink,#0a0a0a)">• ' + d.who.items.join('<br>• ') + '</div></div>';
-  if(d.extra) h += '<div style="font-size:11.5px;color:var(--silver,#889);line-height:1.6;margin-bottom:14px">' + d.extra + '</div>';
+  if(d.extra) h += '<div style="font-size:11.5px;color:var(--silver,#8c8c8c);line-height:1.6;margin-bottom:14px">' + d.extra + '</div>';
   box.innerHTML = h; wrap.style.display = 'block';
 }
 function closeHelp(){ var h=el('xtl_help'); if(h) h.style.display='none'; }
