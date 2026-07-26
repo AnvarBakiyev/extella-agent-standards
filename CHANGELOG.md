@@ -3,6 +3,23 @@
 Правила репозитория: любое изменение документов — только через утверждение Анвара.
 У каждой записи: дата, версия, что изменилось, кто утвердил.
 
+## 26.07.2026 — v0.12 — canonical contracts для Evolution Console
+- `tools/check_agent_passport.py`: строгий Qwen-гейт (пустой/GPT/Claude не проходят);
+  `check_report(doc)` и CLI `--json` дают один двуязычный structured report со stable
+  `code + severity + path`; legacy `check()` и обычный CLI используют тот же расчёт.
+- Agent Passport получил обязательный stable `agent.platform_agent_id` и опциональные live-поля
+  `platform_provider` / `declared_instructions` для честного черновика из Evolution Console.
+- Добавлен canonical `shared_genes[]`: stable `gene_id`, kind
+  `knowledge | rule | expert | handler`, имя, версия, `provenance: global`.
+  Потребители считаются по `gene_id + platform_agent_id`, не по именам.
+- `tools/build_agent_cabinet.py` использует `check_report()` без собственной проверки, сохраняет
+  schema `extella.agent_cabinet.v1.1` и добавляет backward-compatible stable IDs в Agent Genome.
+  Legacy `capability.global` видим отдельно, но не участвует в точном N.
+- `templates/cabinet_widget.js` и `templates/help_widget.js`: полный RU+EN, canonical названия,
+  HTML escaping всех данных и обработчики без inline `onclick` в Agent Cabinet.
+  `tools/test_widgets.js` доказывает 3 вкладки × 2 языка и XSS-негативы.
+Утвердил: Анвар.
+
 ## 26.07.2026 — v0.11 — архитектура названий Extella Evolution
 - `NAMING.md`: продукт **Extella Evolution** (категория Agent Evolution Platform) и словарь из 9
   терминов: Agent Passport, Agent Genome, Shared Gene, Agent Cabinet, Evolution Console, Evolution

@@ -1,10 +1,10 @@
 # Архитектурные принципы агентов Extella
 
-Статус: Draft for architecture approval, v0.9
+Статус: Draft for architecture approval, v0.9.1
 
 Владелец: Анвар (все решения по этому документу — только он)
 
-Дата: 25.07.2026
+Дата: 26.07.2026
 
 До формального утверждения этот документ не отменяет `EXTELLA_AI_ONBOARDING.md`, North Star и release-протоколы репозиториев. При конфликте действует более строгая действующая норма. После утверждения документ получает версию, дату вступления и владельца последующего изменения.
 
@@ -515,10 +515,14 @@ Agent MUST получать только данные, необходимые д
 ```yaml
 agent:
   name: ""
+  platform_agent_id: ""
+  platform_provider: ""
+  declared_instructions: ""
   owner: ""
   business_goal: ""
   model_profile: "qwen-3.7"
   version: "0.1.0"
+  languages: ["ru", "en"]
   immutable_bundle_id: ""
   dependency_lock_sha256: ""
   interfaces: []
@@ -550,6 +554,16 @@ capabilities:
     data_residency: ""
     evidence_schema: ""
     rollback: ""
+    help_surface: ""
+    limits: []
+
+shared_genes: []
+# Элемент списка:
+# - gene_id: "rule.stable-id"
+#   kind: "knowledge"  # knowledge | rule | expert | handler
+#   name: ""
+#   version: "1.0.0"
+#   provenance: "global"
 
 budgets:
   # null запрещён; 0 означает «операция этого класса запрещена», не unlimited.
