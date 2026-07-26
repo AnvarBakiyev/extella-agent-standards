@@ -32,22 +32,22 @@ function renderCabinet(cab, hostId, tab){
   });
   h += '</div>';
   h += '<div style="font:700 18px var(--sans)">' + (i.name||'—') + '</div>' +
-       '<div style="font-size:12.5px;color:var(--silver,#889);margin-bottom:12px">' +
+       '<div style="font-size:12.5px;color:var(--silver,#8c8c8c);margin-bottom:12px">' +
        T.owner + ': ' + (i.owner||'—') + ' · ' + T.version + ': ' + (i.active_version||'—') +
        ' · ' + (i.model_profile||'—') + ' · ' + ((i.languages||[]).join(', ')||'—') + '</div>';
 
   if(tab === 'passport'){
     h += '<div class="card" style="margin-bottom:12px"><div style="font-weight:700;margin-bottom:8px">' + T.state + '</div><table style="width:100%;font-size:12px;border-collapse:collapse">';
     (p.genome||[]).forEach(function(s){
-      h += '<tr style="border-top:1px solid var(--line,#e4decf)"><td style="padding:5px 4px"><b>' + s.capability + '</b> <span style="color:var(--silver)">v' + s.version + '</span></td>' +
+      h += '<tr style="border-top:1px solid var(--line,#ebe8e1)"><td style="padding:5px 4px"><b>' + s.capability + '</b> <span style="color:var(--silver)">v' + s.version + '</span></td>' +
            '<td style="padding:5px 4px">' + s.autonomy + '</td>' +
-           '<td style="padding:5px 4px;color:' + (s.provenance==='global'?'#b8862f':'var(--silver)') + '">' + (s.provenance==='global'?T.shared:T.own) + '</td>' +
+           '<td style="padding:5px 4px;color:' + (s.provenance==='global'?'#c57e33':'var(--silver)') + '">' + (s.provenance==='global'?T.shared:T.own) + '</td>' +
            '<td style="padding:5px 4px">' + s.side_effects + ' / ' + s.confirmation + '</td>' +
            '<td style="padding:5px 4px">' + T.limitsCol + ': ' + (s.limits||[]).length + '</td></tr>';
     });
     h += '</table></div>';
     var a = p.attention || {};
-    h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' + T.attention + '</div><div style="font-size:12.5px;line-height:1.7">' +
+    h += '<div class="card" style="border-left:3px solid #c57e33"><div style="font-weight:700;margin-bottom:8px">' + T.attention + '</div><div style="font-size:12.5px;line-height:1.7">' +
          '• ' + T.shared + ': ' + ((a.shared_genes||[]).join(', ')||'—') + '<br>' +
          '• ' + (L==='en'?'outward or physical actions':'действия наружу или с техникой') + ': ' + ((a.external_or_physical||[]).join(', ')||'—') + '<br>' +
          '• ' + (L==='en'?'human required':'обязателен человек') + ': ' + ((a.human_required||[]).join(', ')||'—') + '</div></div>';
@@ -59,7 +59,7 @@ function renderCabinet(cab, hostId, tab){
          (d.steps||[]).map(function(s,n){ return (n+1) + '. ' + s.capability + ' (' + s.autonomy + ', ' + s.side_effects + ')'; }).join('<br>') + '</div></div>';
     h += '<div class="card" style="margin-bottom:12px"><div style="font-weight:700;margin-bottom:8px">' + T.sources + '</div><div style="font-size:12.5px;line-height:1.7">• ' +
          (ac.evidence_sources||[]).map(function(s){ return s.what; }).join('<br>• ') + '</div></div>';
-    h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' + T.limits + '</div><div style="font-size:12.5px;line-height:1.7">• ' +
+    h += '<div class="card" style="border-left:3px solid #c57e33"><div style="font-weight:700;margin-bottom:8px">' + T.limits + '</div><div style="font-size:12.5px;line-height:1.7">• ' +
          ((ac.limits||{})[L]||[]).join('<br>• ') + '</div></div>';
   }
 
@@ -71,11 +71,11 @@ function renderCabinet(cab, hostId, tab){
     var ch = (L==='en' ? g.choices_en : g.choices_ru) || [];
     // N подставляет продукт из живых данных: сколько агентов реально используют механизм
     q = q.replace('{N}', String(g.affected_count != null ? g.affected_count : 'N'));
-    h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' + T.guard + '</div>' +
+    h += '<div class="card" style="border-left:3px solid #c57e33"><div style="font-weight:700;margin-bottom:8px">' + T.guard + '</div>' +
          '<div style="font-size:13px;line-height:1.6;margin-bottom:10px">' + q + '</div>' +
          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
          ch.map(function(c,n){ return '<button class="btn ' + (n===0?'gold':'ghost') + ' sm" disabled title="' + (L==='en'?'wired by the product':'подключает продукт') + '">' + c + '</button>'; }).join('') +
-         '</div><div style="font-size:12px;color:var(--silver,#889)">' + g.must_show +
+         '</div><div style="font-size:12px;color:var(--silver,#8c8c8c)">' + g.must_show +
          '<br><b>' + (L==='en'?'Shared Genes of this agent':'Shared Genes этого агента') + ':</b> ' + ((g.candidates||[]).join(', ')||'—') + '</div></div>';
   }
   window._cab = cab;
