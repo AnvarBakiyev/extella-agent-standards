@@ -94,8 +94,9 @@ def build(doc):
             "interfaces": agent.get("interfaces") or [],
             "hosting": agent.get("hosting_profile") or None,
         },
-        # Эффективное состояние: не сырой список, а способности с происхождением и влиянием
-        "effective_state": [{
+        # Agent Genome (NAMING.md): изменяемое содержание агента — не сырой список,
+        # а способности с происхождением, версиями и влиянием на класс.
+        "genome": [{
             "capability": c.get("name"), "version": c.get("version"),
             "autonomy": c.get("autonomy"), "provenance": _provenance(c),
             "side_effects": c.get("side_effects"), "confirmation": c.get("confirmation"),
@@ -111,7 +112,8 @@ def build(doc):
                        "owner_on_call": ops.get("owner_on_call"),
                        "evidence_retention": ops.get("evidence_retention") or None},
         "attention": {
-            "shared_objects": [c.get("name") for c in shared],
+            # Shared Genes — наследуемые элементы генома: их изменение затрагивает класс агентов
+            "shared_genes": [c.get("name") for c in shared],
             "external_or_physical": [c.get("name") for c in writes],
             "human_required": [c.get("name") for c in needs_human],
         },
@@ -146,7 +148,7 @@ def build(doc):
                   "(кабинет — его проекция по одному агенту, а не второй механизм версий)",
     }
 
-    return {"schema": "extella.agent_cabinet.v1", "passport": passport,
+    return {"schema": "extella.agent_cabinet.v1.1", "passport": passport,
             "declared_behaviour": declared, "actual_behaviour": actual, "evolution": evolution}
 
 
@@ -156,16 +158,16 @@ def as_markdown(cab):
     out += ["**Владелец:** %s · **Цель:** %s" % (i.get("owner") or "—", i.get("business_goal") or "—"),
             "**Активная версия:** %s · **Модель:** %s · **Языки:** %s" %
             (i.get("active_version") or "—", i.get("model_profile") or "—", ", ".join(i.get("languages") or []) or "—"), ""]
-    out += ["## Эффективное состояние", "", "| Способность | Версия | Самостоятельность | Откуда | Эффекты | Подтверждение | Границ |",
+    out += ["## Agent Genome — геном агента (что определяет поведение)", "", "| Способность | Версия | Самостоятельность | Откуда | Эффекты | Подтверждение | Границ |",
             "|---|---|---|---|---|---|---|"]
-    for s in p["effective_state"]:
+    for s in p["genome"]:
         out.append("| %s | %s | %s | %s | %s | %s | %d |" % (
             s["capability"], s["version"], s["autonomy"],
             "общий (влияет на класс)" if s["provenance"] == "global" else "только этот агент",
             s["side_effects"], s["confirmation"], len(s["limits"])))
     att = p["attention"]
     out += ["", "## Требует внимания", ""]
-    out += ["- Общие объекты (изменение затронет другие агенты): %s" % (", ".join(att["shared_objects"]) or "нет")]
+    out += ["- Shared Genes — общие элементы (изменение затронет другие агенты): %s" % (", ".join(att["shared_genes"]) or "нет")]
     out += ["- Действия наружу или с техникой: %s" % (", ".join(att["external_or_physical"]) or "нет")]
     out += ["- Обязателен человек: %s" % (", ".join(att["human_required"]) or "нет")]
     out += ["", "## Как работает фактически — источники", ""]
@@ -206,11 +208,11 @@ def selftest():
         print("PASS: эталонный паспорт проходит стандарт")
     cab = build(GOOD)
     checks = [
-        ("кабинет собран по схеме v1", cab.get("schema") == "extella.agent_cabinet.v1"),
+        ("кабинет собран по схеме v1.1", cab.get("schema") == "extella.agent_cabinet.v1.1"),
         ("паспорт содержит активную версию", cab["passport"]["identity"]["active_version"] == "1.2.0"),
-        ("эффективное состояние: 2 способности", len(cab["passport"]["effective_state"]) == 2),
-        ("провенанс различает общий объект", [s["provenance"] for s in cab["passport"]["effective_state"]] == ["agent", "global"]),
-        ("общий объект попал в «требует внимания»", cab["passport"]["attention"]["shared_objects"] == ["Отправить письмо"]),
+        ("геном агента: 2 способности", len(cab["passport"]["genome"]) == 2),
+        ("провенанс различает общий ген (Shared Gene)", [s["provenance"] for s in cab["passport"]["genome"]] == ["agent", "global"]),
+        ("Shared Gene попал в «требует внимания»", cab["passport"]["attention"]["shared_genes"] == ["Отправить письмо"]),
         ("действие наружу отмечено", cab["passport"]["attention"]["external_or_physical"] == ["Отправить письмо"]),
         ("обязателен человек отмечен", cab["passport"]["attention"]["human_required"] == ["Отправить письмо"]),
         ("заявленное поведение отделено от фактического",
