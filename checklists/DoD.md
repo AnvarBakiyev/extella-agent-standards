@@ -35,6 +35,13 @@
 - [ ] **Есть владелец эксплуатации**
   Назначен конкретный человек, который отвечает за агента после запуска.
 
+- [ ] **Agent Passport связан со stable platform agent ID**
+  Указан `agent.platform_agent_id`; совпадение по отображаемому имени не считается связью.
+
+- [ ] **Shared Genes имеют stable IDs**
+  Каждый общий элемент объявлен в `shared_genes[]` с `gene_id`, kind, версией и
+  `provenance: global`; потребители не считаются по имени.
+
 - [ ] **Есть поэтапная выкатка и проверенный откат (rollback)**
   Выкатка идёт поэтапно, и откат назад реально проверен, а не только описан.
 
@@ -57,5 +64,9 @@
 
 ```
 python3 tools/check_agent_passport.py путь/к/паспорту.yaml
+python3 tools/check_agent_passport.py путь/к/паспорту.yaml --json
 python3 tools/check_brand_copy.py путь/к/интерфейсу.js путь/к/странице.html
 ```
+
+Evolution Console использует второй вызов и тот же расчёт `check_report(doc)`, а не
+собственную проверку риска.

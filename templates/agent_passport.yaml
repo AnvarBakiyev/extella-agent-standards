@@ -1,10 +1,13 @@
-# Паспорт агента Extella — заполни его ПЕРЕД выпуском агента клиенту.
+# Agent Passport Extella — заполни его ПЕРЕД выпуском агента клиенту.
 # Все пустые "" замени своими значениями; способностей (capabilities) может быть несколько — копируй блок, начиная с "- name".
 # Подсказки: autonomy = A0..A4; side_effects = none|local|external|physical; confirmation = never|conditional|always; idempotency = supported|unsupported.
 # Проверка готовности: python3 tools/check_agent_passport.py templates/agent_passport.yaml
 ---
 agent:
   name: ""
+  platform_agent_id: ""    # стабильный id из platform agent/list + agent/get; по имени связывать запрещено
+  platform_provider: ""    # live provider из platform agent/get; черновик заполняет Evolution Console
+  declared_instructions: "" # live instructions как исходный черновик; человек проверяет перед выпуском
   owner: ""
   business_goal: ""
   model_profile: "qwen-3.7"
@@ -42,6 +45,13 @@ capabilities:
     rollback: ""
     help_surface: ""        # где человек прочитает «как это работает» (экран/кнопка); internal — если экрана нет
     limits: []              # ОБЯЗАТЕЛЬНО: чего возможность НЕ делает (минимум одна честная строка)
+shared_genes: []            # общие элементы Agent Genome; потребитель = agent.platform_agent_id
+# Пример canonical Shared Gene (N потребителей считается только по gene_id, не по имени):
+#  - gene_id: "rule.profitability-gate"
+#    kind: "rule"           # knowledge | rule | expert | handler
+#    name: "Profitability gate"
+#    version: "1.0.0"
+#    provenance: "global"
 budgets:
   max_duration_ms: 30000
   max_llm_tokens: 0
