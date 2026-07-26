@@ -111,8 +111,12 @@ def check_report(doc):
     if not platform_agent_id:
         add(
             "AGENT_PLATFORM_ID_REQUIRED", "error", "agent.platform_agent_id",
-            "agent.platform_agent_id — не указан стабильный идентификатор агента на платформе",
-            "agent.platform_agent_id is required to bind the Agent Passport to a stable platform agent",
+            "agent.platform_agent_id — не указан стабильный идентификатор агента на платформе. "
+            "Исправление: в Evolution Console выбери живого агента и нажми "
+            "«Создать черновик Agent Passport».",
+            "agent.platform_agent_id is required to bind the Agent Passport to a stable platform agent. "
+            "To fix it, open Evolution Console, select the live agent, and choose "
+            "“Create Agent Passport draft”.",
         )
     elif not PLATFORM_AGENT_ID_RE.fullmatch(platform_agent_id):
         add(
@@ -591,12 +595,24 @@ def selftest():
 
     missing_id = json.loads(GOOD_JSON)
     missing_id["agent"]["platform_agent_id"] = ""
+    missing_id_issue = next(
+        (x for x in check_report(missing_id)["issues"]
+         if x["code"] == "AGENT_PLATFORM_ID_REQUIRED"),
+        None,
+    )
     invalid_id = json.loads(GOOD_JSON)
     invalid_id["agent"]["platform_agent_id"] = "not-an-agent-id"
     id_checks = [
         ("отсутствующий platform_agent_id отклонён",
-         "AGENT_PLATFORM_ID_REQUIRED" in
-         {x["code"] for x in check_report(missing_id)["issues"]}),
+         missing_id_issue is not None),
+        ("исправление отсутствующего platform_agent_id объяснено для RU и EN",
+         missing_id_issue is not None
+         and "Evolution Console" in missing_id_issue["message_ru"]
+         and "живого агента" in missing_id_issue["message_ru"]
+         and "«Создать черновик Agent Passport»" in missing_id_issue["message_ru"]
+         and "Evolution Console" in missing_id_issue["message_en"]
+         and "live agent" in missing_id_issue["message_en"]
+         and "“Create Agent Passport draft”" in missing_id_issue["message_en"]),
         ("нестабильный platform_agent_id отклонён",
          "AGENT_PLATFORM_ID_INVALID" in
          {x["code"] for x in check_report(invalid_id)["issues"]}),
