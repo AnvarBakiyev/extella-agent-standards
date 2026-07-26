@@ -87,6 +87,66 @@ EVOLUTION_CYCLE = [
 ]
 
 
+# Что человек может СОЗДАТЬ в Extella прямо из Agent Cabinet. Кабинет — не
+# смотровая площадка: агент растёт там, где им управляют. Виды совпадают с видами
+# Agent Genome (knowledge | rule | expert | handler), чтобы созданное сразу
+# становилось частью генома, а не отдельной сущностью «сбоку».
+CREATION_KINDS = [
+    ("knowledge", "Знание — то, что агент обязан знать",
+     "Knowledge — what the agent must know", "/api/concept/*"),
+    ("rule", "Правило — что агенту разрешено и запрещено",
+     "Rule — what the agent may and may not do", "/api/rule/*"),
+    ("expert", "Способность — проверяемое действие, которое агент умеет выполнять",
+     "Capability — a verifiable action the agent can perform", "/api/expert/save"),
+    ("handler", "Обработчик класса (CSPL) — общий способ исполнения класса способностей",
+     "Class handler (CSPL) — a shared way of executing a class of capabilities",
+     "/api/expert/save"),
+]
+
+# Каждая гарантия обязательна. Это не рекомендации: без них создание из кабинета
+# превращается в тихую запись в чужую область — наш живой класс отказов.
+CREATION_GUARDS = [
+    ("same_loop",
+     "Создание идёт тем же Evolution Loop: черновик → проверка в Evolution Lab → публикация → "
+     "Evolution Receipt. Прямая тихая запись в прод запрещена",
+     "Creation goes through the same Evolution Loop: draft → Evolution Lab check → publication → "
+     "Evolution Receipt. Direct silent writes to production are forbidden"),
+    ("scope_default_agent",
+     "Область по умолчанию — ТОЛЬКО этот агент. Общий (global) объект создаётся лишь после экрана "
+     "влияния, и такое создание завершается в Evolution Console, а не в кабинете",
+     "Default scope is THIS agent only. A global object may be created only after the impact "
+     "screen, and such creation completes in Evolution Console, not in the cabinet"),
+    ("no_duplicate_names",
+     "Имя способности, уже существующее в другой области, отклоняется: дубль = недетерминированный "
+     "запуск (живой класс отказов, проверка wz_expert_janitor)",
+     "A capability name that already exists in another scope is refused: a duplicate means "
+     "non-deterministic execution (a live failure class, checked by wz_expert_janitor)"),
+    ("rest_with_explicit_scope",
+     "Запись только через REST с явно указанной областью. MCP save_expert запрещён: он молча пишет "
+     "в область другого агента",
+     "Write only via REST with an explicit scope. MCP save_expert is forbidden: it silently writes "
+     "into another agent's scope"),
+    ("qwen_only",
+     "Всё, что исполняется, работает на платформенном Qwen; платные сторонние агенты запрещены",
+     "Everything runnable runs on the platform Qwen; paid third-party agents are forbidden"),
+    ("readback_verify",
+     "Успех подтверждается перечитыванием с платформы (agent/get, experts_db/list). HTTP 5xx или "
+     "таймаут не считается ни провалом, ни успехом — проверяется артефактом",
+     "Success is confirmed by reading back from the platform (agent/get, experts_db/list). HTTP "
+     "5xx or a timeout is neither a failure nor a success — it is verified by artifact"),
+    ("receipt_and_rollback",
+     "Каждое создание оставляет Evolution Receipt: что создано, в какой области, кем и как вернуть "
+     "состояние до создания",
+     "Every creation leaves an Evolution Receipt: what was created, in which scope, by whom, and "
+     "how to restore the state before creation"),
+    ("not_a_new_agent",
+     "Создание НОВОГО агента в кабинете запрещено: кабинет — про одного агента. Новый агент "
+     "создаётся в Evolution Console или Конструктором (анти-дублирование поверхностей)",
+     "Creating a NEW agent in the cabinet is forbidden: the cabinet is about one agent. A new "
+     "agent is created in Evolution Console or by the Wizard (surface anti-duplication)"),
+]
+
+
 def _provenance(cap):
     """Откуда пришёл элемент состояния: собственный агента или общий (влияет на класс)."""
     return "global" if cap.get("global") is True else "agent"
@@ -201,6 +261,24 @@ def build(doc):
                          "agent only, or change the whole class?",
             "choices_ru": ["Создать локальную версию", "Изменить весь класс", "Отмена"],
             "choices_en": ["Create a local version", "Change the whole class", "Cancel"],
+        },
+        # Кабинет обязан УМЕТЬ СОЗДАВАТЬ в Extella, а не только показывать:
+        # агент растёт там, где им управляют (решение Анвара 26.07.2026).
+        "creation": {
+            "required": True,
+            "title_ru": "Создать в Extella",
+            "title_en": "Create in Extella",
+            "kinds": [{"kind": k, "what_ru": ru, "what_en": en, "platform_route": route}
+                      for k, ru, en, route in CREATION_KINDS],
+            "guards": [{"id": g, "must_ru": ru, "must_en": en}
+                       for g, ru, en in CREATION_GUARDS],
+            "default_scope": "agent",
+            "forbidden_ru": ["создание нового агента (это Evolution Console или Конструктор)",
+                             "запись мимо Evolution Loop",
+                             "создание через MCP save_expert"],
+            "forbidden_en": ["creating a new agent (that is Evolution Console or the Wizard)",
+                             "writing outside the Evolution Loop",
+                             "creating via MCP save_expert"],
         },
         "ledger_ru": "тот же управляемый журнал версий, что в Evolution Console "
                      "(Agent Cabinet — его проекция по одному агенту, а не второй механизм версий)",
@@ -338,6 +416,18 @@ def selftest():
          "{N}" in cab["evolution"]["shared_change_guard"]["prompt_ru"]
          and "{N}" in cab["evolution"]["shared_change_guard"]["prompt_en"]
          and len(cab["evolution"]["shared_change_guard"]["choices_ru"]) == 3),
+        ("кабинет умеет СОЗДАВАТЬ в Extella все четыре вида генома",
+         cab["evolution"]["creation"]["required"] is True
+         and [k["kind"] for k in cab["evolution"]["creation"]["kinds"]]
+         == ["knowledge", "rule", "expert", "handler"]),
+        ("создание по умолчанию — только для этого агента",
+         cab["evolution"]["creation"]["default_scope"] == "agent"),
+        ("создание защищено обязательными гарантиями (цикл, дубли, REST-область, перечитывание, квитанция)",
+         set(g["id"] for g in cab["evolution"]["creation"]["guards"]) >=
+         {"same_loop", "no_duplicate_names", "rest_with_explicit_scope",
+          "readback_verify", "receipt_and_rollback", "not_a_new_agent"}),
+        ("создание НОВОГО агента в кабинете запрещено явно",
+         any("нового агента" in x for x in cab["evolution"]["creation"]["forbidden_ru"])),
         ("markdown-вид собирается",
          "Agent Cabinet — кабинет агента: Дебиторка 28 филиалов" in as_markdown(cab)),
     ]
