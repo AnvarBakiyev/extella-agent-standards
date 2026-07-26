@@ -5,15 +5,15 @@
 
 var CAB_T = {
   ru: { tabs: ['Паспорт', 'Как работает фактически', 'Эволюция'],
-        state: 'Эффективное состояние', attention: 'Требует внимания',
-        own: 'только этот агент', shared: 'общий — изменение затронет класс',
+        state: 'Agent Genome — геном агента', attention: 'Требует внимания',
+        own: 'только этот агент', shared: 'Shared Gene — затронет класс',
         declared: 'Как должен работать (заявлено)', sources: 'Источники доказательств',
         limits: 'Чего кабинет НЕ показывает', cycle: 'Цикл изменения',
         guard: 'Защита от массовой поломки', version: 'Активная версия', owner: 'Владелец',
         est: 'оценка', limitsCol: 'Границы' },
   en: { tabs: ['Passport', 'How it actually works', 'Evolution'],
-        state: 'Effective state', attention: 'Needs attention',
-        own: 'this agent only', shared: 'shared — a change affects the class',
+        state: 'Agent Genome', attention: 'Needs attention',
+        own: 'this agent only', shared: 'Shared Gene — affects the class',
         declared: 'How it is supposed to work (declared)', sources: 'Evidence sources',
         limits: 'What this cabinet does NOT show', cycle: 'Change cycle',
         guard: 'Protection against mass breakage', version: 'Active version', owner: 'Owner',
@@ -38,7 +38,7 @@ function renderCabinet(cab, hostId, tab){
 
   if(tab === 'passport'){
     h += '<div class="card" style="margin-bottom:12px"><div style="font-weight:700;margin-bottom:8px">' + T.state + '</div><table style="width:100%;font-size:12px;border-collapse:collapse">';
-    (p.effective_state||[]).forEach(function(s){
+    (p.genome||[]).forEach(function(s){
       h += '<tr style="border-top:1px solid var(--line,#e4decf)"><td style="padding:5px 4px"><b>' + s.capability + '</b> <span style="color:var(--silver)">v' + s.version + '</span></td>' +
            '<td style="padding:5px 4px">' + s.autonomy + '</td>' +
            '<td style="padding:5px 4px;color:' + (s.provenance==='global'?'#b8862f':'var(--silver)') + '">' + (s.provenance==='global'?T.shared:T.own) + '</td>' +
@@ -48,7 +48,7 @@ function renderCabinet(cab, hostId, tab){
     h += '</table></div>';
     var a = p.attention || {};
     h += '<div class="card" style="border-left:3px solid #b8862f"><div style="font-weight:700;margin-bottom:8px">' + T.attention + '</div><div style="font-size:12.5px;line-height:1.7">' +
-         '• ' + T.shared + ': ' + ((a.shared_objects||[]).join(', ')||'—') + '<br>' +
+         '• ' + T.shared + ': ' + ((a.shared_genes||[]).join(', ')||'—') + '<br>' +
          '• ' + (L==='en'?'outward or physical actions':'действия наружу или с техникой') + ': ' + ((a.external_or_physical||[]).join(', ')||'—') + '<br>' +
          '• ' + (L==='en'?'human required':'обязателен человек') + ': ' + ((a.human_required||[]).join(', ')||'—') + '</div></div>';
   }
@@ -76,7 +76,7 @@ function renderCabinet(cab, hostId, tab){
          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
          ch.map(function(c,n){ return '<button class="btn ' + (n===0?'gold':'ghost') + ' sm" disabled title="' + (L==='en'?'wired by the product':'подключает продукт') + '">' + c + '</button>'; }).join('') +
          '</div><div style="font-size:12px;color:var(--silver,#889)">' + g.must_show +
-         '<br><b>' + (L==='en'?'shared objects of this agent':'общие объекты этого агента') + ':</b> ' + ((g.candidates||[]).join(', ')||'—') + '</div></div>';
+         '<br><b>' + (L==='en'?'Shared Genes of this agent':'Shared Genes этого агента') + ':</b> ' + ((g.candidates||[]).join(', ')||'—') + '</div></div>';
   }
   window._cab = cab;
   host.innerHTML = h;
