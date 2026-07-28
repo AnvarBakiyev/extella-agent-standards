@@ -18,6 +18,9 @@ AUTONOMY = {"A0", "A1", "A2", "A3", "A4"}
 SIDE_EFFECTS = {"none", "local", "external", "physical"}
 CONFIRMATION = {"never", "conditional", "always"}
 IDEMPOTENCY = {"supported", "unsupported"}
+# Способность — не только эксперт. Реестр Extella уже держит восемь видов; вызов другого агента
+# такая же способность, как вызов функции (решение Анвара 28.07.2026).
+CAPABILITY_KINDS = {"expert", "agent", "automation", "cli", "mcp", "cspl", "skill"}
 BUDGET_FIELDS = ("max_duration_ms", "max_llm_tokens", "max_delegation_depth", "max_external_actions")
 PLATFORM_AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9][A-Za-z0-9_-]{2,127}$")
 SHARED_GENE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
@@ -183,6 +186,42 @@ def check_report(doc):
                 tag + ": не заполнена версия (version)",
                 "capability #%d: version is blank" % i,
             )
+        # Вид способности: объявлен — обязан быть известным. Не объявлен — считаем экспертом,
+        # как было исторически.
+        kind = str(cap.get("kind") or "").strip().lower()
+        if kind and kind not in CAPABILITY_KINDS:
+            add(
+                "CAPABILITY_KIND_INVALID", "error", path + ".kind",
+                "%s: kind = «%s» — допустимо только %s"
+                % (tag, cap.get("kind"), " | ".join(sorted(CAPABILITY_KINDS))),
+                "capability #%d: kind = %r — allowed: %s"
+                % (i, cap.get("kind"), " | ".join(sorted(CAPABILITY_KINDS))),
+            )
+        if kind and kind != "expert" and is_blank(cap.get("ref")):
+            add(
+                "CAPABILITY_REF_REQUIRED", "error", path + ".ref",
+                "%s: вид «%s» объявлен, но не сказано ЧЕМ он исполняется — заполни ref "
+                "(agent_..., id автоматизации, имя инструмента)" % (tag, kind),
+                "capability #%d declares kind %r but does not say what executes it — fill ref"
+                % (i, kind),
+            )
+        # Делегирование агенту без бюджета запрещено: это прямой антипаттерн «Agent-to-Agent без
+        # бюджета, trace и защиты от циклов». Бюджет мы сняли из обязательных как церемонию —
+        # и возвращаем ровно там, где он несёт нагрузку.
+        if kind == "agent":
+            depth = (doc.get("budgets") or {}).get("max_delegation_depth")
+            if not isinstance(depth, int) or isinstance(depth, bool) or depth < 1:
+                add(
+                    "CAPABILITY_AGENT_DELEGATION_BUDGET_REQUIRED", "error",
+                    "budgets.max_delegation_depth",
+                    "%s: способность вызывает другого агента, значит нужен предел вложенности "
+                    "(budgets.max_delegation_depth ≥ 1) — иначе цикл агентов ничем не "
+                    "ограничен" % tag,
+                    "capability #%d delegates to another agent, so a delegation depth limit is "
+                    "required (budgets.max_delegation_depth >= 1) — otherwise an agent cycle is "
+                    "unbounded" % i,
+                )
+
         allowed_fields = (
             ("autonomy", AUTONOMY, "A0..A4", "CAPABILITY_AUTONOMY_INVALID"),
             ("side_effects", SIDE_EFFECTS, "none | local | external | physical",
@@ -538,6 +577,36 @@ def selftest():
             print("      - " + err)
     else:
         print("PASS: правильный паспорт проходит без ошибок")
+    # Новые правила 28.07: способность — не только эксперт, и делегирование агенту без
+    # предела вложенности запрещено.
+    import copy as _copy
+    def _codes(doc):
+        return {i["code"] for i in check_report(doc)["issues"]}
+
+    _base = json.loads(GOOD_JSON)
+
+    _d = _copy.deepcopy(_base); _d["capabilities"][0]["kind"] = "телепатия"
+    print(("PASS: " if "CAPABILITY_KIND_INVALID" in _codes(_d) else "FAIL: ")
+          + "неизвестный вид способности — поймано")
+    ok = ok and "CAPABILITY_KIND_INVALID" in _codes(_d)
+
+    _d = _copy.deepcopy(_base); _d["capabilities"][0]["kind"] = "agent"; _d["capabilities"][0]["ref"] = ""
+    print(("PASS: " if "CAPABILITY_REF_REQUIRED" in _codes(_d) else "FAIL: ")
+          + "вид объявлен, а чем исполняется — нет: поймано")
+    ok = ok and "CAPABILITY_REF_REQUIRED" in _codes(_d)
+
+    _d = _copy.deepcopy(_base)
+    _d["capabilities"][0].update({"kind": "agent", "ref": "agent_contract_checker_1"})
+    _d.pop("budgets", None)          # бюджет теперь необязателен — именно это и проверяем
+    print(("PASS: " if "CAPABILITY_AGENT_DELEGATION_BUDGET_REQUIRED" in _codes(_d) else "FAIL: ")
+          + "вызов агента без предела вложенности — поймано")
+    ok = ok and "CAPABILITY_AGENT_DELEGATION_BUDGET_REQUIRED" in _codes(_d)
+
+    _d["budgets"] = {"max_delegation_depth": 2}
+    print(("PASS: " if "CAPABILITY_AGENT_DELEGATION_BUDGET_REQUIRED" not in _codes(_d) else "FAIL: ")
+          + "вызов агента с объявленным пределом проходит")
+    ok = ok and "CAPABILITY_AGENT_DELEGATION_BUDGET_REQUIRED" not in _codes(_d)
+
     bad_errors, _ = check(json.loads(BAD_JSON))
     for label, needle in RULE_CHECKS:
         if any(needle in err for err in bad_errors):

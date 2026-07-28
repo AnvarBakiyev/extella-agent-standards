@@ -142,6 +142,19 @@ def build(roots, now=None):
 
     not_ready = [e["automation_id"] or e["source_path"] for e in entries if not e["passport_ok"]]
 
+    # Подсказка, а не запрет (решение Анвара 28.07): семейство из четырёх и более похожих
+    # способностей — повод взвесить обработчик класса вместо N-го эксперта. Жёсткого правила
+    # нет намеренно: абстракция раньше времени вредна не меньше, чем копипаста.
+    families = {}
+    for c in capabilities:
+        pref = str(c["expert"]).split("_")[0]
+        if pref:
+            families.setdefault(pref, []).append(c["expert"])
+    class_hints = sorted(
+        [{"family": p, "count": len(v), "members": sorted(v)[:8]}
+         for p, v in families.items() if len(v) >= 4],
+        key=lambda x: -x["count"])
+
     return {
         "schema": SCHEMA,
         "source": "passports_in_git",
@@ -150,8 +163,10 @@ def build(roots, now=None):
         "automations": sorted(entries, key=lambda e: e["automation_id"] or e["source_path"]),
         "capabilities": capabilities,
         "shared_candidates": shared,
+        "class_handler_hints": class_hints,
         "counts": {"automations": len(entries), "capabilities": len(capabilities),
-                   "shared_candidates": len(shared), "passport_not_ready": len(not_ready)},
+                   "shared_candidates": len(shared), "passport_not_ready": len(not_ready),
+                   "class_handler_hints": len(class_hints)},
         "warnings": warnings,
     }
 
