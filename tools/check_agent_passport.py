@@ -193,6 +193,12 @@ def check_report(doc):
              "CAPABILITY_IDEMPOTENCY_INVALID"),
         )
         for field, allowed, hint, code in allowed_fields:
+            # Ревизия 28.07: эти признаки стали необязательными. Раньше их требовали всегда, и
+            # строитель сочинял значения — паспорт начинал врать правдоподобно. Правило теперь:
+            # НЕ ОБЪЯВЛЕНО — пропускаем; ОБЪЯВЛЕНО — обязано быть верным, и тогда включаются
+            # производные проверки безопасности ниже.
+            if field not in cap or cap.get(field) in (None, ""):
+                continue
             if cap.get(field) not in allowed:
                 add(
                     code, "error", path + "." + field,
@@ -224,13 +230,8 @@ def check_report(doc):
                     tag + ": есть побочные эффекты, но не описан путь отката (rollback)",
                     "capability #%d has side effects but no rollback path" % i,
                 )
-            if is_blank(cap.get("evidence_schema")):
-                add(
-                    "CAPABILITY_EVIDENCE_REQUIRED", "error", path + ".evidence_schema",
-                    tag + ": есть побочные эффекты, но не описано доказательство "
-                    "исполнения (evidence_schema)",
-                    "capability #%d has side effects but no execution evidence_schema" % i,
-                )
+            # evidence_schema снят из обязательных 28.07: его не читает ни продукт, ни другой
+            # гейт. Путь отката (rollback) остаётся обязательным — его читает продукт.
         if cap.get("global") is True:
             if is_blank(cap.get("rollback")):
                 add(
@@ -368,13 +369,17 @@ def check_report(doc):
             "help, and errors must ship in both languages",
         )
 
-    # Правило 8: бюджеты
+    # Правило 8: бюджеты. Ревизия 28.07 — раздел стал НЕОБЯЗАТЕЛЬНЫМ: ни одно из четырёх
+    # значений сегодня не применяется в рантайме, а требовать заполнять то, что ни на что не
+    # влияет, значит учить строителя писать неправду. Объявил — проверим строго.
     budgets = doc.get("budgets")
-    if not isinstance(budgets, dict):
+    if budgets is None:
+        pass
+    elif not isinstance(budgets, dict):
         add(
-            "BUDGETS_REQUIRED", "error", "budgets",
-            "раздел budgets отсутствует — лимиты обязательны",
-            "the budgets section is missing — limits are required",
+            "BUDGETS_SHAPE", "error", "budgets",
+            "раздел budgets должен быть объектом с числовыми лимитами",
+            "the budgets section must be an object with numeric limits",
         )
     else:
         for field in BUDGET_FIELDS:
@@ -398,18 +403,15 @@ def check_report(doc):
                     % (field, budgets[field]),
                 )
 
-    # Правило 9: эксплуатация
-    if is_blank(ops.get("success_metric")):
+    # Правило 9: эксплуатация. Ревизия 28.07 — обязателен только ПУТЬ ОТКАТА: он один отвечает
+    # на вопрос «как вернуть, если стало хуже», и его читает продукт. Дежурный, метрика успеха,
+    # наблюдаемость и выкатка ушли в необязательные: агента строит машина, и назначать дежурного
+    # от её имени — выдумка. Владелец агента объявлен в agent.owner.
+    if is_blank(ops.get("rollback")):
         add(
-            "OPERATIONS_SUCCESS_METRIC_REQUIRED", "error", "operations.success_metric",
-            "operations.success_metric — не сказано, как понять, что агент работает хорошо",
-            "operations.success_metric does not say how to tell whether the agent works well",
-        )
-    if is_blank(ops.get("owner_on_call")):
-        add(
-            "OPERATIONS_OWNER_ON_CALL_REQUIRED", "error", "operations.owner_on_call",
-            "operations.owner_on_call — не назначен человек, отвечающий за агента",
-            "operations.owner_on_call does not name the person responsible for the agent",
+            "OPERATIONS_ROLLBACK_REQUIRED", "error", "operations.rollback",
+            "operations.rollback — не сказано, как вернуть агента к предыдущему состоянию",
+            "operations.rollback does not say how to return the agent to its previous state",
         )
 
     # Предупреждения (не блокируют выпуск)
@@ -485,7 +487,7 @@ GOOD_JSON = """{
   "shared_genes": [{"gene_id": "rule.daily-digest-policy", "kind": "rule",
                     "name": "Daily digest policy", "version": "1.0.0", "provenance": "global"}],
   "budgets": {"max_duration_ms": 30000, "max_llm_tokens": 8000, "max_delegation_depth": 1, "max_external_actions": 0},
-  "operations": {"success_metric": "сводка доставлена до 09:00", "owner_on_call": "Анвар"}
+  "operations": {"rollback": "вернуть предыдущую версию сборки и перечитать agent/get"}
 }"""
 
 BAD_JSON = """{
@@ -499,7 +501,7 @@ BAD_JSON = """{
                     "evidence_schema": "лог отправки", "permissions": [], "rules": [],
                     "limits": [], "help_surface": ""}],
   "budgets": {"max_duration_ms": 30000, "max_llm_tokens": null, "max_delegation_depth": 0, "max_external_actions": 1},
-  "operations": {"success_metric": "письмо согласовано", "owner_on_call": "Анвар"}
+  "operations": {"rollback": "версия -1"}
 }"""
 
 RULE_CHECKS = (

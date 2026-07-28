@@ -262,20 +262,23 @@ def check_report(doc):
                   "hand-over to the client" % (kind or "?"))
 
     # 6. Эксплуатация и бюджеты
+    # Ревизия 28.07: обязателен только ПУТЬ ОТКАТА — он отвечает на «как вернуть, если стало
+    # хуже», и его читает продукт. Дежурный, метрика успеха, наблюдаемость и выкатка ушли в
+    # необязательные: автоматизацию собирает машина, назначать от её имени дежурного — выдумка.
     for field, ru, en in (
-        ("owner_on_call", "не назначен дежурный", "no on-call owner"),
         ("rollback", "не описан путь отката", "no rollback path"),
-        ("success_metric", "не сказано, как понять, что автоматизация работает хорошо",
-         "no success metric"),
     ):
         if is_blank(ops.get(field)):
             _issue(errors, "AUTOMATION_OPS_%s_REQUIRED" % field.upper(), "operations." + field, ru, en)
-    for field in ("max_duration_ms", "max_llm_tokens", "max_external_actions"):
-        v = budgets.get(field)
-        if v is None or (isinstance(v, (int, float)) and v <= 0 and field != "max_external_actions"):
-            _warn(warns, "AUTOMATION_BUDGET_EMPTY", "budgets." + field,
-                  "бюджет «%s» не задан — расходы и время не ограничены" % field,
-                  "budget %r is not set — cost and duration are unbounded" % field)
+    # Бюджеты стали необязательными: рантайм их не применяет. Предупреждаем, только если
+    # раздел объявлен, но заполнен наполовину — тогда это недоделка, а не сознательный отказ.
+    if budgets:
+        for field in ("max_duration_ms", "max_llm_tokens", "max_external_actions"):
+            v = budgets.get(field)
+            if v is None:
+                _warn(warns, "AUTOMATION_BUDGET_EMPTY", "budgets." + field,
+                      "бюджет «%s» объявлен, но пуст" % field,
+                      "budget %r is declared but empty" % field)
 
     return {"ready": not errors, "errors": errors, "warnings": warns}
 
@@ -302,11 +305,7 @@ GOOD = {
                           "secret_ref": "config.json:greenapi_token"}],
         "knowledge": ["скрипты подогрева"], "rules": ["подтверждение человеком перед отправкой"],
     },
-    "budgets": {"max_duration_ms": 600000, "max_llm_tokens": 50000,
-                "max_delegation_depth": 2, "max_external_actions": 20},
-    "operations": {"observability": "квитанции в панели", "owner_on_call": "Анвар",
-                   "rollout": "поэтапно", "rollback": "версия -1 + бэкап конфига",
-                   "success_metric": "доля отвеченных лидов за сутки"},
+    "operations": {"rollback": "версия -1 + бэкап конфига"},
 }
 
 BAD = {
@@ -351,9 +350,7 @@ RULE_CHECKS = [
     ("хранит ПДн без срока хранения", "INTEGRATION_RETENTION_REQUIRED"),
     ("пишет наружу без ответа про человека", "INTEGRATION_HUMAN_IN_LOOP_REQUIRED"),
     ("секрет лежит прямо в паспорте", "INTEGRATION_SECRET_INLINE"),
-    ("нет дежурного", "AUTOMATION_OPS_OWNER_ON_CALL_REQUIRED"),
     ("нет отката", "AUTOMATION_OPS_ROLLBACK_REQUIRED"),
-    ("нет метрики успеха", "AUTOMATION_OPS_SUCCESS_METRIC_REQUIRED"),
 ]
 
 

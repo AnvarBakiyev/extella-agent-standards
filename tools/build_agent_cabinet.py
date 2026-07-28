@@ -211,8 +211,11 @@ def build(doc):
         # Shared Genes идут отдельными element_type и считаются только по gene_id.
         "genome": capability_genome + canonical_shared_genes,
         "budgets": doc.get("budgets") or {},
-        "operations": {"success_metric": ops.get("success_metric"),
-                       "owner_on_call": ops.get("owner_on_call"),
+        # Откат обязателен и показывается всегда; остальное — необязательное, и в кабинете
+        # честно даёт null вместо выдуманного значения (ревизия полей 28.07).
+        "operations": {"rollback": ops.get("rollback"),
+                       "success_metric": ops.get("success_metric") or None,
+                       "owner_on_call": ops.get("owner_on_call") or None,
                        "evidence_retention": ops.get("evidence_retention") or None},
         "attention": {
             "shared_genes": [{
@@ -364,7 +367,7 @@ GOOD = {
          "name": "Receivables policy", "version": "2.1.0", "provenance": "global"},
     ],
     "budgets": {"max_duration_ms": 60000, "max_llm_tokens": 20000, "max_delegation_depth": 1, "max_external_actions": 1},
-    "operations": {"success_metric": "сводка до 09:00 пн", "owner_on_call": "Анвар", "evidence_retention": "90d"},
+    "operations": {"rollback": "вернуть предыдущую сборку и перечитать agent/get"},
 }
 
 
