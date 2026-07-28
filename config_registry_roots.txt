@@ -1,0 +1,5 @@
+# Каноничные репозитории продуктов. Рабочие клоны (~/Documents/Codex/*) сюда НЕ входят:
+# они объявляют тот же automation_id и раздувают реестр четырьмя копиями одного продукта.
+~/Documents/Extella/extella-core-portal
+~/Documents/Extella/extella-1c-agent
+~/Documents/kazakh-lawyer
