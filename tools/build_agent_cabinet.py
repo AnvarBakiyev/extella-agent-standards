@@ -290,7 +290,82 @@ def build(doc):
     }
 
     return {"schema": CABINET_SCHEMA, "passport": passport,
-            "declared_behaviour": declared, "actual_behaviour": actual, "evolution": evolution}
+            "declared_behaviour": declared, "actual_behaviour": actual,
+            "evolution": evolution, "masking_policy": _masking_form(doc)}
+
+
+def _masking_form(passport):
+    """Форма политики «Защита данных» — контракт, который продукт ОБЯЗАН рендерить как есть.
+
+    Редактор политики принадлежит кабинету агента, а не Evolution Console: конфигурация
+    привязана к точному agent_id, один агент может входить в несколько автоматизаций, и второй
+    редактор дал бы второй источник правды с потерянными обновлениями (handoff Codex 28.07.2026).
+
+    Console остаётся только читателем и показывает posture. Здесь — форма и ГЕЙТЫ ЗАПИСИ.
+    """
+    aid = ((passport.get("agent") or {}).get("platform_agent_id")) or None
+    return {
+        "surface": "agent_cabinet",           # редактор живёт здесь, в Console его быть не должно
+        "agent_id": aid,
+        "console_is_read_only": True,
+        "fields": [
+            {"name": "enabled", "type": "boolean", "default": False,
+             "label_ru": "Защита данных включена", "label_en": "Data protection enabled"},
+            {"name": "hooks", "type": "exact_set", "values": ["pre", "post"],
+             "label_ru": "Точки применения", "label_en": "Enforcement points"},
+            {"name": "names_mode", "type": "enum", "values": ["aggressive", "context"],
+             "labels_ru": {"aggressive": "Строже", "context": "По контексту"},
+             "label_ru": "Режим имён", "label_en": "Names mode"},
+            {"name": "field_hints", "type": "map",
+             "value_values": ["iin", "bin", "phone", "email", "iban", "bic", "card",
+                              "account", "name", "address", "org", "number"],
+             "label_ru": "Подсказки по полям", "label_en": "Field hints"},
+            {"name": "reveal_policy", "type": "enum", "values": ["owner_only"],
+             "label_ru": "Кто может раскрыть", "label_en": "Who may reveal"},
+            {"name": "share_key_cross_device", "type": "boolean", "locked_value": False,
+             "label_ru": "Перенос ключа между устройствами",
+             "label_en": "Cross-device key sharing"},
+            {"name": "policy_version", "type": "enum", "values": ["kz-v1"],
+             "label_ru": "Версия политики", "label_en": "Policy version"},
+        ],
+        # Без всех этих подтверждений запись enabled=true запрещена. Это и есть смысл раздела:
+        # тумблер в интерфейсе без подтверждённых хуков защитой не является.
+        "write_gates": [
+            {"code": "PRE_ENFORCED", "ru": "локальный runtime подтвердил PRE",
+             "en": "the local runtime confirmed PRE"},
+            {"code": "POST_ENFORCED", "ru": "локальный runtime подтвердил POST",
+             "en": "the local runtime confirmed POST"},
+            {"code": "POLICY_VERSION_MATCH",
+             "ru": "версия загруженного набора правил совпадает с версией политики",
+             "en": "the loaded rule pack version matches the policy version"},
+            {"code": "AUDIT_HEALTHY", "ru": "журнал пишется без значений и ошибок",
+             "en": "the value-free audit journal writes without errors"},
+            {"code": "EXACT_READ_BACK",
+             "ru": "движок вернул применённую конфигурацию перечитыванием; успешный ответ без "
+                   "перечитывания применением не считается",
+             "en": "the engine returned the effective config on read-back; a successful response "
+                   "without read-back does not count as applied"},
+            {"code": "CAS_REVISION", "ru": "запись прошла со сверкой ревизии",
+             "en": "the write used compare-and-swap on the revision"},
+        ],
+        "honest_notes": [
+            {"ru": "Роли на подходе. Пока платформенных ролей нет, «только владелец» — локальный "
+                   "суррогат: это устройство плюс подтверждение человеком, а не доказанная личность.",
+             "en": "Roles are on the way. Until platform roles exist, «owner only» is a local "
+                   "surrogate: this device plus human confirmation, not a proven identity."},
+            {"ru": "Перенос ключа между устройствами заблокирован и остаётся выключенным.",
+             "en": "Cross-device key sharing is blocked and stays off."},
+            {"ru": "Явная подсказка по полю сильнее эвристики: значение из колонки «ИИН» "
+                   "маскируется как ИИН, даже если не сошлась контрольная цифра.",
+             "en": "An explicit field hint beats the heuristic: a value from an «IIN» column is "
+                   "masked as IIN even when its checksum does not match."},
+            {"ru": "Показывать защиту включённой можно только по подтверждению движка, а не по "
+                   "сохранённому переключателю.",
+             "en": "Protection may be shown as on only on engine confirmation, never on a stored "
+                   "toggle."},
+        ],
+        "checker": "tools/check_masking_policy.py",
+    }
 
 
 def _markdown_text(value):
@@ -410,6 +485,21 @@ def selftest():
         ("границы «фактически» названы на двух языках",
          len(cab["actual_behaviour"]["limits"]["ru"]) >= 4 and len(cab["actual_behaviour"]["limits"]["en"]) >= 4),
         ("цикл эволюции полный (9 шагов)", len(cab["evolution"]["cycle"]) == 9),
+        # Форма «Защиты данных» обязана приезжать контрактом, иначе продукт нарисует свой
+        # список — и включит защиту по одному тумблеру, чего мы и не хотим.
+        ("форма защиты данных живёт в кабинете, Console только читает",
+         cab["masking_policy"]["surface"] == "agent_cabinet"
+         and cab["masking_policy"]["console_is_read_only"] is True),
+        ("перенос ключа между устройствами прибит к false",
+         any(f["name"] == "share_key_cross_device" and f.get("locked_value") is False
+             for f in cab["masking_policy"]["fields"])),
+        ("включение требует подтверждённых PRE и POST",
+         {"PRE_ENFORCED", "POST_ENFORCED"} <=
+         {g["code"] for g in cab["masking_policy"]["write_gates"]}),
+        ("успешный ответ без перечитывания применением не считается",
+         "EXACT_READ_BACK" in {g["code"] for g in cab["masking_policy"]["write_gates"]}),
+        ("сказано, что роли на подходе",
+         any("Роли на подходе" in n["ru"] for n in cab["masking_policy"]["honest_notes"])),
         ("защита от массовой поломки перечисляет canonical Shared Gene по ID",
          cab["evolution"]["shared_change_guard"]["candidates"][0]["gene_id"]
          == "rule.receivables-policy"),
