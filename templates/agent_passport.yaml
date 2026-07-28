@@ -1,65 +1,77 @@
-# Agent Passport Extella — заполни его ПЕРЕД выпуском агента клиенту.
-# Все пустые "" замени своими значениями; способностей (capabilities) может быть несколько — копируй блок, начиная с "- name".
-# Подсказки: autonomy = A0..A4; side_effects = none|local|external|physical; confirmation = never|conditional|always; idempotency = supported|unsupported.
-# Проверка готовности: python3 tools/check_agent_passport.py templates/agent_passport.yaml
+# Agent Passport Extella.
+#
+# ЗАПОЛНЯЕТ МАШИНА, НЕ ЧЕЛОВЕК. Агента строит Claude/Codex/приложение — оно и выпускает паспорт
+# как побочный продукт стройки: цель и «что делает» берутся из исходной просьбы человека ЕГО
+# СЛОВАМИ, границы — это то, что строитель сознательно НЕ сделал, требования — то, что он
+# подключил. Человек не вписывает ничего: он уже сказал, что ему нужно.
+#
+# Ревизия 28.07.2026: снято 30 полей из 66. Восемь не читал никто и никогда; остальные ушли в
+# раздел `optional` — они нужны только под требование конкретного клиента, и сочинять их на
+# каждом агенте не надо. Критерий отбора: поле остаётся, если продукт его читает ИЛИ на нём
+# стоит гейт, который уже ловил живую поломку.
+#
+# Проверка: python3 tools/check_agent_passport.py мой_агент.yaml
 ---
 agent:
   name: ""
-  platform_agent_id: ""    # стабильный id из platform agent/list + agent/get; по имени связывать запрещено
-  platform_provider: ""    # live provider из platform agent/get; черновик заполняет Evolution Console
-  declared_instructions: "" # live instructions как исходный черновик; человек проверяет перед выпуском
-  owner: ""
-  business_goal: ""
-  model_profile: "qwen-3.7"
+  platform_agent_id: ""     # стабильный id из agent/list; связывать по имени запрещено
+  owner: ""                 # кто отвечает за агента после запуска
+  business_goal: ""          # какую задачу закрывает — словами человека, который её поставил
+  model_profile: "qwen-3.7"  # канон: клиентские агенты только платформенный Qwen
   version: "0.1.0"
-  languages: ["ru", "en"]   # ОБЯЗАТЕЛЬНО оба: интерфейс и пояснения делаются сразу на двух языках
-  immutable_bundle_id: ""
-  dependency_lock_sha256: ""
-  interfaces: []
-  hosting_profile: ""
-  data_classification: ""
+  languages: ["ru", "en"]    # оба обязательны: интерфейс и пояснения сразу на двух языках
+  hosting_profile: ""        # local | server | client_server — где агент живёт
+
 capabilities:
   - name: ""
     version: ""
-    input_schema: {}
-    output_schema: {}
-    autonomy: "A0"
-    expert: ""
+    what: ""                # что даёт человеку, ЕГО словами. По этому тексту способность находят
+    expert: ""              # чем исполняется
     cspl: ""
-    scope: "agent"
+    scope: "agent"          # agent | global — по умолчанию только этот агент
     global: false
     rules: []
     concepts: []
     permissions: []
     targets: []
-    side_effects: "none"
-    confirmation: "never"
-    approval_binding: ""
-    idempotency: "unsupported"
     retry_policy: "none"
-    reconciliation: ""
-    completeness_contract: ""
-    data_fields: []
-    data_residency: ""
-    evidence_schema: ""
-    rollback: ""
-    help_surface: ""        # где человек прочитает «как это работает» (экран/кнопка); internal — если экрана нет
-    limits: []              # ОБЯЗАТЕЛЬНО: чего возможность НЕ делает (минимум одна честная строка)
-shared_genes: []            # общие элементы Agent Genome; потребитель = agent.platform_agent_id
-# Пример canonical Shared Gene (N потребителей считается только по gene_id, не по имени):
-#  - gene_id: "rule.profitability-gate"
-#    kind: "rule"           # knowledge | rule | expert | handler
-#    name: "Profitability gate"
-#    version: "1.0.0"
-#    provenance: "global"
-budgets:
-  max_duration_ms: 30000
-  max_llm_tokens: 0
-  max_delegation_depth: 0
-  max_external_actions: 0
+    rollback: ""            # как вернуть состояние до вызова
+    help_surface: ""        # где человек прочитает «как это работает»; internal — если экрана нет
+    limits: []              # чего НЕ делает — минимум одна честная строка, иначе выпуск запрещён
+
 operations:
-  success_metric: ""
-  alerts: []
-  evidence_retention: ""
-  owner_on_call: ""
+  rollback: ""              # как откатить агента целиком
+
+# ---------------------------------------------------------------------------
+# ДАЛЬШЕ — НЕОБЯЗАТЕЛЬНОЕ. Заполняется, только если этого требует конкретный клиент
+# (обычно корпоративная проверка безопасности). По умолчанию раздел не заполняется:
+# ни один из этих признаков сегодня ни на что не влияет в рантайме, и сочинённые значения
+# делают паспорт хуже, а не лучше — он начинает врать правдоподобно.
+# ---------------------------------------------------------------------------
+optional:
+  agent:
+    platform_provider: ""       # live provider из agent/get — черновик от Evolution Console
+    declared_instructions: ""   # live instructions как исходный черновик
+    immutable_bundle_id: ""
+    dependency_lock_sha256: ""
+    interfaces: []
+    data_classification: ""
+  capability:
+    autonomy: "A0"              # A0..A4
+    side_effects: "none"        # none | local | external | physical
+    confirmation: "never"       # never | conditional | always
+    idempotency: "unsupported"  # supported | unsupported
+    evidence_schema: ""
+  shared_genes: []              # общие элементы Agent Genome; потребитель = agent.platform_agent_id
+  budgets:                      # объявляются, но рантайм их сегодня НЕ применяет
+    max_duration_ms: 0
+    max_llm_tokens: 0
+    max_delegation_depth: 0
+    max_external_actions: 0
+  operations:
+    success_metric: ""
+    observability: ""
+    owner_on_call: ""
+    rollout: ""
+    evidence_retention: ""
 ---
