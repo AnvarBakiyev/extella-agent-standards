@@ -62,8 +62,16 @@ def _entry(path, doc, report):
     comp = doc.get("components") if isinstance(doc.get("components"), dict) else {}
     agents = [str(x.get("platform_agent_id") or "").strip()
               for x in (comp.get("platform_agents") or []) if isinstance(x, dict)]
-    experts = [str(x.get("name") or "").strip() if isinstance(x, dict) else str(x)
-               for x in (comp.get("experts") or [])]
+    # experts несут не только имя: `what` — что способность делает словами клиента. Именно по
+    # этому тексту её находит агент, поэтому имя без `what` — способность, которую не найти.
+    experts, experts_what = [], {}
+    for x in (comp.get("experts") or []):
+        nm = str(x.get("name") or "").strip() if isinstance(x, dict) else str(x)
+        if not nm:
+            continue
+        experts.append(nm)
+        if isinstance(x, dict) and str(x.get("what") or "").strip():
+            experts_what[nm] = str(x["what"]).strip()
     integrations = []
     for it in (comp.get("integrations") or []):
         if not isinstance(it, dict):
@@ -80,7 +88,8 @@ def _entry(path, doc, report):
         "service": a.get("service") or {},
         "limits": a.get("limits") or [],
         "agent_ids": [x for x in agents if x],
-        "experts": [x for x in experts if x],
+        "experts": experts,
+        "experts_what": experts_what,
         "integrations": integrations,
         "source_path": path,
         "passport_ok": bool(report["ready"]),
