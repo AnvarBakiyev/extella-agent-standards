@@ -49,7 +49,7 @@ MUST показывать **эффективное состояние**, а не
 
 Canonical Shared Gene объявляется в верхнем списке `shared_genes` Agent Passport:
 `gene_id` (стабильный ключ), `kind` (`knowledge | rule | expert | handler`), `name`, `version`,
-`provenance: global`. Потребитель — `agent.platform_agent_id`. Evolution Console считает точное N
+`provenance` со значением `global`. Потребителем выступает стабильный id агента. Evolution Console считает точное N
 потребителей **только по `gene_id`**, не по отображаемому имени. Старое `capability.global` остаётся
 видимым для миграции, но не является доказательством общей идентичности объекта.
 
