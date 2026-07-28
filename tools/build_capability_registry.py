@@ -245,6 +245,10 @@ def main(argv):
     p.add_argument("roots", nargs="*", help="каталоги, где искать паспорта")
     p.add_argument("--roots-file", help="файл со списком каталогов, по одному на строку")
     p.add_argument("-o", "--out", help="куда записать реестр (по умолчанию — на экран)")
+    p.add_argument("--check", metavar="ФАЙЛ",
+                   help="не писать, а СВЕРИТЬ готовый файл с паспортами: отличается — код 1. "
+                        "Гейт против протухания: артефакт в дистрибутиве уезжает клиенту, "
+                        "а паспорта живут в других репозиториях и меняются без него")
     p.add_argument("--selftest", action="store_true")
     args = p.parse_args(argv)
 
@@ -263,6 +267,37 @@ def main(argv):
     if not reg["automations"]:
         print("ОШИБКА: паспортов не найдено — собирать нечего. Проверь каталоги.")
         return 2
+
+    if args.check:
+        path = os.path.expanduser(args.check)
+        if not os.path.exists(path):
+            print("ОШИБКА: сверять нечего — файла нет: %s" % path)
+            return 1
+        try:
+            with open(path, encoding="utf-8") as f:
+                shipped = json.load(f)
+        except Exception as exc:
+            print("ОШИБКА: файл не прочитан: %s" % exc)
+            return 1
+        # built_at меняется всегда — сверяем содержание, а не момент сборки.
+        a = {k: v for k, v in reg.items() if k != "built_at"}
+        b = {k: v for k, v in shipped.items() if k != "built_at"}
+        if a == b:
+            print("Каталог способностей СВЕЖИЙ: совпадает с паспортами (автоматизаций %d)"
+                  % reg["counts"]["automations"])
+            return 0
+        print("КАТАЛОГ ПРОТУХ: файл не совпадает с паспортами.")
+        ship_ids = {e.get("automation_id") for e in (shipped.get("automations") or [])}
+        live_ids = {e.get("automation_id") for e in reg["automations"]}
+        for aid in sorted(live_ids - ship_ids):
+            print("  нет в файле, есть в паспортах: %s" % aid)
+        for aid in sorted(ship_ids - live_ids):
+            print("  есть в файле, нет в паспортах: %s" % aid)
+        if ship_ids == live_ids:
+            print("  состав тот же — изменилось содержимое паспортов")
+        print("Пересобери: python3 %s --roots-file <roots> -o %s"
+              % (os.path.basename(__file__), args.check))
+        return 1
 
     text = json.dumps(reg, ensure_ascii=False, indent=2)
     if args.out:
