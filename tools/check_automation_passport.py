@@ -29,6 +29,13 @@ AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9_\-]{6,}$")
 SCHEDULE_KINDS = {"external_cron", "internal", "in_service"}
 # Канон: клиентские автоматизации работают на платформенном Qwen (провайдер alibaba).
 ALLOWED_PROVIDER = "alibaba"
+# A2: где живёт автоматизация. server/client_server джанитор не трогает — каталога на диске нет.
+HOSTING_PROFILES = {"local", "server", "client_server"}
+# A4: как ПДн проходят через коннектор. Умолчания нет — «не сказано» это не «не трогает».
+PERSONAL_DATA_MODES = {"none", "reads", "stores"}
+# Ссылка на секрет выглядит как «где лежит», а не как сам секрет. Живой секрет в паспорте —
+# это утечка в git и в кабинет клиента, поэтому ошибка, а не предупреждение.
+SECRET_VALUE_RE = re.compile(r"[A-Za-z0-9_\-]{24,}")
 
 
 def _issue(errors, code, path, ru, en):
@@ -97,6 +104,22 @@ def check_report(doc):
         _issue(errors, "AUTOMATION_HELP_REQUIRED", "automation.help_surface",
                "не указано, где на экране живёт пояснение «? Как это работает» (§3.20)",
                "help_surface is missing: where the «? How it works» panel lives (§3.20)")
+
+    # 2.1. Где живёт автоматизация (A2). Без этого джанитор снесёт серверную карточку как
+    # «мёртвую» — у неё нет и не должно быть каталога на диске.
+    hosting = str(a.get("hosting_profile") or "").strip().lower()
+    if not hosting:
+        _issue(errors, "AUTOMATION_HOSTING_REQUIRED", "automation.hosting_profile",
+               "не указано, где живёт автоматизация (local | server | client_server). Без этого "
+               "джанитор удалит серверную карточку как «мёртвую», а клиент не увидит, где его агент",
+               "hosting_profile is missing (local | server | client_server). Without it the janitor "
+               "deletes a server-hosted card as «dead» and the client cannot see where the agent lives")
+    elif hosting not in HOSTING_PROFILES:
+        _issue(errors, "AUTOMATION_HOSTING_INVALID", "automation.hosting_profile",
+               "размещение «%s» неизвестно — допустимо: %s"
+               % (hosting, ", ".join(sorted(HOSTING_PROFILES))),
+               "hosting_profile %r is unknown — allowed: %s"
+               % (hosting, ", ".join(sorted(HOSTING_PROFILES))))
 
     # 3. Контракт состояния — та причина, по которой Console не будет врать
     svc = a.get("service") if isinstance(a.get("service"), dict) else {}
@@ -169,6 +192,75 @@ def check_report(doc):
                    "schedule kind %r is unknown — allowed: %s"
                    % (kind, ", ".join(sorted(SCHEDULE_KINDS))))
 
+    # 5.1. Права коннекторов (A4). Корпоративный клиент проходит ИБ-проверку по паспорту,
+    # не читая наш код: что за доступ, что именно разрешено, идут ли через него ПДн и где секрет.
+    for i, it in enumerate(comp.get("integrations") or []):
+        base = "components.integrations[%d]" % i
+        if not isinstance(it, dict):
+            _issue(errors, "INTEGRATION_SHAPE", base,
+                   "интеграция должна быть объектом с kind, scopes и personal_data",
+                   "each integration must be an object with kind, scopes and personal_data")
+            continue
+        kind = str(it.get("kind") or "").strip()
+        if not kind:
+            _issue(errors, "INTEGRATION_KIND_REQUIRED", base + ".kind",
+                   "не сказано, что это за внешняя система",
+                   "the external system kind is missing")
+
+        scopes = [s for s in (it.get("scopes") or []) if not is_blank(s)] \
+            if isinstance(it.get("scopes"), list) else []
+        if not scopes:
+            _issue(errors, "INTEGRATION_SCOPES_REQUIRED", base + ".scopes",
+                   "права коннектора «%s» не видны: перечисли, что именно ему разрешено "
+                   "(например messages.read, messages.send). Без этого клиент не может пройти "
+                   "проверку безопасности по паспорту" % (kind or "?"),
+                   "connector %r has no visible rights: list what exactly it may do (e.g. "
+                   "messages.read, messages.send). Without it the client cannot run a security "
+                   "review from the passport" % (kind or "?"))
+
+        pd = str(it.get("personal_data") or "").strip().lower()
+        if not pd:
+            _issue(errors, "INTEGRATION_PERSONAL_DATA_REQUIRED", base + ".personal_data",
+                   "не объявлено, как коннектор «%s» обращается с персональными данными "
+                   "(none | reads | stores). «Не сказано» — это не «не трогает»" % (kind or "?"),
+                   "it is not declared how connector %r handles personal data (none | reads | "
+                   "stores). «Not stated» does not mean «does not touch»" % (kind or "?"))
+        elif pd not in PERSONAL_DATA_MODES:
+            _issue(errors, "INTEGRATION_PERSONAL_DATA_INVALID", base + ".personal_data",
+                   "режим персональных данных «%s» неизвестен — допустимо: %s"
+                   % (pd, ", ".join(sorted(PERSONAL_DATA_MODES))),
+                   "personal_data mode %r is unknown — allowed: %s"
+                   % (pd, ", ".join(sorted(PERSONAL_DATA_MODES))))
+        elif pd == "stores" and is_blank(it.get("retention")):
+            _issue(errors, "INTEGRATION_RETENTION_REQUIRED", base + ".retention",
+                   "коннектор «%s» ХРАНИТ персональные данные, но не сказано сколько — "
+                   "срок хранения обязателен для договора об обработке" % (kind or "?"),
+                   "connector %r STORES personal data but no retention is stated — the retention "
+                   "period is required for the data-processing agreement" % (kind or "?"))
+
+        # Запись наружу: подтверждает ли её человек — объявляется явно, оба ответа допустимы.
+        if it.get("external_writes") is True and it.get("human_in_loop") is None:
+            _issue(errors, "INTEGRATION_HUMAN_IN_LOOP_REQUIRED", base + ".human_in_loop",
+                   "коннектор «%s» пишет наружу, но не объявлено, подтверждает ли запись человек. "
+                   "Ответ «нет» допустим — умолчание нет" % (kind or "?"),
+                   "connector %r writes externally but human_in_loop is not declared. «false» is a "
+                   "valid answer — silence is not" % (kind or "?"))
+
+        # Секрет в паспорте = утечка в git и в кабинет клиента.
+        ref = str(it.get("secret_ref") or "").strip()
+        if ref and ":" not in ref and SECRET_VALUE_RE.fullmatch(ref):
+            _issue(errors, "INTEGRATION_SECRET_INLINE", base + ".secret_ref",
+                   "в secret_ref похоже лежит сам секрет, а не ссылка на него. Пиши, ГДЕ он "
+                   "хранится (например «config.json:greenapi_token»)",
+                   "secret_ref looks like the secret itself rather than a reference. State WHERE "
+                   "it is stored (e.g. «config.json:greenapi_token»)")
+        if not ref and scopes:
+            _warn(warns, "INTEGRATION_SECRET_REF_EMPTY", base + ".secret_ref",
+                  "не сказано, где лежит секрет коннектора «%s» — при передаче клиенту его "
+                  "негде искать" % (kind or "?"),
+                  "the location of connector %r secret is not stated — nobody can find it during "
+                  "hand-over to the client" % (kind or "?"))
+
     # 6. Эксплуатация и бюджеты
     for field, ru, en in (
         ("owner_on_call", "не назначен дежурный", "no on-call owner"),
@@ -193,7 +285,7 @@ GOOD = {
         "automation_id": "extella_travel_agency",
         "name": {"ru": "Турагентство: лиды и подогрев базы", "en": "Travel agency: leads and nurture"},
         "owner": "Анвар", "business_goal": "возвращать спящую базу туристов без ручного обзвона",
-        "version": "1.0.0", "languages": ["ru", "en"],
+        "version": "1.0.0", "languages": ["ru", "en"], "hosting_profile": "local",
         "service": {"port": 8766, "health": "/api/health", "state": "/api/state"},
         "limits": ["не отправляет сообщения без человека", "не обещает наличие тура без Tourvisor"],
         "help_surface": "панель автоматизации, кнопка «? Как это работает»",
@@ -204,7 +296,10 @@ GOOD = {
         "experts": [{"name": "ta_birthday_scan", "required": True}],
         "schedules": [{"id": "campaigns_birthday", "kind": "external_cron", "cadence": "daily"},
                       {"id": "inbound_poller", "kind": "internal", "cadence": "~20s"}],
-        "integrations": [{"kind": "whatsapp", "external_writes": True}],
+        "integrations": [{"kind": "whatsapp", "account": "GreenAPI instance 1101…",
+                          "scopes": ["messages.read", "messages.send"], "external_writes": True,
+                          "human_in_loop": True, "personal_data": "reads",
+                          "secret_ref": "config.json:greenapi_token"}],
         "knowledge": ["скрипты подогрева"], "rules": ["подтверждение человеком перед отправкой"],
     },
     "budgets": {"max_duration_ms": 600000, "max_llm_tokens": 50000,
@@ -218,6 +313,7 @@ BAD = {
     "automation": {
         "automation_id": "x", "name": {"ru": "Юрист", "en": ""},
         "owner": "", "business_goal": "", "version": "1.0", "languages": ["ru"],
+        "hosting_profile": "облако",
         "service": {"port": 8767, "health": "", "state": ""},
         "limits": [], "help_surface": "",
     },
@@ -226,6 +322,12 @@ BAD = {
             {"platform_agent_id": "по имени", "role": "", "provider_expected": "custom"},
         ],
         "schedules": [{"id": "nightly", "kind": "cron"}],
+        "integrations": [
+            {"kind": "email", "external_writes": True},                    # нет прав, нет ПДн, нет человека
+            {"kind": "crm", "scopes": ["contacts.read"], "personal_data": "stores"},   # хранит, но нет срока
+            {"kind": "sheets", "scopes": ["rows.write"], "personal_data": "нет",
+             "secret_ref": "ya29AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"},    # режим неизвестен + секрет внутри
+        ],
     },
     "budgets": {}, "operations": {},
 }
@@ -242,6 +344,13 @@ RULE_CHECKS = [
     ("id агента не стабильный", "AUTOMATION_AGENT_ID_INVALID"),
     ("провайдер не Qwen запрещён", "AUTOMATION_AGENT_PROVIDER_FORBIDDEN"),
     ("вид расписания неизвестен", "AUTOMATION_SCHEDULE_KIND_INVALID"),
+    ("размещение неизвестно", "AUTOMATION_HOSTING_INVALID"),
+    ("права коннектора не видны", "INTEGRATION_SCOPES_REQUIRED"),
+    ("не объявлены персональные данные", "INTEGRATION_PERSONAL_DATA_REQUIRED"),
+    ("режим персональных данных неизвестен", "INTEGRATION_PERSONAL_DATA_INVALID"),
+    ("хранит ПДн без срока хранения", "INTEGRATION_RETENTION_REQUIRED"),
+    ("пишет наружу без ответа про человека", "INTEGRATION_HUMAN_IN_LOOP_REQUIRED"),
+    ("секрет лежит прямо в паспорте", "INTEGRATION_SECRET_INLINE"),
     ("нет дежурного", "AUTOMATION_OPS_OWNER_ON_CALL_REQUIRED"),
     ("нет отката", "AUTOMATION_OPS_ROLLBACK_REQUIRED"),
     ("нет метрики успеха", "AUTOMATION_OPS_SUCCESS_METRIC_REQUIRED"),
@@ -273,6 +382,18 @@ def selftest():
     else:
         ok = False
         print("FAIL: пустой шаблон обработан неверно")
+    # Молчание — не ответ: отсутствующее поле обязано ловиться отдельно от неверного значения.
+    for field, code, label in (
+        ("hosting_profile", "AUTOMATION_HOSTING_REQUIRED", "размещение не указано вовсе"),
+    ):
+        miss = json.loads(json.dumps(GOOD))
+        miss["automation"].pop(field, None)
+        if any(e["code"] == code for e in check_report(miss)["errors"]):
+            print("PASS: %s — поймано" % label)
+        else:
+            ok = False
+            print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+
     dup = json.loads(json.dumps(GOOD))
     dup["components"]["platform_agents"].append(dup["components"]["platform_agents"][0])
     if any(e["code"] == "AUTOMATION_AGENT_DUPLICATE" for e in check_report(dup)["errors"]):

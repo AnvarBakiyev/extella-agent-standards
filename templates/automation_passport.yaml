@@ -13,6 +13,8 @@ automation:
   business_goal: ""          # какую боль закрывает, словами клиента
   version: ""                # версия автоматизации (не версия отдельного агента)
   languages: ["ru", "en"]    # §3.26 — обе обязательны
+  hosting_profile: ""        # где живёт: local | server | client_server (A2).
+                             # server/client_server — джанитор НЕ трогает: каталога на диске у них нет
   service:                   # контракт состояния (B-часть ТЗ)
     port: 0
     health: "/api/health"
@@ -28,7 +30,18 @@ components:
       provider_expected: "alibaba"   # канон: клиентские агенты только платформенный Qwen
   experts: []                # [{name, required}]
   schedules: []              # [{id, kind: external_cron|internal|in_service, cadence}]
-  integrations: []           # [{kind, external_writes: false|true}]
+  # Интеграции = ПРАВА автоматизации во внешних системах (A4). Права обязаны быть ВИДНЫ
+  # в паспорте: корпоративный клиент проходит по нему ИБ-проверку, не читая наш код.
+  # Секреты сюда НЕ пишутся никогда — только ссылка, ГДЕ секрет лежит.
+  integrations: []
+  #  - kind: "whatsapp"             # какая внешняя система
+  #    account: "GreenAPI instance 1101…"   # чей доступ используется (без секрета)
+  #    scopes: ["messages.read", "messages.send"]  # что именно разрешено — пусто нельзя
+  #    external_writes: true        # пишет ли наружу
+  #    human_in_loop: true          # подтверждает ли человек внешнюю запись; при записи объявить явно
+  #    personal_data: "reads"       # none | reads | stores — обязательно, умолчания нет
+  #    retention: "30 дней"         # обязательно при personal_data: stores
+  #    secret_ref: "config.json:greenapi_token"  # ГДЕ лежит секрет, не сам секрет
   knowledge: []              # знания (Concepts), которыми пользуется автоматизация
   rules: []                  # правила
 
