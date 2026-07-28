@@ -39,14 +39,19 @@ import sys
 AGENT_ID_RE = re.compile(r"\bagent_[A-Za-z0-9][A-Za-z0-9_-]{7,}\b")
 # Имена, которые агентом не являются: это параметры и ключи конфигурации, а не живой id.
 AGENT_ID_ALLOWED = {
-    "agent_extella_default",      # канонический скоуп общих объектов — пиннинг обязателен
+    "agent_extella_default",      # исторический скоуп общих объектов; ловится гейтом account-scope
+    "agent_XXXXXXXX",             # намеренная заглушка тулбара: НЕ настоящий id, поставлена, чтобы
+                                  # заголовок был синтаксически заполнен без чужого агента
     "agent_id", "agent_ids", "agent_name", "agent_run", "agent_get", "agent_list",
     "agent_create", "agent_update", "agent_delete", "agent_runs", "agent_passport",
     "agent_cabinet", "agent_extella_alibaba_default",
 }
-# Ключи, которые по смыслу общие для всего аккаунта.
-SHARED_KEYS = ("_mkt_", "capability:registry", "composer:catalog", "capability:steps",
-               "cspl:registry")
+# Старые имена общих реестров и их свободная замена (перенос 28.07.2026).
+LEGACY_SHARED_KEYS = {
+    "_mkt_automations": "extella:automations:v2",
+    "_mkt_installed": "extella:installed:v2",
+    "capability:registry": "capability:registry:v2",
+}
 KV_CALL_RE = re.compile(r"kv[_/](set|get|search|remove)|/api/kv/")
 CANON_OK_RE = re.compile(r"(#|//)\s*canon-ok:\s*\S+")
 CODE_EXT = (".py", ".js")
@@ -79,6 +84,13 @@ def check_source(name, src):
             ident = m.group(0)
             if ident in AGENT_ID_ALLOWED:
                 continue
+            # Имя-префикс, а не идентификатор: agent_passport_, agent_control_ и подобные.
+            if ident.endswith("_"):
+                continue
+            # Заглушки из одинаковых символов (agent_XXXXXXXX, agent_00000000) настоящими не бывают.
+            tail = ident[len("agent_"):]
+            if len(set(tail.lower())) <= 1:
+                continue
             issues.append({
                 "code": "HARDCODED_AGENT_ID", "severity": "error",
                 "path": "%s:%d" % (name, n), "value": ident,
@@ -91,22 +103,34 @@ def check_source(name, src):
                               "not a substitution" % ident,
             })
 
-    # 2. Общий ключ, тронутый без канонического скоупа
-    touches_shared = [k for k in SHARED_KEYS if k in src]
-    if touches_shared and KV_CALL_RE.search(src):
-        if "agent_extella_default" not in src and not CANON_OK_RE.search(src):
-            issues.append({
-                "code": "SHARED_KEY_WITHOUT_CANONICAL_SCOPE", "severity": "error",
-                "path": name, "value": ", ".join(sorted(touches_shared)),
-                "message_ru": "файл работает с общим ключом (%s), но нигде не закрепляет скоуп "
-                              "agent_extella_default. `global: true` общего чтения НЕ даёт: своя "
-                              "копия ключа у агента побеждает общую молча. Писатель и читатель "
-                              "обязаны быть под одним агентом" % ", ".join(sorted(touches_shared)),
-                "message_en": "the file works with a shared key (%s) but never pins the "
-                              "agent_extella_default scope. `global: true` does NOT guarantee a "
-                              "shared read: an agent's own copy silently wins. Writer and reader "
-                              "must run under the same agent" % ", ".join(sorted(touches_shared)),
-            })
+    # 2. Чтение ОТРАВЛЕННОГО старого имени общего реестра.
+    # ПОПРАВКА 28.07 ночью: прежняя редакция требовала закреплять agent_extella_default. Это был
+    # правильный обход, но не лечение — и он конфликтовал с запретом платного Claude в тулбаре.
+    # Опыт показал, что `global: true` исправен у имени БЕЗ истории, а ломали его близнецы.
+    # Поэтому канон теперь другой: общие реестры живут в свободных именах и читаются обычным
+    # общим чтением. Ловим не отсутствие пиннинга, а чтение старых имён.
+    # Старое имя — это ИМЕННО оно, а не префикс нового: `capability:registry:v2` содержит
+    # `capability:registry` подстрокой, и наивное вхождение ловило бы правильный код.
+    touched = [k for k in LEGACY_SHARED_KEYS
+               if re.search(re.escape(k) + r"(?![:\w-])", src)]
+    if touched and KV_CALL_RE.search(src) and not CANON_OK_RE.search(src):
+        issues.append({
+            "code": "LEGACY_SHARED_KEY_READ", "severity": "error",
+            "path": name, "value": ", ".join(sorted(touched)),
+            "message_ru": "файл читает старое имя общего реестра (%s). У этих имён накопились "
+                          "близнецы в разных областях, и платформа отдаёт не ту запись: живая "
+                          "проверка 28.07 дала 0 записей при 12 целых. Читай свободное имя — "
+                          "%s" % (", ".join(sorted(touched)),
+                                  ", ".join("%s → %s" % (k, v) for k, v in
+                                            sorted(LEGACY_SHARED_KEYS.items()) if k in touched)),
+            "message_en": "the file reads a legacy shared registry name (%s). Those names have "
+                          "twins across scopes and the platform returns the wrong record: a live "
+                          "check on 28.07 returned 0 records while 12 were intact. Read the free "
+                          "name instead — %s" % (", ".join(sorted(touched)),
+                                                 ", ".join("%s -> %s" % (k, v) for k, v in
+                                                           sorted(LEGACY_SHARED_KEYS.items())
+                                                           if k in touched)),
+        })
     return issues
 
 
@@ -141,12 +165,11 @@ def demo(agent_id=""):
 BAD_SCOPE_SRC = '''
 def read_registry(token):
     return api("/api/kv/get", {"key": "capability:registry", "global": True})
-'''
+'''   # старое отравленное имя
 
 OK_SCOPE_SRC = '''
 def read_registry(token):
-    hdr = {"X-Agent-Id": "agent_extella_default"}
-    return api("/api/kv/get", {"key": "capability:registry"}, hdr)
+    return api("/api/kv/get", {"key": "capability:registry:v2", "global": True})
 '''
 
 OK_MARKED_SRC = '''
@@ -161,9 +184,9 @@ def selftest():
     cases = [
         ("честный отказ проходит", GOOD_SRC, None),
         ("зашитый id агента — поймано", BAD_AGENT_SRC, "HARDCODED_AGENT_ID"),
-        ("общий ключ без канонического скоупа — поймано", BAD_SCOPE_SRC,
-         "SHARED_KEY_WITHOUT_CANONICAL_SCOPE"),
-        ("общий ключ с закреплённым скоупом проходит", OK_SCOPE_SRC, None),
+        ("чтение старого отравленного имени — поймано", BAD_SCOPE_SRC,
+         "LEGACY_SHARED_KEY_READ"),
+        ("чтение свободного имени проходит", OK_SCOPE_SRC, None),
         ("осознанное исключение с причиной проходит", OK_MARKED_SRC, None),
     ]
     for label, src, expected in cases:
@@ -180,12 +203,12 @@ def selftest():
         ok = False
         print("FAIL: пометка без причины выключила гейт")
 
-    # agent_extella_default — это и есть канон, он не нарушение.
-    if not check_source("d.py", 'hdr = {"X-Agent-Id": "agent_extella_default"}'):
-        print("PASS: канонический скоуп не считается нарушением")
+    # Заглушка тулбара — не идентификатор агента, она поставлена ВМЕСТО чужого id.
+    if not check_source("d.js", "var BOOTSTRAP_AGENT_SCOPE = 'agent_XXXXXXXX';"):
+        print("PASS: намеренная заглушка нарушением не считается")
     else:
         ok = False
-        print("FAIL: канонический скоуп посчитан нарушением")
+        print("FAIL: заглушка посчитана нарушением")
 
     for i in check_source("d.py", BAD_AGENT_SRC) + check_source("d.py", BAD_SCOPE_SRC):
         if not i.get("message_ru") or not i.get("message_en"):
