@@ -6,7 +6,7 @@
 до сих пор не проверялись ничем. Обе — из одного дня, 28.07.2026:
 
 1. **Захардкоженный id агента как фолбэк.** В `ta_wa_inbound_tick` стоял жёсткий фолбэк на
-   `agent_iVWWFbzjmNwxgZNB5chIr` — это «Extella Qwen fine-tuned» на модели `extella_test_llm`,
+   `agent_iVWWFbzjmNwxgZNB5chIr` — это «Extella Qwen fine-tuned» на модели `extella_test_llm`,  # canon-ok: разбор самого дефекта в пояснении
    то есть НЕ платформенный Qwen. На машине разработчика нужный id был задан в конфиге, фолбэк
    не срабатывал, и дефекта не было видно. У коллеги и у клиента автоматизация молча уехала бы
    на запрещённую каноном модель.
@@ -34,9 +34,33 @@ import os
 import re
 import sys
 
-# Стабильный id платформенного агента в коде. Восемь символов и больше — чтобы не ловить
-# слова вроде agent_id или agent_name.
+# Живой id платформенного агента в коде.
+#
+# ПЕРЕПИСАНО 29.07.2026 — прежняя редакция ловила ЛЮБОЙ токен `agent_...` длиннее восьми
+# символов и дала 448 «нарушений» на тулбаре, из которых настоящих ноль: 440 — демо-фикстуры
+# в артефакте (`agent_demo_fixture_valid_beta`), восемь — `agent_selftest`. Лечили это списком
+# исключений, но список не масштабируется: каждое новое понятное имя требует правки гейта.
+#
+# Проверяем СВОЙСТВО. Живой id платформы — непрозрачный случайный токен: `agent_hM0qLHwu-Hw_
+# 4sjydTU1g`, `agent_FLYxB0v1qIY2phB5beVP5`. У всех пяти живых агентов аккаунта суффикс длиной  # canon-ok: образец формы живого id в пояснении к правилу
+# 21-22 символа и обязательно с заглавными буквами. Понятное имя, наоборот, читается словами
+# в нижнем регистре через подчёркивание — и никуда клиента увести не может, потому что такого
+# агента на платформе не существует.
+#
+# Отсюда правило: суффикс от 16 символов И (есть заглавная ИЛИ нет ни одного подчёркивания).
+# Вторая половина ловит маловероятный случайный токен без заглавных — у него нет словесной
+# структуры. Промах здесь безопаснее ложной тревоги: гейт, кричащий на правильном коде,
+# перестают читать.
 AGENT_ID_RE = re.compile(r"\bagent_[A-Za-z0-9][A-Za-z0-9_-]{7,}\b")
+
+
+def _looks_live(ident):
+    suffix = ident[len("agent_"):]
+    if len(suffix) < 16:
+        return False
+    return any(c.isupper() for c in suffix) or "_" not in suffix
+
+
 # Имена, которые агентом не являются: это параметры и ключи конфигурации, а не живой id.
 AGENT_ID_ALLOWED = {
     "agent_extella_default",      # исторический скоуп общих объектов; ловится гейтом account-scope
@@ -82,7 +106,7 @@ def check_source(name, src):
             continue
         for m in AGENT_ID_RE.finditer(line):
             ident = m.group(0)
-            if ident in AGENT_ID_ALLOWED:
+            if ident in AGENT_ID_ALLOWED or not _looks_live(ident):
                 continue
             # Имя-префикс, а не идентификатор: agent_passport_, agent_control_ и подобные.
             if ident.endswith("_"):
@@ -161,11 +185,14 @@ def demo(agent_id=""):
     return {"status": "success"}
 '''
 
-BAD_AGENT_SRC = '''
-def demo(agent_id=""):
-    qwen = agent_id or "agent_iVWWFbzjmNwxgZNB5chIr"
-    return qwen
-'''
+# Фикстура нарушения. Id собран из двух кусков НАМЕРЕННО: целиком он в этом файле появиться
+# не может — гейт поймает сам себя, а пометку `canon-ok` сюда не поставить, она стала бы частью
+# фикстуры и выключила бы ровно ту проверку, которую фикстура и должна вызывать.
+BAD_AGENT_SRC = (
+    '\ndef demo(agent_id=""):\n'
+    '    qwen = agent_id or "agent_' + 'iVWWFbzjmNwxgZNB5chIr"\n'
+    '    return qwen\n'
+)
 
 BAD_SCOPE_SRC = '''
 def read_registry(token):
@@ -222,6 +249,21 @@ def selftest():
     else:
         ok = False
         print("FAIL: заглушка посчитана нарушением")
+
+    # Форма id: закрепляем ЖИВЫМИ идентификаторами аккаунта против выдуманных имён.
+    # Без этого правило размоется при следующей правке, и вернутся 448 ложных тревог.
+    live_ids = ["agent_hM0qLHwu-Hw_4sjydTU1g", "agent_FLYxB0v1qIY2phB5beVP5",  # canon-ok: фикстуры самопроверки — правило закрепляется живыми id
+                "agent__aYgv8OdIHF4eb92JN07r", "agent_Lu25PvPrKqLn1rqINlbA_",
+                "agent_eUSuv3enLqKkZd2lj0aeI", "agent_iVWWFbzjmNwxgZNB5chIr"]  # canon-ok: фикстуры самопроверки
+    made_up = ["agent_demo_fixture_valid_beta", "agent_selftest", "agent_qwen_spoofed",
+               "agent_from_another_namespace", "agent_qwen_one_c_demo", "agent_missing_model"]
+    missed = [i for i in live_ids if not _looks_live(i)]
+    false_alarm = [i for i in made_up if _looks_live(i)]
+    if not missed and not false_alarm:
+        print("PASS: живые id ловятся, понятные имена — нет")
+    else:
+        ok = False
+        print("FAIL: пропущены %s; ложная тревога на %s" % (missed or "нет", false_alarm or "нет"))
 
     for i in check_source("d.py", BAD_AGENT_SRC) + check_source("d.py", BAD_SCOPE_SRC):
         if not i.get("message_ru") or not i.get("message_en"):

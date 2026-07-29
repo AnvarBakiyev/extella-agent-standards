@@ -172,7 +172,7 @@ GOOD = {
         "host": "127.0.0.1:8766",
         "platform_profile_id": "default",
         "account_ref": "3f9a1c04",
-        "agent_ids": ["agent_eUSuv3enLqKkZd2lj0aeI"],
+        "agent_ids": ["agent_eUSuv3enLqKkZd2lj0aeI"],  # canon-ok: фикстура самопроверки контракта
         "since": "2026-07-09T12:00:00Z",
     },
 }
