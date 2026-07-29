@@ -291,7 +291,8 @@ def build(doc):
 
     return {"schema": CABINET_SCHEMA, "passport": passport,
             "declared_behaviour": declared, "actual_behaviour": actual,
-            "evolution": evolution, "masking_policy": _masking_form(doc)}
+            "evolution": evolution, "masking_policy": _masking_form(doc),
+            "agent_control": _agent_control_contract()}
 
 
 def _masking_form(passport):
@@ -365,6 +366,71 @@ def _masking_form(passport):
                    "toggle."},
         ],
         "checker": "tools/check_masking_policy.py",
+    }
+
+
+def _agent_control_contract():
+    """Контракт Центра управления агентами — то, что экран ОБЯЗАН отрисовать.
+
+    Экран рендерит этот блок, а не собственный список операций. Причина проверена дважды за
+    один день: собственный список неизбежно расходится с движком, и первым отваливается условие
+    публикации — появляется кнопка «Опубликовать» без проверок.
+
+    Операции соответствуют публичным функциям `ETB.agentControl` один в один; порядок — тот, ради
+    которого модуль написан. Журнал версий ОБЩИЙ с кабинетом агента: второй журнал гарантирует
+    расхождение (§2.4 стандарта кабинета).
+    """
+    return {
+        "surface": "agent_control_center",
+        "engine": "ETB.agentControl",
+        "shared_ledger_with": "agent_cabinet",   # один журнал, а не второй источник правды
+        "operations": [
+            {"code": "createDraft", "order": 1,
+             "ru": "Черновик изменения", "en": "Change draft",
+             "requires": []},
+            {"code": "analyzeImpact", "order": 2,
+             "ru": "Что это затронет", "en": "What this affects",
+             "requires": ["createDraft"]},
+            {"code": "runPlayground", "order": 3,
+             "ru": "Прогон на проверочных случаях", "en": "Run on check cases",
+             "requires": ["createDraft"]},
+            {"code": "publishDraft", "order": 4,
+             "ru": "Опубликовать", "en": "Publish",
+             "requires": ["analyzeImpact", "runPlayground"]},
+            {"code": "runActive", "order": 5,
+             "ru": "Запустить действующую версию", "en": "Run the active version",
+             "requires": ["publishDraft"]},
+            {"code": "rollback", "order": 6,
+             "ru": "Вернуть предыдущую версию", "en": "Roll back to the previous version",
+             "requires": ["publishDraft"]},
+        ],
+        # Без этих условий публиковать нельзя. Экран обязан держать кнопку недоступной, а не
+        # показывать её и ругаться после нажатия.
+        "publish_gates": [
+            {"code": "IMPACT_ANALYZED",
+             "ru": "показано, кого затронет изменение",
+             "en": "the impact of the change is shown"},
+            {"code": "PLAYGROUND_GREEN",
+             "ru": "прогон на проверочных случаях прошёл",
+             "en": "the run on check cases passed"},
+            {"code": "ROLLBACK_AVAILABLE",
+             "ru": "путь назад известен и доступен на экране",
+             "en": "the way back is known and visible on screen"},
+            {"code": "READ_BACK_CONFIRMED",
+             "ru": "результат подтверждён перечитыванием, а не ответом кнопки",
+             "en": "the result is confirmed by read-back, not by the button response"},
+        ],
+        # Границы пишутся на экране: без них рядом вырастает вторая точка правды.
+        "limits": [
+            {"ru": "Не создаёт нового агента — это Конструктор или Evolution Console.",
+             "en": "Does not create a new agent — that is the Builder or Evolution Console."},
+            {"ru": "Не редактирует защиту данных — политика живёт в кабинете агента.",
+             "en": "Does not edit data protection — the policy lives in the agent cabinet."},
+            {"ru": "Не ведёт свой журнал версий: журнал общий с кабинетом.",
+             "en": "Keeps no separate version ledger: the ledger is shared with the cabinet."},
+            {"ru": "Нет журнала или ответа — показывает «неизвестно», а не ноль.",
+             "en": "With no ledger or no response it shows «unknown», never zero."},
+        ],
     }
 
 
@@ -500,6 +566,25 @@ def selftest():
          "EXACT_READ_BACK" in {g["code"] for g in cab["masking_policy"]["write_gates"]}),
         ("сказано, что роли на подходе",
          any("Роли на подходе" in n["ru"] for n in cab["masking_policy"]["honest_notes"])),
+        # Центр управления: экран рендерит контракт, а не свой список операций.
+        ("операции Центра совпадают с движком и упорядочены",
+         [o["code"] for o in sorted(cab["agent_control"]["operations"], key=lambda x: x["order"])]
+         == ["createDraft", "analyzeImpact", "runPlayground", "publishDraft",
+             "runActive", "rollback"]),
+        ("публикация требует влияния и песочницы",
+         set(next(o for o in cab["agent_control"]["operations"]
+                  if o["code"] == "publishDraft")["requires"])
+         == {"analyzeImpact", "runPlayground"}),
+        ("откат назван доступным условием публикации",
+         "ROLLBACK_AVAILABLE" in {g["code"] for g in cab["agent_control"]["publish_gates"]}),
+        ("результат подтверждается перечитыванием, а не кнопкой",
+         "READ_BACK_CONFIRMED" in {g["code"] for g in cab["agent_control"]["publish_gates"]}),
+        ("журнал общий с кабинетом, а не второй",
+         cab["agent_control"]["shared_ledger_with"] == "agent_cabinet"),
+        ("границы Центра названы (не создаёт агента, не правит защиту данных)",
+         any("не создаёт нового агента" in l["ru"].lower() for l in cab["agent_control"]["limits"])
+         and any("не редактирует защиту" in l["ru"].lower()
+                 for l in cab["agent_control"]["limits"])),
         ("защита от массовой поломки перечисляет canonical Shared Gene по ID",
          cab["evolution"]["shared_change_guard"]["candidates"][0]["gene_id"]
          == "rule.receivables-policy"),
