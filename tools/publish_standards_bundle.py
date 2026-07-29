@@ -188,8 +188,21 @@ def main(argv):
 
     token = _token()
     account = owner_id(token)
-    # Паспортов агентов у нас ноль — говорим это прямо, а не подставляем выдуманные.
+    # Паспорта берём из passports/*.yaml — теперь они есть. Пустой список остаётся
+    # честным ответом, если каталог пуст: ноль это «посмотрели и там пусто».
     passports = []
+    pdir = os.path.join(ROOT, "passports")
+    if os.path.isdir(pdir):
+        import glob
+        try:
+            import yaml
+            for f in sorted(glob.glob(os.path.join(pdir, "*.yaml"))):
+                with open(f, encoding="utf-8") as fh:
+                    doc = yaml.safe_load(fh) or {}
+                if doc.get("agent"):
+                    passports.append(doc)
+        except ImportError:
+            print("  ! PyYAML не установлен — паспорта не попадут в bundle")
     bundle = build_bundle(account, passports, agent_control_contract())
     manifest = build_manifest(account, bundle)
     text = canonical(bundle)
