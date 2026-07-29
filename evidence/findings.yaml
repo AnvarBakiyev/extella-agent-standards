@@ -1,0 +1,31 @@
+# Находки 29.07.2026. Ни одна не была задачей — все всплыли по дороге.
+# Это и есть образец для §4.6: так выглядит заполненный журнал.
+findings:
+  - what: "канон называл «Агента 1С» образцом урезанных прав — «ровно 6 инструментов, ни одного опасного»"
+    where: "CLAUDE.md против живого agent/get"
+    impact: "у агента 45 инструментов, включая delete_agent, delete_profile и token_generate — агент-эталон безопасности может удалить другого агента аккаунта"
+    severity: blocker
+  - what: "token_generate есть у ВСЕХ пяти живых агентов"
+    where: "живой agent/get по пяти агентам"
+    impact: "любой из них может выписать токен доступа ко всему аккаунту; ни одному это не нужно для его задачи"
+    severity: blocker
+  - what: "MCP-адрес платформы пускает без токена"
+    where: "https://api.extella.ai/mcp/"
+    impact: "неавторизованный tools/list отдаёт весь каталог, включая agent_delete и token_generate; страница /claude сама приведёт туда незнакомых людей"
+    severity: blocker
+  - what: "обязательные тесты приватности жили в scratchpad и исчезли вместе с сессией"
+    where: "scratchpad/pg_mandatory_tests.py, на который ссылается INTEGRATOR_HANDOFF_ANON_PHASE1.md"
+    impact: "прогнать гейт перед деплоем Privacy Gateway было нечем; восстановлены как tests/test_privacy_gateway.py"
+    severity: major
+  - what: "два теста закрепляли нарушение канона вместо канона"
+    where: "evolution-console-ux-simplicity (Ваши автоматизации), evolution-console-surface (свой переключатель языка)"
+    impact: "правило пришло позже кода, и тесты какое-то время защищали именно то, что правило запрещает"
+    severity: major
+  - what: "preflight_ui.sh был красным на main и держал деплой всем"
+    where: "расхождение kp_ask, kp_ingest, kp_install_pack между визардом и паком"
+    impact: "визард ставится после пака и молча затирал у клиента более новую версию с мостом рантайма"
+    severity: major
+  - what: "гейт паспорта отвергал реальный id платформы"
+    where: "check_agent_passport.py, PLATFORM_AGENT_ID_RE"
+    impact: "правило требовало букву после agent_, а у живого агента id с двойным подчёркиванием — гейт запрещал описывать реального агента"
+    severity: minor
