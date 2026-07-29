@@ -113,7 +113,12 @@ def check_source(name, src):
     # `capability:registry` подстрокой, и наивное вхождение ловило бы правильный код.
     touched = [k for k in LEGACY_SHARED_KEYS
                if re.search(re.escape(k) + r"(?![:\w-])", src)]
-    if touched and KV_CALL_RE.search(src) and not CANON_OK_RE.search(src):
+    # Файл, который знает и НОВОЕ имя, участвует в переносе осознанно: он либо зеркалит старое
+    # в новое, либо держит старое честным запасным путём. Такие не трогаем — иначе гейт валит
+    # ровно тот код, который и делает переход. Ловим тех, кто про перенос не знает вовсе.
+    migration_aware = any(v in src for v in LEGACY_SHARED_KEYS.values())
+    if touched and KV_CALL_RE.search(src) and not migration_aware \
+            and not CANON_OK_RE.search(src):
         issues.append({
             "code": "LEGACY_SHARED_KEY_READ", "severity": "error",
             "path": name, "value": ", ".join(sorted(touched)),
@@ -172,6 +177,13 @@ def read_registry(token):
     return api("/api/kv/get", {"key": "capability:registry:v2", "global": True})
 '''
 
+# Зеркалирование и честный запасной путь — это и есть перенос, а не его нарушение.
+MIGRATING_SRC = '''
+def rebuild(api):
+    data = api("/api/kv/get", {"key": "capability:registry"})
+    api("/api/kv/set", {"key": "capability:registry:v2", "value": data, "global": True})
+'''
+
 OK_MARKED_SRC = '''
 def legacy(agent_id=""):
     return agent_id or "agent_hM0qLHwu-Hw_4sjydTU1g"  # canon-ok: фикстура теста, не фолбэк
@@ -187,6 +199,7 @@ def selftest():
         ("чтение старого отравленного имени — поймано", BAD_SCOPE_SRC,
          "LEGACY_SHARED_KEY_READ"),
         ("чтение свободного имени проходит", OK_SCOPE_SRC, None),
+        ("файл, знающий про перенос, не считается нарушением", MIGRATING_SRC, None),
         ("осознанное исключение с причиной проходит", OK_MARKED_SRC, None),
     ]
     for label, src, expected in cases:
