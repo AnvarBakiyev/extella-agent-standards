@@ -22,7 +22,12 @@ IDEMPOTENCY = {"supported", "unsupported"}
 # такая же способность, как вызов функции (решение Анвара 28.07.2026).
 CAPABILITY_KINDS = {"expert", "agent", "automation", "cli", "mcp", "cspl", "skill"}
 BUDGET_FIELDS = ("max_duration_ms", "max_llm_tokens", "max_delegation_depth", "max_external_actions")
-PLATFORM_AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9][A-Za-z0-9_-]{2,127}$")
+# ПОПРАВКА 29.07.2026: первый же настоящий паспорт был отвергнут гейтом.
+# Правило требовало, чтобы сразу после `agent_` шла буква или цифра, — а у живого
+# «Агента 1С» id `agent__aYgv8OdIHF4eb92JN07r`, с ДВОЙНЫМ подчёркиванием. Платформа
+# такие выдаёт, значит гейт, который их не принимает, запрещает описывать реального
+# агента. Разрешаем подчёркивание и в первой позиции суффикса.
+PLATFORM_AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9_][A-Za-z0-9_-]{2,127}$")
 SHARED_GENE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{2,127}$")
 SHARED_GENE_KINDS = {"knowledge", "rule", "expert", "handler"}
 QWEN_PROFILE_RE = re.compile(

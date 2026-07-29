@@ -1,0 +1,75 @@
+---
+# ПЕРВЫЙ ПАСПОРТ АГЕНТА. Написан 29.07.2026 ПО ФАКТУ, а не по документу.
+#
+# Решение Анвара: сначала фотография, потом уборка. Подчищать натуру перед съёмкой значит
+# потерять то, ради чего паспорт и делается — через неделю никто не вспомнит, что права
+# были другими.
+#
+# Что паспорт нашёл сразу: CLAUDE.md называл этого агента образцом урезанных прав —
+# «ровно 6 инструментов, ни одного опасного». Живой agent/get отдаёт 45, среди них
+# delete_agent и delete_profile. Агент-эталон безопасности может снести другого агента.
+# Канон исправлен тем же днём.
+agent:
+  name: "Extella | Агент 1С"
+  platform_agent_id: "agent__aYgv8OdIHF4eb92JN07r"  # canon-ok: паспорт описывает ИМЕННО этого агента
+  owner: "Анвар (CEO Extella)"
+  business_goal: "Читает боевую базу 1С Бухгалтерия для Казахстана и отвечает на вопросы
+    по деньгам предприятия: дебиторка, банк, склад, закрытие месяца — без выгрузок и без
+    бухгалтера-посредника."
+  model_profile: "qwen-3.7"        # живая модель: qwen3.7-max-2026-06-08, канон соблюдён
+  version: "0.1.0"
+  languages: ["ru", "en"]
+  hosting_profile: "client_server"  # мозг на платформе, доступ к базе — на машине клиента
+  immutable_bundle_id: "pack-62997fe"   # пин комплекта, которым агент выкачен 29.07
+  data_classification: "financial_pii"  # бухгалтерия предприятия: контрагенты, суммы, реквизиты
+
+capabilities:
+  - name: "read_1c_registers"
+    version: "0.1.0"
+    what: "Отвечает на вопросы по боевой базе 1С — суммы, контрагенты, остатки — читая её
+      напрямую, без выгрузок в Excel."
+    kind: "expert"
+    ref: "wz_1c_com_subprocess"
+    scope: "agent"
+    global: false
+    permissions: ["1c:read"]
+    targets: ["устройство с установленной 1С"]
+    retry_policy: "none"
+    rollback: "не требуется — операция только читает, состояние базы не меняется"
+    help_surface: "docs/CODEX_B6_RELEASE_SLICES.md"
+    limits:
+      - "НЕ пишет в базу 1С — только чтение"
+      - "НЕ работает без запущенной 1С на устройстве: COM-соединение живёт в отдельном
+        процессе, иначе листенер зависает"
+      - "НЕ проверено на живой базе клиента: VERIFIED = ноль, ждём демо-базу с read-only
+        пользователем"
+
+operations:
+  rollback: "Агент заморожен (F2). Откат изменений — восстановление инструкций из файла
+    adoption_wizard/*_instructions.md и повторная прошивка агента целиком."
+
+optional:
+  agent:
+    # ⚠ РАСХОЖДЕНИЕ НАМЕРЕНИЯ И ФАКТА — главное, ради чего паспорт написан.
+    # Намерение (CLAUDE.md до 29.07): 6 безопасных инструментов.
+    # Факт (живой agent/get 29.07): 45, включая удаляющие чужие объекты.
+    observed_tools_count: 45
+    observed_dangerous_tools:
+      - "delete_agent_mcp_extella"     # может удалить другого агента аккаунта
+      - "delete_profile_mcp_extella"   # может удалить профиль
+    observed_write_tools:
+      - "save_expert_mcp_extella"
+      - "delete_expert_mcp_extella"
+      - "add_rule_mcp_extella"
+      - "delete_rule_mcp_extella"
+      - "update_rule_mcp_extella"
+      - "add_concept_mcp_extella"
+      - "delete_concept_mcp_extella"
+      - "update_concept_mcp_extella"
+      - "set_kv_mcp_extella"
+      - "delete_kv_mcp_extella"
+      - "add_target_mcp_extella"
+      - "delete_target_mcp_extella"
+    intended_tools_count: 6
+    drift_note: "Права шире заявленных в семь раз. Урезание — изменение поведения прода
+      (агенты заморожены, F2), поэтому отдельным решением Анвара, а не правкой паспорта."
