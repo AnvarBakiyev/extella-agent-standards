@@ -1,0 +1,43 @@
+---
+# Паспорт написан 29.07.2026 ПО ФАКТУ: права и модель сняты живым agent/get, а не взяты
+# из документа. Решение Анвара — сначала фотография, потом уборка.
+agent:
+  name: "Kazakh Lawyer"
+  platform_agent_id: "agent_Lu25PvPrKqLn1rqINlbA_"  # canon-ok: паспорт описывает ИМЕННО этого агента
+  owner: "Анвар (CEO Extella)"
+  business_goal: "Контрактный юрист для малого бизнеса Казахстана: разбор договора по живому ГК, замечания и согласование правок."
+  model_profile: "qwen-3.7"        # живая модель: qwen3.7-max-2026-06-08
+  version: "0.1.0"
+  languages: ["ru", "en"]
+  hosting_profile: "client_server"
+  immutable_bundle_id: "pack-62997fe"
+  data_classification: "contract_pii"
+
+capabilities:
+  - name: "kazakh_lawyer_main"
+    version: "0.1.0"
+    what: "Контрактный юрист для малого бизнеса Казахстана: разбор договора по живому ГК, замечания и согласование правок."
+    kind: "expert"
+    ref: "kz_contract_review"
+    scope: "agent"
+    global: false
+    permissions: []
+    targets: []
+    retry_policy: "none"
+    rollback: "Восстановить инструкции из adoption_wizard/*_instructions.md и прошить агента целиком."
+    help_surface: "adoption_wizard/README_ADOPTION_WIZARD.md"
+    limits:
+      - "НЕ отправляет письма и не пишет наружу сам — только черновики, отправляет человек"
+      - "НЕ проверено на живых данных клиента"
+
+operations:
+  rollback: "Агент заморожен (F2). Откат — прошивка инструкций из файла целиком."
+
+optional:
+  agent:
+    # Факт против намерения: канон требует урезанных прав, живой агент их шире.
+    observed_tools_count: 48
+    observed_dangerous_tools:
+      - "token_generate_mcp_extella"
+    drift_note: "У агента есть token_generate — право выпустить токен доступа к аккаунту.
+      Это шире, чем нужно для его задачи. Урезание — решение Анвара (прод заморожен, F2)."
