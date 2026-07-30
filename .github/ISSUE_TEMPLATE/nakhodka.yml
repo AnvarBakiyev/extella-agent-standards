@@ -32,6 +32,17 @@ body:
       placeholder: паспорт живого агента невозможно описать — гейт не даёт
     validations:
       required: true
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: Как часто встречается
+      description: По этому полю мы отделяем частые ошибки от разовых.
+      options:
+        - впервые
+        - уже второй-третий раз
+        - постоянно, каждую стройку
+    validations:
+      required: true
   - type: input
     id: build
     attributes:
