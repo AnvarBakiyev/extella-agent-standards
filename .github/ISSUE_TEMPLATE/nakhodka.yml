@@ -1,0 +1,40 @@
+name: Находка
+description: Ошибка стандарта, гейта или шаблона, найденная при создании агента
+title: "Находка: "
+labels: ["находка"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Репозиторий приватный — писать сюда можно всё, включая дыры безопасности.
+        Поля те же, что в нашем журнале находок: их потом переносят в evidence/findings.yaml.
+  - type: textarea
+    id: what
+    attributes:
+      label: Что не так
+      description: Одной-двумя фразами. «Гейт требует X, а правило запрещает X» — хорошая находка.
+      placeholder: гейт check_agent_passport отвергает реальный id платформы
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Где
+      description: Файл, гейт, шаблон или команда. Если ругнулся гейт — вставь его вывод целиком.
+      placeholder: tools/check_agent_passport.py, вывод ниже
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Чем бьёт
+      description: Что сломается или кто пострадает, если не чинить.
+      placeholder: паспорт живого агента невозможно описать — гейт не даёт
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Сборка витрины (если ошибка всплыла в Extella)
+      description: Отпечаток внизу Рабочего стола — выделяется и копируется. Половина «не работает» объясняется старой сборкой.
+      placeholder: e20ac09
