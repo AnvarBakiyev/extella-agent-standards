@@ -49,13 +49,64 @@ def fetch(url, timeout=25):
     return (code.strip(), body)
 
 
+def gh_token():
+    """Ключ GitHub для приватных репозиториев: переменная среды или gh CLI. Пусто — не ошибка."""
+    t = os.environ.get("GITHUB_TOKEN", "").strip()
+    if t:
+        return t
+    r = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True)
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def api(url, token, raw=False, timeout=25):
+    """GitHub API одним вызовом. Возвращает (код, тело)."""
+    hdr = ["-H", "Accept: application/vnd.github.raw" if raw else "Accept: application/vnd.github+json",
+           "-H", "User-Agent: extella-agent-gate"]
+    if token:
+        hdr += ["-H", "Authorization: token %s" % token]
+    r = subprocess.run(["curl", "-s", "-w", "\n%{http_code}", "--max-time", str(timeout)] + hdr + [url],
+                       capture_output=True, text=True)
+    body, _, code = r.stdout.rpartition("\n")
+    return code.strip(), body
+
+
 def find_manifest(owner, repo):
-    """Возвращает (ветка, текст) или (None, None). Пробуем main, затем master."""
+    """Возвращает (ветка, текст, причина). Причина заполняется, только если файла нет.
+
+    ПРИВАТНЫЕ РЕПОЗИТОРИИ: raw.githubusercontent отдаёт 404 и на приватный, и на
+    несуществующий — раньше человек с приватным репозиторием получал «нет паспорта» и шёл
+    искать файл, который у него есть. Теперь при промахе спрашиваем API: репозитория нет,
+    доступа нет или паспорта нет — три разных ответа.
+    """
     for br in BRANCHES:
         code, body = fetch(RAW % (owner, repo, br))
         if code == "200" and body.strip():
-            return br, body
-    return None, None
+            return br, body, None
+
+    token = gh_token()
+    code, body = api("https://api.github.com/repos/%s/%s" % (owner, repo), token)
+    if code in ("401", "403"):
+        return None, None, ("GitHub не принял ключ доступа: он истёк или не даёт прав на этот "
+                            "репозиторий. Обнови ключ (gh auth login) и повтори")
+    if code == "404":
+        if token:
+            return None, None, ("репозиторий не найден: либо в ссылке опечатка, либо он приватный "
+                                "и твой ключ GitHub не даёт к нему доступа")
+        return None, None, ("репозиторий не найден. Если он приватный — нужен ключ доступа GitHub "
+                            "(gh auth login или GITHUB_TOKEN); если публичный — проверь ссылку")
+    if code != "200":
+        return None, None, "GitHub ответил кодом %s — попробуй ещё раз чуть позже" % code
+
+    try:
+        meta = json.loads(body) or {}
+    except Exception:
+        meta = {}
+    br = meta.get("default_branch") or "main"
+    code, body = api("https://api.github.com/repos/%s/%s/contents/%s?ref=%s"
+                     % (owner, repo, MANIFEST, br), token, raw=True)
+    if code == "200" and body.strip():
+        return br, body, None
+    return None, None, None
 
 
 def verdict(url):
@@ -65,7 +116,9 @@ def verdict(url):
         return ["это не ссылка на репозиторий GitHub — нужна ссылка вида "
                 "https://github.com/<владелец>/<репозиторий>"], None
     owner, repo = pair
-    branch, text = find_manifest(owner, repo)
+    branch, text, why = find_manifest(owner, repo)
+    if why:
+        return [why], None
     if not text:
         return ["в репозитории нет файла `%s` в корне. Это паспорт агента: без него "
                 "витрина не знает, что ставит, и на какую полку класть. Возьми шаблон в "
