@@ -43,6 +43,7 @@ run check_brand_copy
 run check_design_rule
 run check_findings_log
 run check_agent_drift
+run register_new_agents
 run check_agent_repo
 run build_agent_cabinet
 run build_automation_cabinet

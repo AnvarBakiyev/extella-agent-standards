@@ -11,6 +11,12 @@ set -u
 # TCC: заданию launchd нужен Полный доступ к диску для /bin/bash — иначе оно не прочитает
 # ~/Documents и молча упадёт с «Operation not permitted». Выдано 29.07.2026.
 cd "$(dirname "$0")/.."
-OUT=$(python3 tools/check_agent_drift.py 2>&1)
-if [ $? -eq 0 ]; then exit 0; fi          # сошлось — молчим, шум не нужен
-printf 'РАСХОЖДЕНИЕ ПРАВ АГЕНТОВ %s\n\n%s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$OUT"
+# Две проверки, а не одна. Сверка обходит ПАСПОРТА — агент без паспорта для неё не
+# существует и остаётся невидимым навсегда (замер 30.07: живых 20, паспортов 5).
+# Поэтому рядом идёт регистратор: он идёт ОТ ЖИВЫХ АГЕНТОВ и заводит черновики на тех,
+# у кого паспорта нет. Молчим, только если чисто обе.
+OUT=$(python3 tools/check_agent_drift.py 2>&1); DRIFT=$?
+NEW=$(python3 tools/register_new_agents.py 2>&1); FRESH=$?
+if [ $DRIFT -eq 0 ] && [ $FRESH -eq 0 ]; then exit 0; fi   # сошлось — молчим, шум не нужен
+[ $DRIFT -ne 0 ] && printf 'РАСХОЖДЕНИЕ ПРАВ АГЕНТОВ %s\n\n%s\n\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$OUT"
+[ $FRESH -ne 0 ] && printf 'АГЕНТЫ БЕЗ ПАСПОРТА %s\n\n%s\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$NEW"
