@@ -79,6 +79,14 @@ BG_RE = re.compile(r"background(?:-color)?\s*:[^;{}]*?(#[0-9a-fA-F]{3,8})", re.I
 SHORT_STR_RE = re.compile(r"""(['"])([^'"\n]{0,60}![^'"\n]{0,60})\1""")
 # `!=`, `!==` и `!important` — это код и CSS, а не восклицание в тексте интерфейса
 NOT_EXCLAMATION = ("!=", "!important")
+# Отрицание в коде: `!e.target`, `!cur.endsWith`, `c => !c.status`, `!(a && b)`.
+# Регулярка выше ловит текст между двумя строковыми литералами и принимает код за
+# сообщение интерфейса. Признак отрицания — за `!` сразу идёт начало имени или скобка;
+# в человеческой фразе после восклицания идёт пробел, кавычка или конец строки.
+CODE_NEGATION_RE = re.compile(r"!\s*[A-Za-z_$(]")
+# Осознанное исключение помечается в самой строке: `# canon-ok: причина` (или `// canon-ok:`).
+# Та же конвенция, что в check_code_canon.py — гейты не должны требовать разного.
+CANON_OK_RE = re.compile(r"(#|//)\s*canon-ok:\s*\S+")
 
 
 def norm_hex(raw):
@@ -105,6 +113,19 @@ def check_text(name, text, strict=False):
     def loc(match):
         return "%s:%d" % (name, text.count("\n", 0, match.start()) + 1)
 
+    def exempt(match):
+        """Строка помечена `canon-ok:` — осознанное исключение.
+
+        Нужно там, где файл по своей задаче обязан НАЗЫВАТЬ нарушение: скрипт,
+        который заменяет восклицания в интерфейсе, содержит их в таблице замен.
+        Без пометки такой файл нельзя провести через гейт честно, а непроходимый
+        гейт сам является дефектом (BRAND_FOR_AGENTS.md §7).
+        """
+        start = text.rfind("\n", 0, match.start()) + 1
+        end = text.find("\n", match.start())
+        line = text[start:] if end == -1 else text[start:end]
+        return bool(CANON_OK_RE.search(line))
+
     lines = text.split("\n")
 
     def line_of(match):
@@ -129,7 +150,7 @@ def check_text(name, text, strict=False):
     unknown = {}
     for m in HEX_RE.finditer(text):
         h = norm_hex(m.group(0))
-        if h and h not in PALETTE and h not in unknown:
+        if h and h not in PALETTE and h not in unknown and not exempt(m):
             unknown[h] = loc(m)
     for h, where in sorted(unknown.items()):
         message = ("%s: цвет #%s не из палитры Extella — заменить на цвет из BRAND_FOR_AGENTS.md §2"
@@ -154,6 +175,10 @@ def check_text(name, text, strict=False):
     for m in SHORT_STR_RE.finditer(text):
         value = m.group(2)
         if any(token in value for token in NOT_EXCLAMATION):
+            continue
+        if CODE_NEGATION_RE.search(value):
+            continue
+        if exempt(m):
             continue
         warns.append("%s: восклицательный знак в строке интерфейса («%s») — системные сообщения "
                      "пишутся без него" % (loc(m), value[:40]))
