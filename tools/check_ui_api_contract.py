@@ -104,10 +104,23 @@ def called_methods(text: str) -> dict:
     # Второй способ обращения, который используют другие наши продукты: прямые пути
     # /api/<метод> в fetch. Без этого гейт находил ноль вызовов и объявлял успех —
     # то есть врал зелёным там, где не проверил ничего.
-    for m in re.finditer(r"['\"`](/api/[a-z0-9_/-]+)", text):
-        route = m.group(1)[4:]                       # без префикса /api
-        if route.rstrip("/"):
-            out.setdefault(route.rstrip("/"), False)   # «/путь» = REST-маршрут, не RPC-метод
+    # Три способа обращения, которые используют наши продукты:
+    #   api('метод')            — RPC (Рекрутёр)
+    #   fetch('/api/путь')      — REST (Подключения)
+    #   post('/x/имя')          — мост Extella (Юрист, Travel Agency)
+    # Первая версия знала только первый и находила ноль вызовов у половины продуктов —
+    # то есть объявляла успех, не проверив ничего.
+    for m in re.finditer(r"['\"`](/(?:api|x)/[a-z0-9_/-]+)(['\"`])", text):
+        raw = m.group(1)
+        after = text[m.end(): m.end() + 2]
+        # Маршрут с параметром собирается конкатенацией: api('/api/jobs/' + id).
+        # Голый «/api/jobs» никто не зовёт, и проверять его — значит обвинять продукт
+        # в дыре, которой нет: так первая версия нашла две «поломки» у Таргетолога.
+        if raw.endswith("/") or after.strip().startswith("+"):
+            continue
+        route = raw.rstrip("/")
+        if route.count("/") >= 2:
+            out.setdefault(route, False)             # «/api/...» или «/x/...» = маршрут
     return out
 
 
@@ -169,6 +182,21 @@ def main(argv) -> int:
     ROOT = root
     BASE = f"http://127.0.0.1:{port}" if port else ""
     ui = ui_path.read_text(encoding="utf-8", errors="ignore")
+    # Логика часто вынесена в отдельный файл: <script src="/app.js">. Читая только HTML,
+    # гейт находил у Баги ноль вызовов и честно писал «проверять нечего» — но проверять
+    # было ЧТО, просто не там. Дочитываем локальные скрипты страницы.
+    extra = 0
+    for m in re.finditer(r"""<script[^>]+src=['"]([^'"]+)['"]""", ui):
+        rel = m.group(1).split("?")[0].lstrip("/")
+        if rel.startswith(("http://", "https://", "//")):
+            continue
+        for cand in (ui_path.parent / rel, root / rel):
+            if cand.exists() and cand.is_file():
+                ui += "\n" + cand.read_text(encoding="utf-8", errors="ignore")
+                extra += 1
+                break
+    if extra:
+        print(f"  дочитано подключённых скриптов: {extra}")
     print(f"{root.name} ({ui_path.name}" + (f", порт {port}" if port else ", сервер не найден") + ")")
     called = called_methods(ui)
     served = server_methods()
@@ -190,7 +218,7 @@ def main(argv) -> int:
     if routes and BASE:
         dead = []
         def probe(url, post=False):
-            """Код ответа. 404 — маршрута нет; 400/401/403/405 — есть, но нужны данные."""
+            """(код, тело). 404 — маршрута нет; 400/401/403/405 — есть, но нужны данные."""
             try:
                 req = urllib.request.Request(url)
                 if post:
@@ -198,22 +226,49 @@ def main(argv) -> int:
                     req.add_header("Content-Type", "application/json")
                 with urllib.request.urlopen(req, timeout=8) as resp:
                     resp.read(1)
-                    return 200
+                    return 200, ""
+            except urllib.error.HTTPError as e:
+                try:
+                    return e.code, e.read(400).decode("utf-8", "replace")
+                except Exception:
+                    return e.code, ""
             except Exception as e:
                 digits = "".join(ch for ch in str(e) if ch.isdigit())[:3]
-                return int(digits) if digits.isdigit() else 0
+                return (int(digits) if digits.isdigit() else 0), ""
+
+        # Эталон «маршрута точно нет»: заведомо несуществующий путь. Нужен потому, что
+        # 404 у сервера значит две разных вещи, и по коду они неотличимы. У Баги оба
+        # маршрута импорта существуют и работают, но на пустой пробник отвечали
+        # 404 «Сохранённый поиск не найден» — общий except там отдаёт 404 на любое
+        # исключение. Гейт записал живые маршруты в мёртвые и послал бы человека чинить
+        # исправное. Сравниваем ТЕЛО ответа с эталонным: совпало — маршрута нет,
+        # отличается — маршрут отработал и сказал что-то своё. Признак не зависит
+        # от языка сообщения и от того, как продукт формулирует ошибки.
+        # Эталон снимаем ОТДЕЛЬНО для GET и для POST: на GET несуществующего пути сервер
+        # отдаёт html-страницу ошибки, на POST — json. Сравнив GET-ответ с POST-эталоном,
+        # первая версия правки решила, что «тело другое, значит маршрут есть», и
+        # перестала видеть дыры вообще. Проверено подставным /api/zzz-does-not-exist:
+        # гейт назвал его живым. Слепой гейт хуже громкого — он молча разрешает публикацию.
+        NOWHERE = "/api/__extella_probe_no_such_route__"
+        no_such = {p: probe(BASE + NOWHERE, post=p)[1].strip() for p in (False, True)}
+
+        def missing_route(r):
+            for post in (False, True):
+                code, body = probe(BASE + r, post=post)
+                if code != 404:
+                    return False                      # ответил хоть чем-то — маршрут есть
+                ref = no_such[post]
+                if ref and body.strip() != ref:
+                    return False                      # свой текст ошибки — маршрут отработал
+            return True
 
         for r in routes:
-            code = probe(BASE + "/api" + r)
             # Многие маршруты только POST: на GET они честно отвечают 404, и первая
             # версия гейта объявила три живых раздела «Подключений» мёртвыми.
-            # Пустое тело сервер отвергает по валидации — это и подтверждает, что путь есть.
-            if code == 404:
-                code = probe(BASE + "/api" + r, post=True)
-            if code == 404:
+            if missing_route(r):
                 dead.append(r)
         for r in dead:
-            problems.append(f"маршрут «/api{r}» интерфейс зовёт, сервер отвечает 404 — "
+            problems.append(f"маршрут «{r}» интерфейс зовёт, сервер отвечает 404 — "
                             f"этот раздел останется пустым")
         if not dead:
             print(f"  ✓ все {len(routes)} маршрутов отвечают")
