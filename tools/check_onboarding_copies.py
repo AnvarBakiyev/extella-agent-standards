@@ -25,6 +25,8 @@ CANON = Path.home() / "Documents/Extella/extella-recruiting-agent/app/agent_onbo
 
 COPIES = [
     ("Юрист по договорам", Path.home() / "Documents/kazakh-lawyer/app/agent_onboarding.py"),
+    ("Travel Agency", Path.home() / "Documents/Extella/extella-core-portal/"
+                                    "extella-travel-agency-pack/app/agent_onboarding.py"),
 ]
 
 # Строки, которым положено отличаться: блок настройки продукта.
