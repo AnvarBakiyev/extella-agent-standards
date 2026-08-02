@@ -116,7 +116,30 @@ def check_report(doc):
     # Стабильная привязка Agent Passport к живому агенту. Имена не уникальны и
     # не могут использоваться Evolution Console как ключ сверки.
     platform_agent_id = str(agent.get("platform_agent_id") or "").strip()
-    if not platform_agent_id:
+
+    # РАЗДАВАЕМЫЙ ПРОДУКТ: агента выбирает пользователь, а не владелец.
+    #
+    # Стандарт писался под наших агентов, где паспорт сверяется с одним живым агентом.
+    # У продукта, который ставит себе кто угодно, такого агента нет и быть не может:
+    # решение владельца 30.07.2026 — при открытии плитки человек создаёт своего агента
+    # или выбирает действующего. Пока это нельзя было заявить, паспорта раздаваемых
+    # продуктов указывали на НАШ общий агент аккаунта — то есть врали о том, с чем
+    # продукт работает у клиента, и держали релиз.
+    #
+    # Значение by_user говорит: привязки в паспорте нет намеренно. Но обещание проверяем —
+    # заявлен ли механизм выбора (agent.binding_ui). Существует ли этот файл на диске,
+    # проверяет CLI: check_report обязан оставаться чистой функцией от документа, её зовут
+    # Evolution Console и генератор кабинета, у которых каталога продукта нет вовсе.
+    if platform_agent_id == "by_user":
+        if not str(agent.get("binding_ui") or "").strip():
+            add(
+                "AGENT_BINDING_UI_REQUIRED", "error", "agent.binding_ui",
+                "platform_agent_id = by_user, но не указан agent.binding_ui — где именно "
+                "пользователь выбирает агента. Укажи путь к модулю привязки.",
+                "platform_agent_id = by_user requires agent.binding_ui — the module where "
+                "the user picks an agent.",
+            )
+    elif not platform_agent_id:
         add(
             "AGENT_PLATFORM_ID_REQUIRED", "error", "agent.platform_agent_id",
             "agent.platform_agent_id — не указан стабильный идентификатор агента на платформе. "
@@ -763,6 +786,25 @@ def main(argv):
         print("ИТОГ: НЕ ГОТОВ — исправь ошибки выше")
         return 1
     report = check_report(doc)
+
+    # Обещанный первый экран должен существовать на диске. Проверяем здесь, а не в
+    # check_report: у Evolution Console каталога продукта нет. Паспорт, обещающий выбор
+    # агента без механизма выбора, — это то же, чем была карточка пака с несуществующей
+    # панелью: установка проходит, человек упирается в пустой экран.
+    _agent = doc.get("agent") or {}
+    if str(_agent.get("platform_agent_id") or "").strip() == "by_user":
+        _ui = str(_agent.get("binding_ui") or "").strip()
+        if _ui and not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(path)), _ui)):
+            report["issues"].append({
+                "code": "AGENT_BINDING_UI_MISSING", "severity": "error",
+                "path": "agent.binding_ui",
+                "message_ru": "agent.binding_ui = «%s» — такого файла нет рядом с паспортом. "
+                              "Паспорт обещает выбор агента, которого в продукте не существует." % _ui,
+                "message_en": "agent.binding_ui = %r not found next to the passport — the passport "
+                              "promises an agent picker the product does not have." % _ui,
+            })
+            report["ready"] = False
+
     if json_mode:
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
         return 0 if report["ready"] else 1
