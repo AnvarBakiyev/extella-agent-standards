@@ -30,6 +30,17 @@ COPIES = [
     ("Таргетолог", Path.home() / "Documents/Codex/extella-targetologist/agent_onboarding.py"),
 ]
 
+# Продукты, порождённые каркасом new_product.py, встают под гейт сами — через реестр.
+# Без этого изменение канона гнило бы в них молча (класс «машина отката»).
+_reg = Path(__file__).resolve().parents[1] / "product_registry.txt"
+if _reg.exists():
+    for _line in _reg.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#"):
+            _f = Path(_line) / "app" / ("platform_client.py" if "platform_client" in CANON.name
+                                        else "agent_onboarding.py")
+            COPIES.append((Path(_line).name, _f))
+
 # Строки, которым положено отличаться: блок настройки продукта.
 TUNABLE = re.compile(r"^\s*(PRODUCT_RU|PRODUCT_EN|ROLE_RU|BRAIN_RU|BRAIN_EN|BINDING_FILE)\s*=")
 
