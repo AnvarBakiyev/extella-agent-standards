@@ -42,20 +42,36 @@ def parse_repo(url):
     return (m.group(1), m.group(2)) if m else None
 
 
+# Ответ GitHub всегда в UTF-8, а Windows декодирует вывод системной кодировкой (cp1251).
+# Кириллица в паспорте роняла проверку трассировкой вместо честного ответа — поймала
+# Перизат 03.08 и обошла через PYTHONUTF8=1. Обходить не должен никто: задаём кодировку
+# явно и заменяем то, что не разобралось, вместо падения.
+RUN_TEXT = {"capture_output": True, "text": True, "encoding": "utf-8", "errors": "replace"}
+
+
 def fetch(url, timeout=25):
     r = subprocess.run(["curl", "-s", "-w", "\\n%{http_code}", "--max-time", str(timeout), url],
-                       capture_output=True, text=True)
-    body, _, code = r.stdout.rpartition("\n")
+                       **RUN_TEXT)
+    body, _, code = (r.stdout or "").rpartition("\n")
     return (code.strip(), body)
 
 
 def gh_token():
-    """Ключ GitHub для приватных репозиториев: переменная среды или gh CLI. Пусто — не ошибка."""
+    """Ключ GitHub для приватных репозиториев: переменная среды или gh CLI. Пусто — не ошибка.
+
+    Вызов gh обёрнут: на машине без GitHub CLI subprocess бросает FileNotFoundError,
+    и проверка падала трассировкой — при том что gh здесь НЕОБЯЗАТЕЛЕН и его отсутствие
+    не мешает публичным репозиториям. Инструмент, падающий на необязательном шаге,
+    выглядит сломанным продуктом.
+    """
     t = os.environ.get("GITHUB_TOKEN", "").strip()
     if t:
         return t
-    r = subprocess.run(["gh", "auth", "token"], capture_output=True, text=True)
-    return r.stdout.strip() if r.returncode == 0 else ""
+    try:
+        r = subprocess.run(["gh", "auth", "token"], **RUN_TEXT)
+    except Exception:
+        return ""
+    return (r.stdout or "").strip() if r.returncode == 0 else ""
 
 
 def api(url, token, raw=False, timeout=25):
@@ -65,8 +81,8 @@ def api(url, token, raw=False, timeout=25):
     if token:
         hdr += ["-H", "Authorization: token %s" % token]
     r = subprocess.run(["curl", "-s", "-w", "\n%{http_code}", "--max-time", str(timeout)] + hdr + [url],
-                       capture_output=True, text=True)
-    body, _, code = r.stdout.rpartition("\n")
+                       **RUN_TEXT)
+    body, _, code = (r.stdout or "").rpartition("\n")
     return code.strip(), body
 
 
