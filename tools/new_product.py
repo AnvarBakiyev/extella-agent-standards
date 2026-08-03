@@ -16,7 +16,9 @@
 
 Запуск:
   python3 tools/new_product.py <slug> "<Название>" "<кому-в-дательном>" <порт> [каталог]
-  python3 tools/new_product.py --selftest        # сгенерировать пробный и прогнать гейты
+  python3 tools/new_product.py <slug> "<Название>" "<кому>" <порт> --serverless
+                                                 # тонкая панель: без порта и процесса
+  python3 tools/new_product.py --selftest        # сгенерировать пробные и прогнать гейты
 
 Пример:
   python3 tools/new_product.py docflow "Документооборот" "документообороту" 8797
@@ -324,6 +326,21 @@ checks:
     fix_ru: "порт занят другим процессом — закрой его или поменяй порт продукта"
 '''
 
+MANIFEST_YAML_THIN = """# Манифест зависимостей «__NAME_RU__» (тонкая панель).
+#
+# Порта и своего процесса нет — проверять нечего. Осталось то, что действительно
+# нужно: приложение Extella с живым мостом (он один на машину) и вход в аккаунт.
+checks:
+  - kind: file
+    path: "~/.extella/api_token.txt"
+    level: warn            # без него панель честно попросит войти в Extella
+    fix_ru: "открой приложение Extella и войди в аккаунт — файл появится сам"
+  - kind: python
+    min_version: "3.10"
+    fix_ru: "поставь Python 3.10+ (нужен только установщику, не панели)"
+"""
+
+
 INSTALL_PY = '''#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Установка «__NAME_RU__» на это устройство (дев-канал; коллегам продукт раздаёт пак).
@@ -536,7 +553,222 @@ README_MD = '''# __NAME_RU__
 '''
 
 
-def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path, register: bool = True) -> None:
+
+# ── ТОНКИЙ РЕЖИМ (--serverless): панель без собственного сервера ───────────────
+# Восемь продуктов = восемь локальных серверов = восемь портов, автозапусков и
+# зависимостей от питона машины; практически весь бэклог 03–04.08 вырос отсюда.
+# Тонкая панель не имеет ни порта, ни процесса: страница живёт в приложении
+# (ui.type=html), работу делают эксперты НА устройстве через мост витрины
+# (etb_run_expert), данные с машины не уходят. Токен странице не выдаётся вовсе.
+
+THIN_HTML = '''<div class="wrap">
+  <h1>__NAME_RU__</h1>
+  <div class="sub" id="sub">Панель без локального сервера: работу делают эксперты на этом устройстве.</div>
+
+  <div class="card">
+    <div><span class="pill">Устройство: <span class="mono" id="devId">…</span></span>
+         <span class="pill">Агент: <b id="agentName">…</b></span></div>
+    <div style="margin-top:12px">
+      <button class="btn sec" onclick="bindAgent()" id="bindBtn">Выбрать агента</button>
+      <button class="btn" onclick="ping()" id="pingBtn">Проверить связь</button>
+    </div>
+    <div class="err" id="out"></div>
+  </div>
+</div>
+<style>
+:root{--ink:#1F2937;--paper:#FAF9F6;--gold:#C9A227;--petrol:#0F4C5C;--divider:#E5E1D8;--muted:#6B7280}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',ui-sans-serif,sans-serif;background:var(--paper);color:var(--ink);font-size:15px;line-height:1.5}
+button,input,select,textarea{font-family:inherit;font-size:inherit}
+.wrap{max-width:720px;margin:0 auto;padding:24px}
+h1{font-size:20px;font-weight:700;margin-bottom:4px}
+.sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.card{background:#fff;border:1px solid var(--divider);border-radius:12px;padding:16px;margin-bottom:16px}
+.btn{display:inline-block;border:1px solid var(--petrol);background:var(--petrol);color:#fff;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:600}
+.btn.sec{background:#fff;color:var(--petrol)}
+.pill{display:inline-block;border:1px solid var(--divider);border-radius:999px;padding:4px 12px;font-size:13px;margin-right:8px}
+.err{color:#8A2D2D;font-size:13px;margin-top:12px;min-height:16px}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px}
+</style>
+<script>
+// Двуязычно с рождения — паспорт заявляет ru+en, заявка обязана быть правдой.
+var T={ru:{none:'не выбран',check:'проверяю…',ans:'ответ агента: ',fail:'не получилось',
+ nodev:'устройство не найдено — открой приложение Extella и войди в аккаунт',
+ pick:'Вставь id агента (список — в приложении, вкладка «Агенты»):',bound:'агент привязан: '},
+ en:{none:'not selected',check:'checking…',ans:'agent answered: ',fail:'did not work',
+ nodev:'device not found — open the Extella app and sign in',
+ pick:'Paste the agent id (see the Agents tab in the app):',bound:'agent bound: '}};
+var L=(navigator.language||'ru').indexOf('ru')===0?'ru':'en';
+function tr(k){return T[L][k];}
+function $(id){return document.getElementById(id);}
+
+// Мост экспертов витрины: страница НИКОГДА не держит токен и не ходит в сеть сама.
+var _seq=0,_waiting={};
+window.addEventListener('message',function(e){
+  var d=e.data||{};
+  if(d.type==='etb_expert_result'&&_waiting[d.reqId]){var f=_waiting[d.reqId];delete _waiting[d.reqId];f(d);}
+});
+function runExpert(name,params){
+  return new Promise(function(res){
+    var id='r'+(++_seq);
+    _waiting[id]=function(d){res(d);};
+    var msg={type:'etb_run_expert',reqId:id,name:name,params:params||{}};
+    if(DEVICE)msg.targets=[DEVICE];      // работа ЗДЕСЬ, а не на чужой машине аккаунта
+    parent.postMessage(msg,'*');
+    setTimeout(function(){if(_waiting[id]){delete _waiting[id];
+      res({ok:false,error:'нет ответа от моста за 120с — это не провал, задача могла уйти дальше'});}},120000);
+  });
+}
+// Своё устройство — у моста Конструктора (он один на машину и ставится с приложением).
+var DEVICE='';
+function selfDevice(){
+  return fetch('http://127.0.0.1:8765/x/health').then(function(r){return r.json();})
+    .then(function(j){return (j&&j.target)||'';}).catch(function(){return '';});
+}
+function say(t){$('out').textContent=t||'';}
+function unwrap(d){
+  if(!d||!d.ok)return {status:'error',message:(d&&d.error)||tr('fail')};
+  var r=d.result;
+  if(typeof r==='string'){try{r=JSON.parse(r);}catch(_){return {status:'error',message:String(r).slice(0,200)};}}
+  return r||{status:'error',message:tr('fail')};
+}
+async function refresh(){
+  DEVICE=await selfDevice();
+  $('devId').textContent=DEVICE?DEVICE.slice(0,8):'—';
+  if(!DEVICE){say(tr('nodev'));return;}
+  var st=unwrap(await runExpert('__SLUG___state',{}));
+  $('agentName').textContent=(st&&st.agent)?st.agent.slice(0,18):tr('none');
+}
+async function bindAgent(){
+  var id=prompt(tr('pick'));if(!id)return;
+  var r=unwrap(await runExpert('__SLUG___bind',{agent_id:id.trim()}));
+  say(r.status==='success'?tr('bound')+r.agent:(r.message||tr('fail')));
+  refresh();
+}
+async function ping(){
+  say(tr('check'));
+  var r=unwrap(await runExpert('__SLUG___ping',{}));
+  // «running» и «failed» — не успех: недожатое не имеет права выглядеть сделанным.
+  say(r.status==='success'?tr('ans')+(r.answer||''):(r.message||r.error||tr('fail')));
+}
+refresh();
+</script>
+'''
+
+THIN_STATE_EXPERT = '''# expert: __SLUG___state
+# description: __NAME_RU__: состояние продукта на устройстве — привязанный агент. Параметры: нет.
+
+def __SLUG___state() -> str:
+    import json, os
+    p = os.path.expanduser("~/extella___SLUG__/agent_binding.json")
+    agent = ""
+    try:
+        with open(p, encoding="utf-8") as fh:
+            agent = (json.load(fh) or {}).get("agent_id", "")
+    except Exception:
+        agent = ""
+    return json.dumps({"status": "success", "agent": agent}, ensure_ascii=False)
+'''
+
+THIN_BIND_EXPERT = '''# expert: __SLUG___bind
+# description: __NAME_RU__: привязать агента к продукту на ЭТОМ устройстве. Параметры: agent_id.
+
+def __SLUG___bind(agent_id="") -> str:
+    import json, os
+    a = str(agent_id or "").strip()
+    if not a or a.startswith("{{"):
+        return json.dumps({"status": "error", "message": "нужен agent_id"}, ensure_ascii=False)
+    # Платный Claude клиентам запрещён каноном — отказ честный, а не тихая подмена.
+    if a == "agent_extella_default":
+        return json.dumps({"status": "error",
+                           "message": "этот агент платный и клиентам не выдаётся — выберите своего"},
+                          ensure_ascii=False)
+    d = os.path.expanduser("~/extella___SLUG__")
+    os.makedirs(d, exist_ok=True)
+    with open(os.path.join(d, "agent_binding.json"), "w", encoding="utf-8") as fh:
+        json.dump({"agent_id": a}, fh, ensure_ascii=False)
+    return json.dumps({"status": "success", "agent": a}, ensure_ascii=False)
+'''
+
+THIN_CARD = '''{
+  "id": "__SLUG__",
+  "name": "__NAME_RU__",
+  "tagline": "Панель без локального сервера — работа на устройстве через экспертов",
+  "description": "Тонкая панель Extella: ни порта, ни отдельного процесса. Интерфейс живёт в приложении, работу делают эксперты на этом устройстве, данные машину не покидают.",
+  "category": "work",
+  "type": "custom",
+  "version": "0.1.0",
+  "ui": {"type": "html", "tokenless": true},
+  "experts": ["__SLUG___state", "__SLUG___bind", "__SLUG___ping"]
+}'''
+
+THIN_INSTALL = '''#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""Установка «__NAME_RU__» — тонкой панели (ни порта, ни процесса, ни автозапуска).
+
+Ставит: экспертов на аккаунт + карточку с самой страницей внутрь реестра плагинов.
+Обновление продукта = обновление карточки; чинить нечего — сервера нет.
+"""
+import io
+import json
+import os
+import sys
+from pathlib import Path
+
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
+HERE = Path(__file__).resolve().parent
+REGISTRY = Path.home() / "extella-plugins" / "_registry"
+
+
+def main() -> int:
+    sys.path.insert(0, str(HERE / "app"))
+    import agent_onboarding                                 # noqa: E402
+    import platform_client                                  # noqa: E402
+
+    print("== Эксперты ==")
+    try:
+        reg_agent = platform_client.bound_agent()
+    except platform_client.PlatformError:
+        reg_agent = agent_onboarding.PLATFORM_TRIAL_ID
+    for f in sorted((HERE / "experts").glob("*.py")):
+        src = f.read_text(encoding="utf-8")
+        desc = ""
+        for line in src.splitlines()[:6]:
+            if line.startswith("# description:"):
+                desc = line.split(":", 1)[1].strip()
+        try:
+            platform_client.xapi("/api/expert/save",
+                                 {"name": f.stem, "code": src, "description": desc or f.stem,
+                                  "global": True}, timeout=90, agent_id=reg_agent)
+            print("  ok", f.stem)
+        except platform_client.PlatformError as e:
+            print("  FAIL", f.stem, "—", str(e)[:120])
+            return 1
+
+    print("== Карточка ==")
+    card = json.loads((HERE / "card.json").read_text(encoding="utf-8"))
+    # Страница едет ВНУТРИ карточки: приложение показывает её из памяти, файлов на
+    # диске нет — значит нечему устареть, потеряться при копировании и упасть.
+    card["ui"]["html"] = (HERE / "panel.html").read_text(encoding="utf-8")
+    REGISTRY.mkdir(parents=True, exist_ok=True)
+    out = REGISTRY / (card["id"] + ".json")
+    out.write_text(json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")
+    print("  ok", out)
+    print("Готово. Открой Extella → Plugins → «__NAME_RU__». Порт не нужен, служба не нужна.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+
+
+def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
+             register: bool = True, thin: bool = False) -> None:
     if not re.fullmatch(r"[a-z][a-z0-9_]{2,30}", slug):
         raise SystemExit("slug — латиница/цифры/подчёркивание, 3–31 символ: %r" % slug)
     if dest.exists() and any(dest.iterdir()):
@@ -551,6 +783,34 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path, regist
 
     (dest / "app").mkdir(parents=True, exist_ok=True)
     (dest / "experts").mkdir(exist_ok=True)
+
+    if thin:
+        # Тонкая панель: ни server.py, ни порта, ни автозапуска.
+        (dest / "panel.html").write_text(fill(THIN_HTML), encoding="utf-8")
+        (dest / "card.json").write_text(fill(THIN_CARD), encoding="utf-8")
+        (dest / "install.py").write_text(fill(THIN_INSTALL), encoding="utf-8")
+        (dest / "experts" / (slug + "_state.py")).write_text(fill(THIN_STATE_EXPERT), encoding="utf-8")
+        (dest / "experts" / (slug + "_bind.py")).write_text(fill(THIN_BIND_EXPERT), encoding="utf-8")
+        (dest / "experts" / (slug + "_ping.py")).write_text(fill(PING_EXPERT), encoding="utf-8")
+        (dest / "agent_passport.yaml").write_text(
+            fill(PASSPORT_YAML).replace('hosting_profile: "client_server"',
+                                        'hosting_profile: "bridge_only"')
+                               .replace("# локальная панель 127.0.0.1:__PORT__ + эксперты на устройстве".replace("__PORT__", str(port)),
+                                        "# страница в приложении + эксперты на устройстве; своего сервера нет"),
+            encoding="utf-8")
+        (dest / "MANIFEST.yaml").write_text(fill(MANIFEST_YAML_THIN), encoding="utf-8")
+        (dest / "README.md").write_text(fill(README_MD).replace(
+            "## Что уже правильно с рождения",
+            "**Тонкий режим:** у продукта НЕТ своего сервера, порта и автозапуска — "
+            "страница живёт в приложении, работу делают эксперты на устройстве через мост "
+            "витрины. Токен в страницу не попадает вовсе.\n\n## Что уже правильно с рождения"),
+            encoding="utf-8")
+        shutil.copy(CANON_APP / "platform_client.py", dest / "app" / "platform_client.py")
+        shutil.copy(CANON_APP / "agent_onboarding.py", dest / "app" / "agent_onboarding.py")
+        print("Тонкий каркас «%s» создан: %s" % (name_ru, dest))
+        print("Установка: python3 %s/install.py — без порта и без службы." % dest)
+        return
+
     (dest / "app" / "server.py").write_text(fill(SERVER_PY), encoding="utf-8")
     (dest / "app" / "index.html").write_text(fill(INDEX_HTML), encoding="utf-8")
     (dest / "experts" / (slug + "_ping.py")).write_text(fill(PING_EXPERT), encoding="utf-8")
@@ -626,6 +886,69 @@ def selftest() -> int:
         print("  ✓ смоук: " + r.stdout.strip())
 
     shutil.rmtree(tmp.parent, ignore_errors=True)
+
+    # ── Тонкий режим: панель без сервера ──────────────────────────────────────
+    tmp2 = Path(tempfile.mkdtemp()) / "probe_thin"
+    generate("probethin", "Тонкая проба", "тонкой пробе", 8918, tmp2, register=False, thin=True)
+    for py in list(tmp2.rglob("*.py")):
+        try:
+            ast.parse(py.read_text(encoding="utf-8"))
+        except SyntaxError as e:
+            print("  ✗ тонкий: синтаксис", py.name, e)
+            bad += 1
+
+    # Ни порта, ни процесса, ни автозапуска — иначе это не тонкая панель.
+    card = json.loads((tmp2 / "card.json").read_text(encoding="utf-8"))
+    if card.get("ui", {}).get("type") != "html" or card.get("ui", {}).get("port") or card.get("service"):
+        print("  ✗ тонкий: карточка не бессерверная:", card.get("ui"))
+        bad += 1
+    if not card.get("ui", {}).get("tokenless"):
+        print("  ✗ тонкий: карточка не помечена tokenless — странице выдадут токен аккаунта")
+        bad += 1
+
+    page = (tmp2 / "panel.html").read_text(encoding="utf-8")
+    leaks = [m for m in ("api.extella.ai", "X-Auth-Token", "auth_token") if m in page]
+    if leaks:
+        print("  ✗ тонкий: страница ходит в платформу сама:", leaks)
+        bad += 1
+    if "targets" not in page:
+        print("  ✗ тонкий: мост зовётся без закрепления — работа уедет на чужое устройство")
+        bad += 1
+
+    # Эксперты исполняются как их зовёт листенер — на ЧУЖОМ HOME.
+    import tempfile as _tf
+    fake_home = _tf.mkdtemp()
+    env_home = os.environ.get("HOME")
+    os.environ["HOME"] = fake_home
+    try:
+        for name, kwargs, expect in (("probethin_state", {}, "success"),
+                                     ("probethin_bind", {"agent_id": "agent_extella_default"}, "error"),
+                                     ("probethin_bind", {"agent_id": "agent_qwen_x"}, "success"),
+                                     ("probethin_ping", {}, "success")):
+            src = (tmp2 / "experts" / (name + ".py")).read_text(encoding="utf-8")
+            ns = {}
+            exec(compile(src, name, "exec"), ns)
+            got = json.loads(ns[name](**kwargs)).get("status")
+            if got != expect:
+                print("  ✗ тонкий: %s дал %s вместо %s" % (name, got, expect))
+                bad += 1
+    finally:
+        if env_home:
+            os.environ["HOME"] = env_home
+    if not bad:
+        print("  ✓ тонкий режим: без порта и процесса, токена нет, работа закреплена, эксперты живы")
+
+    canon_gate2 = Path.home() / "Documents/Extella/extella-toolbar-src/tools/check_panel_canon.py"
+    if canon_gate2.exists():
+        r = subprocess.run([sys.executable, str(canon_gate2), str(tmp2 / "panel.html")],
+                           capture_output=True, text=True)
+        if "✕" in r.stdout:
+            print("  ✗ тонкая панель вне канона дизайна:\n" + r.stdout[-500:])
+            bad += 1
+        else:
+            print("  ✓ тонкая панель проходит канон дизайна")
+    shutil.rmtree(tmp2.parent, ignore_errors=True)
+
     if bad:
         print("\nКАРКАС НЕИСПРАВЕН: %d" % bad)
         return 1
@@ -639,9 +962,11 @@ def main(argv) -> int:
     if len(argv) < 4:
         print(__doc__)
         return 1
+    thin = "--serverless" in argv
+    argv = [a for a in argv if not a.startswith("--")]
     slug, name_ru, dat_ru, port = argv[0], argv[1], argv[2], int(argv[3])
     dest = Path(argv[4]).expanduser() if len(argv) > 4 else Path.home() / "Documents" / ("extella-" + slug)
-    generate(slug, name_ru, dat_ru, port, dest)
+    generate(slug, name_ru, dat_ru, port, dest, thin=thin)
     return 0
 
 
