@@ -157,6 +157,30 @@ def server_methods() -> set:
     return {n for n in names if not n.startswith("_")}   # пустое множество ≠ мёртвый сервер
 
 
+def served_routes() -> set:
+    """Маршруты, которые сервер объявляет В ИСХОДНИКЕ, — без единого живого вызова.
+
+    Прежняя версия проверяла живой сервер POST-ом с пустым телом — и тем самым
+    ИСПОЛНЯЛА обработчики: nego_start запускал настоящую арену переговоров,
+    send_email слал настоящее тестовое письмо, а рождённые ими платформенные задачи
+    без закрепления разлетались по устройствам аккаунта. Три «загадочные волны
+    фоновой работы» 03.08 — с ареной, письмом и паспортом TESTOVA на экране
+    владельца — оказались прогонами ЭТОГО гейта (пойманы ловушкой по User-Agent:
+    Python-urllib, обход маршрутов по алфавиту). Гейт не имеет права трогать прод,
+    который проверяет: существование маршрута читается из исходника, как и вся
+    остальная поверхность.
+    """
+    routes = set()
+    for src in list(ROOT.rglob("*.py")):
+        if any(part in {".venv", "node_modules", "__pycache__", ".git", "dist", "tests"}
+               for part in src.parts):
+            continue
+        text = src.read_text(encoding="utf-8", errors="ignore")
+        for m in re.finditer(r"['\"](/(?:api|x)/[a-z0-9_/-]+)['\"]", text):
+            routes.add(m.group(1).rstrip("/"))
+    return routes
+
+
 def response_shape(method: str):
     """Форма ответа — только для методов чтения и только если сервер запущен."""
     if not BASE or not method.startswith(READ_PREFIXES):
@@ -215,63 +239,28 @@ def main(argv) -> int:
     # путь, который никто не зовёт, — и человек шёл чинить несуществующее.
     routes = [r for r in routes if not any(o != r and o.startswith(r + "/") for o in routes)]
     rpc = {m: v for m, v in called.items() if not m.startswith("/")}
-    if routes and BASE:
-        dead = []
-        def probe(url, post=False):
-            """(код, тело). 404 — маршрута нет; 400/401/403/405 — есть, но нужны данные."""
-            try:
-                req = urllib.request.Request(url)
-                if post:
-                    req.data = b"{}"
-                    req.add_header("Content-Type", "application/json")
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    resp.read(1)
-                    return 200, ""
-            except urllib.error.HTTPError as e:
-                try:
-                    return e.code, e.read(400).decode("utf-8", "replace")
-                except Exception:
-                    return e.code, ""
-            except Exception as e:
-                digits = "".join(ch for ch in str(e) if ch.isdigit())[:3]
-                return (int(digits) if digits.isdigit() else 0), ""
-
-        # Эталон «маршрута точно нет»: заведомо несуществующий путь. Нужен потому, что
-        # 404 у сервера значит две разных вещи, и по коду они неотличимы. У Баги оба
-        # маршрута импорта существуют и работают, но на пустой пробник отвечали
-        # 404 «Сохранённый поиск не найден» — общий except там отдаёт 404 на любое
-        # исключение. Гейт записал живые маршруты в мёртвые и послал бы человека чинить
-        # исправное. Сравниваем ТЕЛО ответа с эталонным: совпало — маршрута нет,
-        # отличается — маршрут отработал и сказал что-то своё. Признак не зависит
-        # от языка сообщения и от того, как продукт формулирует ошибки.
-        # Эталон снимаем ОТДЕЛЬНО для GET и для POST: на GET несуществующего пути сервер
-        # отдаёт html-страницу ошибки, на POST — json. Сравнив GET-ответ с POST-эталоном,
-        # первая версия правки решила, что «тело другое, значит маршрут есть», и
-        # перестала видеть дыры вообще. Проверено подставным /api/zzz-does-not-exist:
-        # гейт назвал его живым. Слепой гейт хуже громкого — он молча разрешает публикацию.
-        NOWHERE = "/api/__extella_probe_no_such_route__"
-        no_such = {p: probe(BASE + NOWHERE, post=p)[1].strip() for p in (False, True)}
-
-        def missing_route(r):
-            for post in (False, True):
-                code, body = probe(BASE + r, post=post)
-                if code != 404:
-                    return False                      # ответил хоть чем-то — маршрут есть
-                ref = no_such[post]
-                if ref and body.strip() != ref:
-                    return False                      # свой текст ошибки — маршрут отработал
-            return True
-
-        for r in routes:
-            # Многие маршруты только POST: на GET они честно отвечают 404, и первая
-            # версия гейта объявила три живых раздела «Подключений» мёртвыми.
-            if missing_route(r):
-                dead.append(r)
-        for r in dead:
-            problems.append(f"маршрут «{r}» интерфейс зовёт, сервер отвечает 404 — "
-                            f"этот раздел останется пустым")
-        if not dead:
-            print(f"  ✓ все {len(routes)} маршрутов отвечают")
+    if routes:
+        surface = served_routes()
+        # Ложный запрет дороже пропущенного нарушения: если поверхность сервера
+        # написана не литералами (собирается кодом), статика не увидит НИЧЕГО — и
+        # обвинять каждый маршрут нельзя. Признак нераспознанной поверхности —
+        # пусто ИЛИ «мёртвы все до одного» при заметном их числе: продукт, у
+        # которого не работает ни один маршрут, не дожил бы до гейта. Точечные
+        # пропажи — настоящие дыры (порог «треть» съедал дыру из двух маршрутов —
+        # поймано самопроверкой).
+        dead = [r for r in routes
+                if surface and r not in surface
+                and not any(sv == r or sv.startswith(r + "/") or r.startswith(sv + "/")
+                            for sv in surface)]
+        if not surface or (len(routes) >= 3 and len(dead) == len(routes)):
+            print("  ~ поверхность маршрутов сервера не распозналась в исходниках — "
+                  "состав маршрутов не сверял")
+        else:
+            for r in dead:
+                problems.append(f"маршрут «{r}» интерфейс зовёт, в исходниках сервера его нет — "
+                                f"этот раздел останется пустым")
+            if not dead:
+                print(f"  ✓ все {len(routes)} маршрутов объявлены сервером")
 
     if served and rpc:
         missing = sorted(m for m in rpc if m not in served)
