@@ -1,97 +1,77 @@
 #!/usr/bin/env python3
 """Гейт договора обязан ОДНОВРЕМЕННО видеть дыру и не выдумывать её.
 
-ЗАЧЕМ ЭТОТ ТЕСТ. 02.08 гейт сказал про Багу: два маршрута импорта не отвечают.
-Оба существовали и работали — сервер отдаёт 404 на любое исключение внутри общего
-except, и «маршрута нет» стало неотличимо от «сохранённый поиск не найден».
-Правка (сравнивать тело ответа с эталонным 404) убрала ложное обвинение — и заодно
-ослепила гейт: подставной /api/zzz-does-not-exist он назвал живым, потому что эталон
-снимался POST-ом, а на GET сервер отдаёт html-страницу ошибки, а не json.
+ЗАЧЕМ ЭТОТ ТЕСТ. 02.08 гейт ложно обвинил живые маршруты Баги, а первая правка его
+ослепила: подставной /api/zzz-does-not-exist он назвал живым. Слепой гейт опаснее
+крикливого: крикливый раздражает, слепой молча пропускает релиз. Обе стороны
+закреплены здесь.
 
-Слепой гейт опаснее крикливого: крикливый раздражает, слепой молча пропускает релиз.
-Поэтому обе стороны закреплены здесь и проверяются без живого продукта — на сервере,
-который ведёт себя как настоящий: html-404 на GET, json-404 на POST, и живой маршрут,
-который на пустое тело честно отвечает 404 своим текстом.
+ПОЧЕМУ БЕЗ ЖИВОГО СЕРВЕРА. 03.08 ловушка по User-Agent доказала: живой пробник гейта
+САМ ИСПОЛНЯЛ обработчики — POST {} в nego_start запускал настоящую арену переговоров,
+в send_email слал настоящее письмо, и «загадочные волны фоновой работы» на машине
+владельца оказались прогонами гейта из preflight. Гейт не имеет права трогать прод,
+который проверяет: существование маршрута теперь читается из ИСХОДНИКА сервера, и
+тест закрепляет ровно эту механику — плюс запрет на любые сетевые звонки по маршрутам.
 
 Запуск: python3 tools/tests/test_contract_gate_sees_holes.py
-Коды выхода: 0 — гейт различает оба случая, 1 — нет.
+Коды выхода: 0 — гейт различает оба случая и честен на нераспознанной поверхности.
 """
-import http.server
-import json
 import subprocess
 import sys
 import tempfile
-import threading
 from pathlib import Path
 
 GATE = Path(__file__).resolve().parents[1] / "check_ui_api_contract.py"
 
-LIVE = "/api/live-route"      # существует, но на пустое тело отвечает 404 своим текстом
-HOLE = "/api/no-such-route"   # не существует вовсе
+LIVE = "/api/live-route"      # объявлен в исходнике сервера
+HOLE = "/api/no-such-route"   # интерфейс зовёт, сервер про него не знает
 
 
-class Handler(http.server.BaseHTTPRequestHandler):
-    def log_message(self, *a):
-        pass
-
-    def _send(self, code, body, ctype="application/json"):
-        raw = body.encode()
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(raw)))
-        self.end_headers()
-        self.wfile.write(raw)
-
-    def do_GET(self):
-        if self.path == "/":
-            return self._send(200, "<html></html>", "text/html")
-        # как настоящий BaseHTTPRequestHandler: неизвестный GET → html-страница ошибки
-        self._send(404, "<!DOCTYPE HTML><html><title>Error response</title></html>", "text/html")
-
-    def do_POST(self):
-        if self.path == LIVE:
-            return self._send(404, json.dumps({"error": "Сохранённый поиск не найден"}))
-        self._send(404, json.dumps({"error": "Маршрут не найден"}))
-
-
-def run_gate(calls, port):
+def run_gate(server_src, calls):
     d = Path(tempfile.mkdtemp())
     (d / "web").mkdir()
     body = "".join(f'fetch("{c}", {{method:"POST"}});\n' for c in calls)
     (d / "web" / "index.html").write_text(f"<html><script>{body}</script></html>", encoding="utf-8")
-    r = subprocess.run([sys.executable, str(GATE), str(d), str(port)],
-                       capture_output=True, text=True, timeout=120)
+    (d / "server.py").write_text(server_src, encoding="utf-8")
+    # Порт передаём НАРОЧНО: даже с известным портом гейт не должен звонить —
+    # если по нему кто-то слушает, это чужой сервер, и трогать его нельзя.
+    r = subprocess.run([sys.executable, str(GATE), str(d), "1"],
+                       capture_output=True, text=True, timeout=60)
     return r.stdout + r.stderr
 
 
-def main() -> int:
-    srv = http.server.HTTPServer(("127.0.0.1", 0), Handler)
-    port = srv.server_address[1]
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+SERVER = 'ROUTES = {"%s": None}\n' % LIVE
 
+# Поверхность, собранная кодом: ни одного literal-маршрута — статике не видно ничего.
+SERVER_DYNAMIC = 'PREFIX = "/ap" + "i/"\nROUTES = {PREFIX + n: None for n in ("live-route", "x")}\n'
+
+
+def main() -> int:
     failures = []
 
-    out = run_gate([LIVE], port)
+    out = run_gate(SERVER, [LIVE])
     if "✗" in out:
-        failures.append("ЛОЖНОЕ ОБВИНЕНИЕ: живой маршрут, ответивший своим 404, "
-                        "объявлен мёртвым — так гейт соврал про Багу")
+        failures.append("ЛОЖНОЕ ОБВИНЕНИЕ: маршрут, объявленный в исходнике сервера, "
+                        "назван отсутствующим:\n" + out)
 
-    out = run_gate([HOLE], port)
-    if "✗" not in out:
-        failures.append("СЛЕПОТА: несуществующий маршрут признан живым — "
-                        "гейт пропустил бы пустой экран в релиз")
+    out = run_gate(SERVER, [LIVE, HOLE])
+    if HOLE not in out or "✗" not in out:
+        failures.append("СЛЕПОТА: интерфейс зовёт маршрут, которого нет в исходниках "
+                        "сервера, а гейт молчит — пустой экран уехал бы в релиз:\n" + out)
+    elif LIVE in out.split("✗", 1)[-1].split("\n", 1)[0]:
+        failures.append("вместе: гейт не указал ровно на дыру:\n" + out)
 
-    out = run_gate([LIVE, HOLE], port)
-    if HOLE not in out or LIVE in out.split("✗", 1)[-1].split("\n", 1)[0]:
-        failures.append("вместе: гейт не указал ровно на дыру")
+    out = run_gate(SERVER_DYNAMIC, [LIVE, HOLE])
+    if "не распознал" not in out and "не сверял" not in out:
+        failures.append("на поверхности, собранной кодом, гейт обязан честно сказать "
+                        "«не распознал», а не краснеть и не молчать:\n" + out)
 
-    srv.shutdown()
     for f in failures:
         print(f"  ✗ {f}")
     if failures:
         print("\nГЕЙТ ДОГОВОРА НЕИСПРАВЕН.")
         return 1
-    print("  ✓ гейт видит дыру и не выдумывает её на живом маршруте")
+    print("  ✓ гейт видит дыру, не выдумывает её и честен на нераспознанной поверхности")
     return 0
 
 
