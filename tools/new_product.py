@@ -612,7 +612,10 @@ function tr(k){return T[L][k];}
 // русскоязычному человеку (поймано на живом экране 04.08).
 window.addEventListener('message',function(e){
   var d=e.data||{};
-  if(d.type==='etb_init'&&d.lang){L=(String(d.lang).indexOf('ru')===0)?'ru':'en';refresh();}
+  if(d.type!=='etb_init')return;
+  if(d.lang)L=(String(d.lang).indexOf('ru')===0)?'ru':'en';
+  DEVICE=String(d.device||'');
+  refresh();
 });
 function $(id){return document.getElementById(id);}
 
@@ -637,12 +640,11 @@ function runExpert(name,params){
       res({ok:false,error:'нет ответа от моста за 120с — это не провал, задача могла уйти дальше'});}},120000);
   });
 }
-// Своё устройство — у моста Конструктора (он один на машину и ставится с приложением).
+// Своё устройство приходит В ПРИВЕТСТВИИ от приложения (etb_init.device).
+// Раньше панель спрашивала его у моста по http://127.0.0.1:8765 — то есть ради
+// одной строки тянула за собой локальный сервер, ровно то, от чего тонкий режим
+// уходит. Ни одного обращения к localhost в этой странице больше нет.
 var DEVICE='';
-function selfDevice(){
-  return fetch('http://127.0.0.1:8765/x/health').then(function(r){return r.json();})
-    .then(function(j){return (j&&j.target)||'';}).catch(function(){return '';});
-}
 function say(t){$('out').textContent=t||'';}
 function unwrap(d){
   // Причина отказа обязана быть на экране: «не получилось» без причины — это день
@@ -657,8 +659,10 @@ function unwrap(d){
   return r||{status:'error',message:tr('fail')};
 }
 async function refresh(){
-  DEVICE=await selfDevice();
   $('devId').textContent=DEVICE?DEVICE.slice(0,8):'—';
+  // Без устройства работать нельзя: задача уйдёт в общий пул аккаунта и исполнится
+  // на чужой машине. Молчать и делать вид, что всё хорошо, — худший вариант.
+  $('pingBtn').disabled=!DEVICE;$('bindBtn').disabled=!DEVICE;
   if(!DEVICE){say(tr('nodev'));return;}
   var st=unwrap(await runExpert('__SLUG___state',{}));
   $('agentName').textContent=(st&&st.agent)?st.agent.slice(0,18):tr('none');
@@ -938,6 +942,17 @@ def selftest() -> int:
     if "msg.target=" not in page.replace(" ", ""):
         print("  ✗ тонкий: мост зовётся без строкового target — установленная сборка "
               "витрины читает именно его, работа уедет на устройство по умолчанию")
+        bad += 1
+    # Ищем ОБРАЩЕНИЕ, а не упоминание: первая версия гейта краснела на комментарии,
+    # который объясняет, что localhost убран. Ложный запрет обходят целиком.
+    live_calls = [ln for ln in page.splitlines()
+                  if ("127.0.0.1" in ln or "localhost" in ln)
+                  and not ln.lstrip().startswith(("//", "*", "/*", "#"))]
+    if live_calls:
+        print("  ✗ тонкий: страница обращается к localhost — это и есть то, от чего "
+              "тонкий режим уходит (устройство приходит в etb_init):")
+        for ln in live_calls[:3]:
+            print("      " + ln.strip()[:100])
         bad += 1
     if "d.res" not in page:
         print("  ✗ тонкий: панель не читает поле res — в установленной сборке витрины "
