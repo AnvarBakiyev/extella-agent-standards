@@ -608,6 +608,12 @@ var T={ru:{none:'не выбран',check:'проверяю…',ans:'ответ 
  pick:'Paste the agent id (see the Agents tab in the app):',bound:'agent bound: '}};
 var L=(navigator.language||'ru').indexOf('ru')===0?'ru':'en';
 function tr(k){return T[L][k];}
+// Язык берём У ПРИЛОЖЕНИЯ: браузерная локаль показывала англоязычный интерфейс
+// русскоязычному человеку (поймано на живом экране 04.08).
+window.addEventListener('message',function(e){
+  var d=e.data||{};
+  if(d.type==='etb_init'&&d.lang){L=(String(d.lang).indexOf('ru')===0)?'ru':'en';refresh();}
+});
 function $(id){return document.getElementById(id);}
 
 // Мост экспертов витрины: страница НИКОГДА не держит токен и не ходит в сеть сама.
@@ -639,10 +645,14 @@ function selfDevice(){
 }
 function say(t){$('out').textContent=t||'';}
 function unwrap(d){
-  if(!d||!d.ok)return {status:'error',message:(d&&d.error)||tr('fail')};
+  // Причина отказа обязана быть на экране: «не получилось» без причины — это день
+  // слепой переписки (урок недели). Показываем, что реально ответил мост.
+  if(!d||!d.ok)return {status:'error',message:(d&&d.error)||(tr('fail')+': '+JSON.stringify(d||{}).slice(0,160))};
   // Сборка витрины кладёт результат в res, исходники — в result. Читаем оба:
   // иначе каждый успешный вызов выглядел бы пустым ответом.
   var r=(d.res!==undefined&&d.res!==null)?d.res:d.result;
+  if(r===undefined||r===null)return {status:'error',
+    message:tr('fail')+': мост ответил без результата — '+JSON.stringify(d).slice(0,160)};
   if(typeof r==='string'){try{r=JSON.parse(r);}catch(_){return {status:'error',message:String(r).slice(0,200)};}}
   return r||{status:'error',message:tr('fail')};
 }
