@@ -554,6 +554,131 @@ README_MD = '''# __NAME_RU__
 
 
 
+# Диспетчер тонкого продукта. КАНОН 04.08.2026: у продукта одна таблица маршрутов,
+# и мост смотрит В НЕЁ. Три переведённых продукта показали разницу: там, где таблицы
+# не было (Предиктив, Таргетолог), карту маршрутов пришлось держать в оболочке и
+# охранять отдельным гейтом; у Юриста таблица была — сверять оказалось нечего.
+# Поэтому новый продукт рождается с таблицей и диспетчером сразу.
+THIN_ROUTES_PY = '''"""Единственная таблица маршрутов продукта «__NAME_RU__».
+
+Панель зовёт маршруты через мост, диспетчер __SLUG___call читает ЭТУ таблицу.
+Добавил маршрут сюда — он сразу доступен панели; убрал — сразу пропал. Второй
+карты нет и заводить её нельзя: разъехавшаяся копия — самый дорогой класс ошибок.
+
+Каждый обработчик принимает тело запроса (dict) и возвращает dict.
+"""
+
+from __future__ import annotations
+
+from typing import Any, Callable
+
+
+def h_status(_body: dict[str, Any]) -> dict[str, Any]:
+    """Честное состояние продукта: что настроено, а что нет."""
+    return {"status": "success", "product": "__SLUG__", "ready": True}
+
+
+def h_ping(_body: dict[str, Any]) -> dict[str, Any]:
+    return {"status": "success", "answer": "готов"}
+
+
+ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
+    "/x/status": h_status,
+    "/x/ping": h_ping,
+}
+'''
+
+THIN_CALL_EXPERT = '''# expert: __SLUG___call
+# description: __NAME_RU__: вызов маршрута продукта на ЭТОМ устройстве (мост тонкой панели). Параметры: route, body_json.
+
+def __SLUG___call(route="", body_json="{}") -> str:
+    """Один эксперт вместо всех маршрутов — и без второй карты.
+
+    Диспетчер читает таблицу ROUTES самого продукта, поэтому панель и продукт
+    не могут разойтись. Список допуска = сама таблица: наружу видно ровно то,
+    что продукт объявил маршрутом.
+    """
+    import json
+    import os
+    import sys
+    import traceback
+
+    def fail(msg, **extra):
+        out = {"status": "error", "message": str(msg)[:400]}
+        out.update(extra)
+        return json.dumps(out, ensure_ascii=False)
+
+    def blank(v):
+        return (not v) or str(v).startswith("{{")
+
+    r = str(route or "").strip()
+    if blank(r):
+        return fail("нужен маршрут")
+    if not r.startswith("/"):
+        r = "/" + r
+    try:
+        body = {} if blank(body_json) else json.loads(body_json)
+        if not isinstance(body, dict):
+            return fail("body_json должен быть объектом")
+    except Exception as e:
+        return fail("тело запроса не разобралось как JSON: %s" % str(e)[:120])
+
+    # Рабочий корень — копия с ДАННЫМИ, а не клон разработчика: поиск по списку
+    # однажды выбрал чужой, и продукт отвечал из пустой базы (04.08).
+    roots = ["__PRODUCT_ROOT__", os.environ.get("EXTELLA___SLUG_UPPER___ROOT", "")]
+    roots = [x for x in roots if x and not x.startswith("__")]
+    roots += [os.path.expanduser(p) for p in (
+        "~/extella-plugins/__SLUG__",
+        "~/Documents/Extella/__SLUG__",
+    )]
+    app_dir = ""
+    for root in roots:
+        for candidate in (os.path.join(root, "app"), root):
+            if os.path.isfile(os.path.join(candidate, "routes.py")):
+                app_dir = candidate
+                break
+        if app_dir:
+            break
+    if not app_dir:
+        return fail("не нашёл файлы продукта на этом устройстве — поставь его заново")
+    if app_dir not in sys.path:
+        sys.path.insert(0, app_dir)
+
+    try:
+        import routes as product
+    except Exception as e:
+        return fail("модуль продукта не загрузился: %s" % str(e)[:200],
+                    where=traceback.format_exc(limit=2)[-300:])
+
+    table = getattr(product, "ROUTES", None)
+    if not isinstance(table, dict):
+        return fail("в продукте нет таблицы маршрутов ROUTES")
+    fn = table.get(r)
+    if not callable(fn):
+        return fail("маршрут «%s» недоступен" % r, allowed_count=len(table))
+
+    try:
+        res = fn(body)
+    except Exception as e:
+        return fail("маршрут «%s» упал: %s" % (r, str(e)[:200]),
+                    where=traceback.format_exc(limit=2)[-300:])
+
+    try:
+        out = json.dumps({"status": "success", "result": res}, ensure_ascii=False, default=str)
+    except Exception as e:
+        return fail("ответ маршрута не сериализуется: %s" % str(e)[:160])
+
+    # Ответ больше ~200 КБ платформа не доносит (замер 04.08) — сжимаем.
+    if len(out) > 200000:
+        import base64
+        import gzip
+        packed = base64.b64encode(gzip.compress(out.encode("utf-8"))).decode("ascii")
+        return json.dumps({"status": "success", "gz": packed,
+                           "raw_len": len(out), "packed_len": len(packed)}, ensure_ascii=False)
+    return out
+'''
+
+
 # ── ТОНКИЙ РЕЖИМ (--serverless): панель без собственного сервера ───────────────
 # Восемь продуктов = восемь локальных серверов = восемь портов, автозапусков и
 # зависимостей от питона машины; практически весь бэклог 03–04.08 вырос отсюда.
@@ -820,6 +945,11 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
         (dest / "experts" / (slug + "_state.py")).write_text(fill(THIN_STATE_EXPERT), encoding="utf-8")
         (dest / "experts" / (slug + "_bind.py")).write_text(fill(THIN_BIND_EXPERT), encoding="utf-8")
         (dest / "experts" / (slug + "_ping.py")).write_text(fill(PING_EXPERT), encoding="utf-8")
+        # Таблица маршрутов и диспетчер поверх неё — с рождения: продукт растёт
+        # маршрутами, а панель получает их сама (канон 04.08).
+        (dest / "app" / "routes.py").write_text(fill(THIN_ROUTES_PY), encoding="utf-8")
+        (dest / "experts" / (slug + "_call.py")).write_text(
+            fill(THIN_CALL_EXPERT).replace("__SLUG_UPPER__", slug.upper()), encoding="utf-8")
         (dest / "agent_passport.yaml").write_text(
             fill(PASSPORT_YAML).replace('hosting_profile: "client_server"',
                                         'hosting_profile: "bridge_only"')
