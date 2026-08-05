@@ -33,6 +33,18 @@ ALLOWED_PROVIDER = "alibaba"
 HOSTING_PROFILES = {"local", "server", "client_server"}
 # A4: как ПДн проходят через коннектор. Умолчания нет — «не сказано» это не «не трогает».
 PERSONAL_DATA_MODES = {"none", "reads", "stores"}
+# Пункт 4 запроса Console (06.08.2026): состояние автоматизации читается ЭКСПЕРТОМ,
+# а не портом на localhost. Console работает у коллеги и на чужой машине, где нашего
+# сервера нет и быть не должно; «порт отвечает» там либо молчит, либо отвечает чужой
+# процесс. Поэтому у паспорта есть второй, предпочтительный источник состояния.
+STATE_READER_EVIDENCE = {"exact_target"}
+# Устройства объявляются стабильными id таргетов. Локальные адреса — это ровно то,
+# от чего уходит тонкий режим, поэтому они запрещены как значение устройства.
+LOCAL_HOST_MARKERS = ("localhost", "127.0.0.1", "0.0.0.0", "::1")
+# Привязку агента в продукте выбирает пользователь (решение владельца 30.07.2026),
+# поэтому паспорт вправе объявить не конкретный id, а способ его узнать.
+USER_SELECTED_AGENT = "USER_SELECTED"
+
 # Ссылка на секрет выглядит как «где лежит», а не как сам секрет. Живой секрет в паспорте —
 # это утечка в git и в кабинет клиента, поэтому ошибка, а не предупреждение.
 SECRET_VALUE_RE = re.compile(r"[A-Za-z0-9_\-]{24,}")
@@ -121,16 +133,74 @@ def check_report(doc):
                "hosting_profile %r is unknown — allowed: %s"
                % (hosting, ", ".join(sorted(HOSTING_PROFILES))))
 
-    # 3. Контракт состояния — та причина, по которой Console не будет врать
+    # 3. Контракт состояния — та причина, по которой Console не будет врать.
+    # Источников два, и хотя бы один обязателен:
+    #   state_reader — эксперт на устройстве (предпочтительный, без localhost);
+    #   service      — HTTP-контракт продукта со своим сервером (наследие).
     svc = a.get("service") if isinstance(a.get("service"), dict) else {}
-    for field, default in (("health", "/api/health"), ("state", "/api/state")):
-        if is_blank(svc.get(field)):
-            _issue(errors, "AUTOMATION_SERVICE_%s_REQUIRED" % field.upper(),
-                   "automation.service." + field,
-                   "не указан адрес «%s» — без контракта состояния Console покажет «порт отвечает» "
-                   "как «работает» (ожидается %s)" % (field, default),
-                   "the «%s» endpoint is missing — without the state contract the Console would "
-                   "report «port answers» as «works» (expected %s)" % (field, default))
+    reader = a.get("state_reader") if isinstance(a.get("state_reader"), dict) else {}
+    has_service = any(not is_blank(svc.get(f)) for f in ("health", "state"))
+    if not reader and not has_service:
+        _issue(errors, "AUTOMATION_STATE_SOURCE_REQUIRED", "automation.state_reader",
+               "не объявлен ни один источник состояния: нужен state_reader (эксперт на "
+               "устройстве) или service (HTTP-контракт своего сервера). Без него Console "
+               "покажет «порт отвечает» как «работает»",
+               "no state source is declared: either state_reader (an expert on the device) or "
+               "service (an HTTP contract) is required. Without it the Console would report "
+               "«port answers» as «works»")
+    if has_service:
+        for field, default in (("health", "/api/health"), ("state", "/api/state")):
+            if is_blank(svc.get(field)):
+                _issue(errors, "AUTOMATION_SERVICE_%s_REQUIRED" % field.upper(),
+                       "automation.service." + field,
+                       "объявлен HTTP-контракт, но не указан адрес «%s» (ожидается %s)"
+                       % (field, default),
+                       "an HTTP contract is declared but the «%s» endpoint is missing "
+                       "(expected %s)" % (field, default))
+        if not reader:
+            _warn(warns, "AUTOMATION_STATE_READER_RECOMMENDED", "automation.state_reader",
+                  "состояние читается только по localhost — у коллеги и на сервере клиента "
+                  "этого порта нет; объяви state_reader через эксперта",
+                  "state is read over localhost only — that port does not exist on a colleague's "
+                  "machine or a client server; declare a state_reader expert")
+    if reader:
+        for field, ru, en in (
+            ("expert", "не указан эксперт, который отдаёт состояние",
+             "the expert that returns the state is missing"),
+            ("schema", "не указана схема ответа — Console не сможет отличить пустой ответ от чужого",
+             "the response schema is missing — the Console cannot tell an empty answer from a foreign one"),
+            ("execution_device", "не указано устройство, НА КОТОРОМ исполняется эксперт",
+             "the device where the expert executes is missing"),
+            ("data_device", "не указано устройство, ГДЕ лежат данные автоматизации",
+             "the device where the automation data lives is missing"),
+        ):
+            if is_blank(reader.get(field)):
+                _issue(errors, "AUTOMATION_STATE_READER_%s_REQUIRED" % field.upper(),
+                       "automation.state_reader." + field, ru, en)
+        for field in ("execution_device", "data_device"):
+            value = str(reader.get(field) or "").strip().lower()
+            if value and any(marker in value for marker in LOCAL_HOST_MARKERS):
+                _issue(errors, "AUTOMATION_STATE_READER_LOCALHOST",
+                       "automation.state_reader." + field,
+                       "устройство объявлено локальным адресом «%s» — устройство это стабильный "
+                       "id таргета, а не порт на этой машине" % reader.get(field),
+                       "the device is declared as a local address %r — a device is a stable target "
+                       "id, not a port on this machine" % reader.get(field))
+        evidence = str(reader.get("evidence") or "").strip()
+        if not evidence:
+            _issue(errors, "AUTOMATION_STATE_READER_EVIDENCE_REQUIRED",
+                   "automation.state_reader.evidence",
+                   "не объявлено доказательство устройства: без него ответ с ЧУЖОЙ машины "
+                   "выглядит как свой (закрепление одиночным target платформа игнорирует молча)",
+                   "no device evidence is declared: without it an answer from a FOREIGN machine "
+                   "looks legitimate (a single target is silently ignored by the platform)")
+        elif evidence not in STATE_READER_EVIDENCE:
+            _issue(errors, "AUTOMATION_STATE_READER_EVIDENCE_INVALID",
+                   "automation.state_reader.evidence",
+                   "доказательство «%s» неизвестно — допустимо: %s"
+                   % (evidence, ", ".join(sorted(STATE_READER_EVIDENCE))),
+                   "evidence %r is unknown — allowed: %s"
+                   % (evidence, ", ".join(sorted(STATE_READER_EVIDENCE))))
 
     # 4. Состав: платформенные агенты — компоненты, и каждый проверяется как агент
     agents = comp.get("platform_agents") if isinstance(comp.get("platform_agents"), list) else []
@@ -151,6 +221,15 @@ def check_report(doc):
             _issue(errors, "AUTOMATION_AGENT_ID_REQUIRED", base + ".platform_agent_id",
                    "у компонента нет стабильного id агента",
                    "the component has no stable agent id")
+        elif aid == USER_SELECTED_AGENT:
+            # Агента выбирает пользователь на первом экране продукта. Тогда паспорт обязан
+            # сказать, ГДЕ лежит фактическая привязка, иначе Console считает ссылку мёртвой.
+            if is_blank(ag.get("binding_ref")):
+                _issue(errors, "AUTOMATION_AGENT_BINDING_REF_REQUIRED", base + ".binding_ref",
+                       "агент выбирается пользователем, но не сказано, где хранится привязка — "
+                       "Console не сможет прочитать фактический id и посчитает ссылку мёртвой",
+                       "the agent is user-selected but the binding location is not declared — the "
+                       "Console cannot read the actual id and will treat the reference as dead")
         elif not AGENT_ID_RE.match(aid):
             _issue(errors, "AUTOMATION_AGENT_ID_INVALID", base + ".platform_agent_id",
                    "id «%s» не похож на стабильный идентификатор вида agent_..." % aid,
@@ -308,6 +387,61 @@ GOOD = {
     "operations": {"rollback": "версия -1 + бэкап конфига"},
 }
 
+# Тонкая автоматизация: своего сервера нет, состояние читает эксперт на устройстве.
+GOOD_THIN = {
+    "automation": {
+        "automation_id": "extella_probe_thin", "name": {"ru": "Проба", "en": "Probe"},
+        "owner": "Анвар", "business_goal": "проверка стандарта", "version": "0.1.0",
+        "languages": ["ru", "en"], "hosting_profile": "local",
+        "state_reader": {
+            "expert": "probe_call", "method": "state",
+            "schema": "extella.automation_state.v1",
+            "execution_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
+            "data_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
+            "evidence": "exact_target",
+        },
+        "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
+    },
+    "components": {
+        "platform_agents": [{"platform_agent_id": "USER_SELECTED",
+                             "role": "мозг продукта, выбирается пользователем",
+                             "provider_expected": "alibaba",
+                             "binding_ref": "~/extella_probe/agent_binding.json"}],
+        "experts": [{"name": "probe_call", "required": True}],
+        "schedules": [], "integrations": [], "knowledge": [], "rules": [],
+    },
+    "operations": {"rollback": "переустановить прежнюю версию карточки"},
+}
+
+# Кривой читатель состояния: пустые поля, локальный адрес вместо устройства, выдуманное
+# доказательство и привязка пользователя без указания, где она лежит.
+BAD_STATE = {
+    "automation": {
+        "automation_id": "extella_probe_bad", "name": {"ru": "Проба", "en": "Probe"},
+        "owner": "Анвар", "business_goal": "проверка стандарта", "version": "0.1.0",
+        "languages": ["ru", "en"], "hosting_profile": "local",
+        "state_reader": {"expert": "", "schema": "",
+                         "execution_device": "127.0.0.1:8971", "data_device": "",
+                         "evidence": "поверьте на слово"},
+        "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
+    },
+    "components": {
+        "platform_agents": [{"platform_agent_id": "USER_SELECTED", "role": "мозг",
+                             "provider_expected": "alibaba"}],
+        "experts": [], "schedules": [], "integrations": [], "knowledge": [], "rules": [],
+    },
+    "operations": {"rollback": "переустановить прежнюю версию карточки"},
+}
+
+STATE_CHECKS = [
+    ("нет эксперта состояния", "AUTOMATION_STATE_READER_EXPERT_REQUIRED"),
+    ("нет схемы ответа", "AUTOMATION_STATE_READER_SCHEMA_REQUIRED"),
+    ("нет устройства данных", "AUTOMATION_STATE_READER_DATA_DEVICE_REQUIRED"),
+    ("устройство объявлено локальным адресом", "AUTOMATION_STATE_READER_LOCALHOST"),
+    ("доказательство устройства выдумано", "AUTOMATION_STATE_READER_EVIDENCE_INVALID"),
+    ("привязка пользователя без адреса", "AUTOMATION_AGENT_BINDING_REF_REQUIRED"),
+]
+
 BAD = {
     "automation": {
         "automation_id": "x", "name": {"ru": "Юрист", "en": ""},
@@ -338,8 +472,7 @@ RULE_CHECKS = [
     ("нет двух языков", "AUTOMATION_LANGUAGES_REQUIRED"),
     ("нет границ", "AUTOMATION_LIMITS_REQUIRED"),
     ("нет пояснения", "AUTOMATION_HELP_REQUIRED"),
-    ("нет адреса health", "AUTOMATION_SERVICE_HEALTH_REQUIRED"),
-    ("нет адреса state", "AUTOMATION_SERVICE_STATE_REQUIRED"),
+    ("не объявлен ни один источник состояния", "AUTOMATION_STATE_SOURCE_REQUIRED"),
     ("id агента не стабильный", "AUTOMATION_AGENT_ID_INVALID"),
     ("провайдер не Qwen запрещён", "AUTOMATION_AGENT_PROVIDER_FORBIDDEN"),
     ("вид расписания неизвестен", "AUTOMATION_SCHEDULE_KIND_INVALID"),
@@ -373,6 +506,22 @@ def selftest():
         else:
             ok = False
             print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+    thin = check_report(json.loads(json.dumps(GOOD_THIN)))
+    if thin["ready"]:
+        print("PASS: тонкая автоматизация без своего сервера проходит (состояние читает эксперт)")
+    else:
+        ok = False
+        print("FAIL: тонкая автоматизация не прошла:")
+        for e in thin["errors"]:
+            print("      - %s %s" % (e["code"], e["message_ru"]))
+    state_codes = {e["code"] for e in check_report(json.loads(json.dumps(BAD_STATE)))["errors"]}
+    for label, code in STATE_CHECKS:
+        if code in state_codes:
+            print("PASS: %s — поймано" % label)
+        else:
+            ok = False
+            print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+
     empty = check_report({"automation": {"automation_id": "", "name": {"ru": "", "en": ""}}})
     if any(e["code"] == "AUTOMATION_TEMPLATE_EMPTY" for e in empty["errors"]) and len(empty["errors"]) == 1:
         print("PASS: пустой шаблон — одна понятная ошибка, а не двадцать")
