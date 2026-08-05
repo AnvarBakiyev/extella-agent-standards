@@ -45,6 +45,7 @@ run check_findings_log
 run check_agent_drift
 run register_new_agents
 run check_agent_repo
+run check_manifest_copies
 run build_agent_cabinet
 run build_automation_cabinet
 run build_capability_registry

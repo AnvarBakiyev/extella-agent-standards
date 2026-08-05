@@ -384,45 +384,13 @@ def _ssl_bootstrap():
 _ssl_bootstrap()
 
 
-def check_manifest() -> bool:
-    """№29: зависимости проверяются ЗДЕСЬ, а не в момент падения у коллеги."""
-    import re
-    raw = io.open(os.path.join(HERE, "MANIFEST.yaml"), encoding="utf-8").read()
-    ok = True
-    for m in re.finditer(r"- kind: (\\w+)\\n((?:    .+\\n)+)", raw):
-        kind, block = m.group(1), m.group(2)
-
-        def field(name):
-            f = re.search(r"%s: [\\"']?([^\\"'\\n]+)" % name, block)
-            # хвостовой комментарий — не значение: "warn   # пояснение" это warn
-            return f.group(1).split("#")[0].strip() if f else ""
-        fix = field("fix_ru")
-        warn_only = field("level") == "warn"
-        if kind == "python":
-            need = tuple(int(x) for x in field("min_version").split("."))
-            good = sys.version_info[:2] >= need
-        elif kind == "file":
-            good = os.path.exists(os.path.expanduser(field("path")))
-        elif kind == "port":
-            s = socket.socket()
-            s.settimeout(0.4)
-            try:
-                good = s.connect_ex(("127.0.0.1", int(field("port")))) != 0   # свободен = хорошо
-            finally:
-                s.close()
-        else:
-            print("  ~ манифест: неизвестная проверка", kind)
-            continue
-        mark = "ok" if good else ("~" if warn_only else "FAIL")
-        print("  %s %s%s" % (mark, kind, "" if good else " — " + fix))
-        if not good and not warn_only:
-            ok = False
-    return ok
-
-
 def main() -> int:
+    # №29: разбор манифеста — канонный модуль (гейт check_manifest_copies следит,
+    # чтобы копия не разошлась). Проверяем ДО первого действия установки.
+    sys.path.insert(0, HERE)
+    import manifest_check                                    # noqa: E402
     print("== Манифест зависимостей ==")
-    if not check_manifest():
+    if not manifest_check.run(os.path.join(HERE, "MANIFEST.yaml")):
         print("Зависимости не готовы — установка остановлена (см. строки FAIL).")
         return 1
 
@@ -878,6 +846,14 @@ REGISTRY = Path.home() / "extella-plugins" / "_registry"
 
 
 def main() -> int:
+    # №29: зависимости машины проверяются ЗДЕСЬ, а не в момент падения у коллеги.
+    sys.path.insert(0, str(HERE))
+    import manifest_check                                    # noqa: E402
+    print("== Манифест зависимостей ==")
+    if not manifest_check.run(HERE / "MANIFEST.yaml"):
+        print("  СТОП: зависимости не готовы — установка остановлена (см. FAIL)")
+        return 1
+
     sys.path.insert(0, str(HERE / "app"))
     import agent_onboarding                                 # noqa: E402
     import platform_client                                  # noqa: E402
@@ -965,6 +941,7 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
             encoding="utf-8")
         shutil.copy(CANON_APP / "platform_client.py", dest / "app" / "platform_client.py")
         shutil.copy(CANON_APP / "agent_onboarding.py", dest / "app" / "agent_onboarding.py")
+        shutil.copy(STANDARDS / "templates" / "manifest_check.py", dest / "manifest_check.py")
         print("Тонкий каркас «%s» создан: %s" % (name_ru, dest))
         print("Установка: python3 %s/install.py — без порта и без службы." % dest)
         return
@@ -980,6 +957,7 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
     # канонные модули — ЖИВЫМИ из канона, не из шаблона
     shutil.copy(CANON_APP / "platform_client.py", dest / "app" / "platform_client.py")
     shutil.copy(CANON_APP / "agent_onboarding.py", dest / "app" / "agent_onboarding.py")
+    shutil.copy(STANDARDS / "templates" / "manifest_check.py", dest / "manifest_check.py")
     if register:
         # Порождённый продукт сам встаёт под гейты копий: без этого изменение канона
         # гнило бы в нём молча — тот самый класс «машина отката», третий раз не надо.
@@ -992,6 +970,22 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
             print("Продукт записан в реестр гейтов: %s" % regf)
     print("Каркас «%s» создан: %s" % (name_ru, dest))
     print("Дальше: python3 %s/smoke_e2e.py — и первый эксперт в experts/." % dest)
+
+
+def manifest_problems(label: str, root: Path) -> bool:
+    """Проходит ли порождённый каркас гейт манифестов (№29). True = не проходит."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "_manifest_gate", STANDARDS / "tools" / "check_manifest_copies.py")
+    gate = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(gate)
+    found = gate.problems_for(label, root)
+    if found:
+        print("  ✗ %s каркас: манифест зависимостей не в порядке — %s"
+              % (label, "; ".join(found)))
+        return True
+    print("  ✓ %s каркас: манифест зависимостей на месте и проверяется установщиком" % label)
+    return False
 
 
 def selftest() -> int:
@@ -1042,6 +1036,11 @@ def selftest() -> int:
         bad += 1
     else:
         print("  ✓ смоук: " + r.stdout.strip())
+
+    # №29: манифест зависимостей — не украшение. Проверяем тем же гейтом, что стережёт
+    # живые продукты: манифест есть, модуль канонный, установщик его действительно зовёт.
+    if manifest_problems("обычный", tmp):
+        bad += 1
 
     shutil.rmtree(tmp.parent, ignore_errors=True)
 
@@ -1121,6 +1120,9 @@ def selftest() -> int:
             os.environ["HOME"] = env_home
     if not bad:
         print("  ✓ тонкий режим: без порта и процесса, токена нет, работа закреплена, эксперты живы")
+
+    if manifest_problems("тонкий", tmp2):
+        bad += 1
 
     canon_gate2 = Path.home() / "Documents/Extella/extella-toolbar-src/tools/check_panel_canon.py"
     if canon_gate2.exists():
