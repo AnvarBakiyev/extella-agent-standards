@@ -1,0 +1,92 @@
+# Класс поверхности: чем является карточка, установленная на устройстве.
+#
+# ЗАЧЕМ. Evolution Console показывает парк автоматизаций клиента. Если в этот парк
+# попадают наши собственные инструменты (Конструктор, Подключения) и сторонние
+# программы, установленные пользователем, Console либо требует у них паспорт
+# автоматизации, которого у них не может быть, либо молча прячет их — и оба
+# поведения врут. Класс объявляется здесь один раз и читается всеми.
+#
+# Классы:
+#   automation    — клиентская автоматизация. ОБЯЗАН быть Automation Passport в git.
+#   system        — платформенная поверхность Extella. Паспорта автоматизации не имеет
+#                   и не должна: это часть инструмента, а не то, что клиент купил.
+#   installed_app — стороннее приложение, установленное пользователем через витрину.
+#                   Мы его не сопровождаем и не отвечаем за его поведение.
+#   probe         — наша временная проба. В парке клиента ей не место.
+#
+# Решение интегратора 06.08.2026 по запросу чата Console (пункты 2 и 3).
+# Проверка: python3 tools/check_surface_classes.py
+
+schema: "extella.surface_classes.v1"
+
+surfaces:
+
+  # ── Клиентские автоматизации ────────────────────────────────────────────────
+  baga_thin:
+    class: automation
+    automation_id: extella_kz_grocery      # id карточки и id автоматизации РАЗНЫЕ
+    why: "Продукт «Баға»: цены сетей Казахстана; данные и расчёты на закреплённом VPS"
+  extella_1c_agent:
+    class: automation
+    automation_id: extella_1c_agent
+    why: "Продукт «Агент 1С»: разбор учёта через проверенный эксперт"
+  extella_contract_agent:
+    class: automation
+    automation_id: extella_contract_agent
+    why: "Продукт «Юрист по договорам»"
+  extella_predictive_sales:
+    class: automation
+    automation_id: extella_predictive_sales
+    why: "Продукт «Predictive Sales»"
+  extella_recruiter:
+    class: automation
+    automation_id: extella_recruiter
+    why: "Продукт «Агент-рекрутёр»"
+  extella_travel_agency:
+    class: automation
+    automation_id: extella_travel_agency
+    why: "Продукт «Travel Agency»"
+  targetologist_team:
+    class: automation
+    automation_id: targetologist_team
+    why: "Продукт «Таргетолог AI»"
+
+  # ── Платформенные поверхности (подтверждено 06.08.2026: system) ─────────────
+  extella_adoption_wizard:
+    class: system
+    why: "Конструктор Extella — инструмент стройки, а не купленная клиентом автоматизация"
+  extella_connectors:
+    class: system
+    why: "Подключения: каталог сервисов и хранилище ключей — часть платформы"
+  copilot_ctl:
+    class: system
+    why: "Второй пилот: платформенная поверхность управления, не продукт клиента"
+  workspace:
+    class: system
+    why: "Workspace: рабочий стол платформы"
+  extella_composer_studio:
+    class: system
+    why: "Композитор способностей — инструмент стройки"
+  extella_cspl_studio:
+    class: system
+    why: "CSPL Studio — инструмент стройки"
+  extella_anon:
+    class: system
+    why: "Сервис псевдоанонимизации — общий инструмент, а не отдельная автоматизация"
+  extella_team:
+    class: system
+    why: "Команда: приглашения и общий контур — часть платформы"
+
+  # ── Стороннее приложение пользователя ──────────────────────────────────────
+  gh_excalidraw_excalidraw:
+    class: installed_app
+    why: >-
+      Excalidraw установлен пользователем из GitHub через витрину. Это не автоматизация
+      Extella и не наша поверхность: у него нет платформенного агента, нет паспорта и
+      нет нашей ответственности за поведение. Console показывает его в «Программах»
+      как установленное приложение и НЕ требует Automation Passport.
+
+  # ── Пробы ──────────────────────────────────────────────────────────────────
+  thindemo:
+    class: probe
+    why: "Проба тонкой панели, оставшаяся от проверки моста; в парке клиента ей не место"

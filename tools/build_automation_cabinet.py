@@ -63,6 +63,7 @@ def build(doc, agent_passports=None):
     comp = doc.get("components") or {}
     ops = doc.get("operations") or {}
     svc = a.get("service") or {}
+    reader = a.get("state_reader") or {}
 
     agents = []
     for item in comp.get("platform_agents") or []:
@@ -88,6 +89,8 @@ def build(doc, agent_passports=None):
         "schema": CABINET_SCHEMA,
         "passport": {
             "automation_id": a.get("automation_id"),
+            # Чем паспорт связан с установленной карточкой. Пусто — значит id совпадают.
+            "registry_card_id": a.get("registry_card_id") or a.get("automation_id"),
             "name": a.get("name") or {},
             "owner": a.get("owner"),
             "business_goal": a.get("business_goal"),
@@ -112,6 +115,22 @@ def build(doc, agent_passports=None):
                        "its Agent Cabinet.",
         },
         "state_contract": {
+            # Как читать состояние. Порядок источников — это контракт для Console:
+            # эксперт на устройстве сильнее localhost, потому что порт есть только у нас.
+            "source": "expert" if reader.get("expert") else ("service" if svc.get("state") else None),
+            "reader": {
+                "expert": reader.get("expert"),
+                "method": reader.get("method"),
+                "schema": reader.get("schema"),
+                "execution_device": reader.get("execution_device"),
+                "data_device": reader.get("data_device"),
+                "evidence": reader.get("evidence"),
+                "note_ru": "Вызов закрепляется массивом targets, ответ обязан нести id устройства: "
+                           "одиночный target платформа игнорирует молча, и ответ приходит с чужой машины.",
+                "note_en": "The call is pinned with a targets array and the answer must carry the "
+                           "device id: a single target is silently ignored and the answer may come "
+                           "from a foreign machine.",
+            } if reader.get("expert") else None,
             "health": svc.get("health"),
             "state": svc.get("state"),
             "port": svc.get("port"),
