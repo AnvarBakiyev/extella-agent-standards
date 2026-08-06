@@ -121,6 +121,8 @@ def build(doc, agent_passports=None):
             "reader": {
                 "expert": reader.get("expert"),
                 "method": reader.get("method"),
+                # Точный объект вызова: Console зовёт эксперта по нему, а не по имени продукта.
+                "params": reader.get("params") or {},
                 "schema": reader.get("schema"),
                 "execution_device": reader.get("execution_device"),
                 "data_device": reader.get("data_device"),

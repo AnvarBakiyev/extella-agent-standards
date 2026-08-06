@@ -38,6 +38,15 @@ PERSONAL_DATA_MODES = {"none", "reads", "stores"}
 # сервера нет и быть не должно; «порт отвечает» там либо молчит, либо отвечает чужой
 # процесс. Поэтому у паспорта есть второй, предпочтительный источник состояния.
 STATE_READER_EVIDENCE = {"exact_target"}
+# Поправка чата Console 06.08: одного имени метода мало. Диспетчеры продуктов принимают
+# маршрут по-разному (`method` у ps/rec/tgt, `route` у law/trv), и добавочные параметры
+# тоже разные (`args_json`, `kwargs_json`, `body_json`). Console не будет зашивать
+# исключение по имени продукта, поэтому паспорт объявляет ТОЧНЫЙ объект вызова.
+STATE_READER_PARAM_KEYS = {"method", "route", "args_json", "kwargs_json", "body_json",
+                           "params_json", "path", "query"}
+# Значение параметра — только JSON-скаляр. Вложенный объект нельзя проверить на секрет,
+# а секрет в паспорте это утечка в git и в кабинет клиента.
+STATE_READER_SCALARS = (str, int, float, bool)
 # Устройства объявляются стабильными id таргетов. Локальные адреса — это ровно то,
 # от чего уходит тонкий режим, поэтому они запрещены как значение устройства.
 LOCAL_HOST_MARKERS = ("localhost", "127.0.0.1", "0.0.0.0", "::1")
@@ -186,6 +195,46 @@ def check_report(doc):
                        "id таргета, а не порт на этой машине" % reader.get(field),
                        "the device is declared as a local address %r — a device is a stable target "
                        "id, not a port on this machine" % reader.get(field))
+        # Точный объект вызова: закрытый список ключей, только скаляры, без секретов.
+        params = reader.get("params")
+        if params is None:
+            _issue(errors, "AUTOMATION_STATE_READER_PARAMS_REQUIRED",
+                   "automation.state_reader.params",
+                   "не объявлен точный объект параметров вызова эксперта: у диспетчеров они "
+                   "разные (method у ps/rec/tgt, route у law/trv, плюс args_json | kwargs_json | "
+                   "body_json). Без него Console зашивала бы исключение по имени продукта",
+                   "the exact expert call object is missing: dispatchers differ (method for "
+                   "ps/rec/tgt, route for law/trv, plus args_json | kwargs_json | body_json). "
+                   "Without it the Console would hardcode a per-product exception")
+        elif not isinstance(params, dict) or not params:
+            _issue(errors, "AUTOMATION_STATE_READER_PARAMS_SHAPE",
+                   "automation.state_reader.params",
+                   "params должен быть непустым объектом «имя параметра → значение»",
+                   "params must be a non-empty object of «parameter name → value»")
+        else:
+            for key, value in params.items():
+                path = "automation.state_reader.params." + str(key)
+                if str(key) not in STATE_READER_PARAM_KEYS:
+                    _issue(errors, "AUTOMATION_STATE_READER_PARAM_UNKNOWN", path,
+                           "параметр «%s» не входит в закрытый список: %s"
+                           % (key, ", ".join(sorted(STATE_READER_PARAM_KEYS))),
+                           "parameter %r is not in the closed list: %s"
+                           % (key, ", ".join(sorted(STATE_READER_PARAM_KEYS))))
+                    continue
+                if not isinstance(value, STATE_READER_SCALARS):
+                    _issue(errors, "AUTOMATION_STATE_READER_PARAM_NOT_SCALAR", path,
+                           "значение параметра «%s» не скаляр — допустимы строка, число, "
+                           "да/нет; вложенный объект нельзя проверить на секрет" % key,
+                           "the value of %r is not a scalar — string, number or boolean only; "
+                           "a nested object cannot be checked for secrets" % key)
+                    continue
+                if isinstance(value, str) and SECRET_VALUE_RE.search(value):
+                    _issue(errors, "AUTOMATION_STATE_READER_PARAM_SECRET", path,
+                           "в параметре «%s» лежит длинная строка, похожая на секрет — "
+                           "чтение состояния секретов не требует" % key,
+                           "parameter %r holds a long secret-looking string — reading state "
+                           "requires no secrets" % key)
+
         evidence = str(reader.get("evidence") or "").strip()
         if not evidence:
             _issue(errors, "AUTOMATION_STATE_READER_EVIDENCE_REQUIRED",
@@ -395,6 +444,7 @@ GOOD_THIN = {
         "languages": ["ru", "en"], "hosting_profile": "local",
         "state_reader": {
             "expert": "probe_call", "method": "state",
+            "params": {"method": "state", "args_json": "[]", "kwargs_json": "{}"},
             "schema": "extella.automation_state.v1",
             "execution_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
             "data_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
@@ -421,6 +471,8 @@ BAD_STATE = {
         "owner": "Анвар", "business_goal": "проверка стандарта", "version": "0.1.0",
         "languages": ["ru", "en"], "hosting_profile": "local",
         "state_reader": {"expert": "", "schema": "",
+                         "params": {"secret": "нет такого параметра",
+                                    "body_json": "ya29AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"},
                          "execution_device": "127.0.0.1:8971", "data_device": "",
                          "evidence": "поверьте на слово"},
         "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
@@ -440,6 +492,8 @@ STATE_CHECKS = [
     ("устройство объявлено локальным адресом", "AUTOMATION_STATE_READER_LOCALHOST"),
     ("доказательство устройства выдумано", "AUTOMATION_STATE_READER_EVIDENCE_INVALID"),
     ("привязка пользователя без адреса", "AUTOMATION_AGENT_BINDING_REF_REQUIRED"),
+    ("параметр вызова вне закрытого списка", "AUTOMATION_STATE_READER_PARAM_UNKNOWN"),
+    ("секрет в параметрах чтения состояния", "AUTOMATION_STATE_READER_PARAM_SECRET"),
 ]
 
 BAD = {
