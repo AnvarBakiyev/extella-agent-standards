@@ -50,6 +50,15 @@ STATE_READER_SCALARS = (str, int, float, bool)
 # Устройства объявляются стабильными id таргетов. Локальные адреса — это ровно то,
 # от чего уходит тонкий режим, поэтому они запрещены как значение устройства.
 LOCAL_HOST_MARKERS = ("localhost", "127.0.0.1", "0.0.0.0", "::1")
+# Найдено при выпуске Console 0.16.0 (06.08): литеральный id устройства в паспорте
+# ломает две вещи разом. Первое — правильность: паспорт едет клиенту, а id принадлежит
+# МОЕЙ машине, и Console закрепила бы вызов на чужом устройстве. Второе — раскрытие:
+# паспорта попадают в публичный канал раздачи, а по id видно, куда наши автоматизации
+# шлют задачи (гейт пака остановил публикацию именно на этом).
+# Поэтому устройство объявляется способом его узнать, а не значением.
+DEVICE_FROM_HOST = "DEVICE_FROM_HOST"     # та машина, где открыта панель
+DEVICE_FROM_REF = "DEVICE_FROM_REF"       # прочитать из файла на устройстве (device_ref)
+DEVICE_INDIRECTIONS = {DEVICE_FROM_HOST, DEVICE_FROM_REF}
 # Привязку агента в продукте выбирает пользователь (решение владельца 30.07.2026),
 # поэтому паспорт вправе объявить не конкретный id, а способ его узнать.
 USER_SELECTED_AGENT = "USER_SELECTED"
@@ -187,14 +196,35 @@ def check_report(doc):
                 _issue(errors, "AUTOMATION_STATE_READER_%s_REQUIRED" % field.upper(),
                        "automation.state_reader." + field, ru, en)
         for field in ("execution_device", "data_device"):
-            value = str(reader.get(field) or "").strip().lower()
+            raw = str(reader.get(field) or "").strip()
+            value = raw.lower()
             if value and any(marker in value for marker in LOCAL_HOST_MARKERS):
                 _issue(errors, "AUTOMATION_STATE_READER_LOCALHOST",
                        "automation.state_reader." + field,
-                       "устройство объявлено локальным адресом «%s» — устройство это стабильный "
-                       "id таргета, а не порт на этой машине" % reader.get(field),
-                       "the device is declared as a local address %r — a device is a stable target "
-                       "id, not a port on this machine" % reader.get(field))
+                       "устройство объявлено локальным адресом «%s» — устройство это способ "
+                       "его узнать, а не порт на этой машине" % raw,
+                       "the device is declared as a local address %r — a device is a way to "
+                       "resolve it, not a port on this machine" % raw)
+            elif raw and raw not in DEVICE_INDIRECTIONS:
+                _issue(errors, "AUTOMATION_STATE_READER_DEVICE_LITERAL",
+                       "automation.state_reader." + field,
+                       "устройство объявлено литеральным id «%s». Паспорт едет клиенту: на его "
+                       "машине этот id указывает на ЧУЖОЕ устройство, а в публичной раздаче "
+                       "раскрывает нашу инфраструктуру. Пиши %s (машина, где открыта панель) "
+                       "или %s вместе с device_ref" % (raw, DEVICE_FROM_HOST, DEVICE_FROM_REF),
+                       "the device is a literal id %r. The passport travels to the client: there "
+                       "this id points at a FOREIGN device, and in a public channel it exposes our "
+                       "infrastructure. Use %s or %s together with device_ref"
+                       % (raw, DEVICE_FROM_HOST, DEVICE_FROM_REF))
+        if DEVICE_FROM_REF in (str(reader.get("execution_device") or "").strip(),
+                               str(reader.get("data_device") or "").strip()) \
+                and is_blank(reader.get("device_ref")):
+            _issue(errors, "AUTOMATION_STATE_READER_DEVICE_REF_REQUIRED",
+                   "automation.state_reader.device_ref",
+                   "устройство читается из файла, но не сказано, из какого — укажи device_ref "
+                   "вида «~/extella_baga/panel.json:data_device»",
+                   "the device is read from a file but the file is not named — set device_ref "
+                   "like «~/extella_baga/panel.json:data_device»")
         # Точный объект вызова: закрытый список ключей, только скаляры, без секретов.
         params = reader.get("params")
         if params is None:
@@ -446,8 +476,8 @@ GOOD_THIN = {
             "expert": "probe_call", "method": "state",
             "params": {"method": "state", "args_json": "[]", "kwargs_json": "{}"},
             "schema": "extella.automation_state.v1",
-            "execution_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
-            "data_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
+            "execution_device": "DEVICE_FROM_HOST",
+            "data_device": "DEVICE_FROM_HOST",
             "evidence": "exact_target",
         },
         "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
@@ -473,7 +503,8 @@ BAD_STATE = {
         "state_reader": {"expert": "", "schema": "",
                          "params": {"secret": "нет такого параметра",
                                     "body_json": "ya29AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"},
-                         "execution_device": "127.0.0.1:8971", "data_device": "",
+                         "execution_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
+                         "data_device": "",
                          "evidence": "поверьте на слово"},
         "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
     },
@@ -489,11 +520,11 @@ STATE_CHECKS = [
     ("нет эксперта состояния", "AUTOMATION_STATE_READER_EXPERT_REQUIRED"),
     ("нет схемы ответа", "AUTOMATION_STATE_READER_SCHEMA_REQUIRED"),
     ("нет устройства данных", "AUTOMATION_STATE_READER_DATA_DEVICE_REQUIRED"),
-    ("устройство объявлено локальным адресом", "AUTOMATION_STATE_READER_LOCALHOST"),
     ("доказательство устройства выдумано", "AUTOMATION_STATE_READER_EVIDENCE_INVALID"),
     ("привязка пользователя без адреса", "AUTOMATION_AGENT_BINDING_REF_REQUIRED"),
     ("параметр вызова вне закрытого списка", "AUTOMATION_STATE_READER_PARAM_UNKNOWN"),
     ("секрет в параметрах чтения состояния", "AUTOMATION_STATE_READER_PARAM_SECRET"),
+    ("литеральный id устройства в паспорте", "AUTOMATION_STATE_READER_DEVICE_LITERAL"),
 ]
 
 BAD = {
@@ -568,6 +599,15 @@ def selftest():
         print("FAIL: тонкая автоматизация не прошла:")
         for e in thin["errors"]:
             print("      - %s %s" % (e["code"], e["message_ru"]))
+    localhost_case = json.loads(json.dumps(BAD_STATE))
+    localhost_case["automation"]["state_reader"]["execution_device"] = "127.0.0.1:8971"
+    if any(e["code"] == "AUTOMATION_STATE_READER_LOCALHOST"
+           for e in check_report(localhost_case)["errors"]):
+        print("PASS: устройство объявлено локальным адресом — поймано")
+    else:
+        ok = False
+        print("FAIL: локальный адрес вместо устройства — НЕ поймано")
+
     state_codes = {e["code"] for e in check_report(json.loads(json.dumps(BAD_STATE)))["errors"]}
     for label, code in STATE_CHECKS:
         if code in state_codes:
