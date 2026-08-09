@@ -1,0 +1,30 @@
+{
+  "enabled": "yes",
+  "active_version": {},
+  "last_run": {
+    "garbage": 1
+  },
+  "last_result": "error",
+  "last_error": {
+    "code": 17,
+    "message_ru": "ошибка",
+    "message_en": "error"
+  },
+  "schedules": [
+    {
+      "id": "nightly",
+      "active": "true"
+    }
+  ],
+  "checked_at": 1770000000,
+  "bound_to": {
+    "hosting_profile": "LOCAL",
+    "host": 8766,
+    "platform_profile_id": "",
+    "account_ref": 12345678,
+    "agent_ids": [
+      "not-an-agent"
+    ],
+    "since": 1770000000
+  }
+}
