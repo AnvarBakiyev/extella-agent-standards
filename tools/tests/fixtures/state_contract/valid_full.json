@@ -1,0 +1,41 @@
+{
+  "enabled": true,
+  "active_version": "1.2.3-rc.1+build.7",
+  "last_run": {
+    "at": "2026-08-10T09:14:00.123Z",
+    "kind": "campaign"
+  },
+  "last_result": "partial",
+  "last_error": {
+    "code": "PARTIAL_DELIVERY",
+    "message_ru": "Один получатель недоступен",
+    "message_en": "One recipient is unavailable"
+  },
+  "schedules": [
+    {
+      "id": "campaigns_birthday",
+      "active": true,
+      "next_run": "2026-08-11T09:00:00+05:00",
+      "cadence": "daily"
+    },
+    {
+      "id": "inbound_poller",
+      "active": false,
+      "next_run": null
+    }
+  ],
+  "checked_at": "2026-08-10T09:20:00+05:00",
+  "bound_to": {
+    "hosting_profile": "local",
+    "host": "127.0.0.1:8766",
+    "platform_profile_id": "default",
+    "account_ref": "3f9a1c04",
+    "agent_ids": [
+      "agent_eUSuv3enLqKkZd2lj0aeI"
+    ],
+    "since": "2026-07-09T12:00:00Z"
+  },
+  "readiness": {
+    "connector": true
+  }
+}

@@ -233,6 +233,10 @@ Windows. Он ломался у коллег ровно там, где мы ег
 
 `/api/health` и `/api/state`. В состоянии обязателен блок `bound_to`: где живёт, к какому
 аккаунту и агенту привязано. Отсутствие поля и честное `null` — разные вещи: поле обязано быть.
+Точная схема ответа — `extella.automation_state.v1`: `enabled` только boolean;
+`active_version` — SemVer или `null`; `last_run` — ISO/число/объект с `at|ts` или `null`;
+`last_result` — только `ok|failed|partial|null`; `last_error` — три строковых поля или `null`;
+каждое расписание содержит `id`, boolean `active` и присутствующий `next_run`.
 
 Если состояние читает Expert, паспорт объявляет **две отдельные оси**: как получить
 `X-Agent-Id` (`state_reader.agent_scope`) и с каким флагом сохранён Expert
