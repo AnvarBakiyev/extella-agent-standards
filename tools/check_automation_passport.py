@@ -78,15 +78,18 @@ SECRET_VALUE_RE = re.compile(r"[A-Za-z0-9_\-]{24,}")
 def _component_id(component):
     """Stable component id: the contract intentionally invents no spelling grammar."""
     value = component.get("component_id") if isinstance(component, dict) else None
-    return value.strip() if isinstance(value, str) else ""
+    if not isinstance(value, str) or not value or value != value.strip():
+        return ""
+    return value
 
 
 def _binding_locator(value):
     """Return true for an exact <path>:<field> locator; split from the right for C:\\ paths."""
-    if not isinstance(value, str):
+    if not isinstance(value, str) or value != value.strip():
         return False
     path, separator, field = value.rpartition(":")
-    return bool(separator and path.strip() and field.strip())
+    return bool(separator and path and field
+                and path == path.strip() and field == field.strip())
 
 
 def _issue(errors, code, path, ru, en):
@@ -320,7 +323,7 @@ def check_report(doc):
                   "the state reader agent scope is not declared — the passport remains valid "
                   "during migration, but the Console must show «state unavailable»")
         else:
-            scope = raw_scope.strip() if isinstance(raw_scope, str) else ""
+            scope = raw_scope if isinstance(raw_scope, str) else ""
 
             component_ids = {}
             for i, component in enumerate(agents):
@@ -386,7 +389,7 @@ def check_report(doc):
                            "для %s нужна ссылка на стабильный component_id" % scope,
                            "%s requires a reference to a stable component_id" % scope)
                 else:
-                    ref = raw_ref.strip() if isinstance(raw_ref, str) else ""
+                    ref = raw_ref if isinstance(raw_ref, str) else ""
                     matches = component_ids.get(ref, []) if ref else []
                     if len(matches) != 1:
                         _issue(errors, "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED",
@@ -397,7 +400,8 @@ def check_report(doc):
                                % raw_ref)
                     else:
                         target = matches[0]
-                        aid = str(target.get("platform_agent_id") or "").strip()
+                        raw_aid = target.get("platform_agent_id")
+                        aid = raw_aid if isinstance(raw_aid, str) else ""
                         if scope == AGENT_FROM_COMPONENT and not AGENT_ID_RE.match(aid):
                             _issue(errors, "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED",
                                    "automation.state_reader.agent_scope_ref",
@@ -428,7 +432,8 @@ def check_report(doc):
                    "элемент состава должен быть объектом с platform_agent_id",
                    "each component must be an object with platform_agent_id")
             continue
-        aid = str(ag.get("platform_agent_id") or "").strip()
+        raw_aid = ag.get("platform_agent_id")
+        aid = raw_aid if isinstance(raw_aid, str) else ""
         if not aid:
             _issue(errors, "AUTOMATION_AGENT_ID_REQUIRED", base + ".platform_agent_id",
                    "у компонента нет стабильного id агента",
@@ -810,6 +815,34 @@ def selftest():
     scope_cases.append(("USER_SELECTED без точного binding_ref", binding_required,
                         "AUTOMATION_STATE_SCOPE_BINDING_REQUIRED"))
 
+    spaced_scope = json.loads(json.dumps(GOOD_THIN))
+    spaced_scope["automation"]["state_reader"]["agent_scope"] = " AGENT_USER_SELECTED "
+    scope_cases.append(("скоуп с внешними пробелами не нормализуется", spaced_scope,
+                        "AUTOMATION_STATE_SCOPE_INVALID"))
+
+    spaced_ref = json.loads(json.dumps(GOOD_THIN))
+    spaced_ref["automation"]["state_reader"]["agent_scope_ref"] = " primary_agent "
+    scope_cases.append(("ссылка с внешними пробелами не нормализуется", spaced_ref,
+                        "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED"))
+
+    spaced_component = json.loads(json.dumps(GOOD_THIN))
+    spaced_component["components"]["platform_agents"][0]["component_id"] = \
+        " primary_agent "
+    scope_cases.append(("component_id с пробелами не считается точным", spaced_component,
+                        "AUTOMATION_AGENT_COMPONENT_ID_REQUIRED"))
+
+    spaced_binding = json.loads(json.dumps(GOOD_THIN))
+    spaced_binding["components"]["platform_agents"][0]["binding_ref"] = \
+        " ~/extella_probe/agent_binding.json:agent_id "
+    scope_cases.append(("binding_ref с пробелами не считается точным", spaced_binding,
+                        "AUTOMATION_STATE_SCOPE_BINDING_REQUIRED"))
+
+    spaced_agent = json.loads(json.dumps(GOOD_THIN))
+    spaced_agent["components"]["platform_agents"][0]["platform_agent_id"] = \
+        " USER_SELECTED "
+    scope_cases.append(("platform_agent_id с пробелами не считается точным", spaced_agent,
+                        "AUTOMATION_STATE_SCOPE_BINDING_REQUIRED"))
+
     ref_forbidden = json.loads(json.dumps(GOOD_THIN))
     ref_forbidden["automation"]["state_reader"]["agent_scope"] = "ACCOUNT_GLOBAL"
     ref_forbidden["automation"]["state_reader"]["expert_global"] = True
@@ -887,6 +920,19 @@ def selftest():
     else:
         ok = False
         print("FAIL: компонентный скоуп ошибочно выводит expert_global")
+
+    multiple_selected = json.loads(json.dumps(GOOD_THIN))
+    second_selected = json.loads(json.dumps(
+        multiple_selected["components"]["platform_agents"][0]))
+    second_selected["component_id"] = "secondary_agent"
+    second_selected["binding_ref"] = \
+        "~/extella_probe_secondary/agent_binding.json:agent_id"
+    multiple_selected["components"]["platform_agents"].append(second_selected)
+    if check_report(multiple_selected)["ready"]:
+        print("PASS: несколько USER_SELECTED различаются стабильным component_id")
+    else:
+        ok = False
+        print("FAIL: несколько USER_SELECTED ошибочно считаются дублем sentinel id")
 
     account_global = json.loads(json.dumps(GOOD_THIN))
     account_reader = account_global["automation"]["state_reader"]
