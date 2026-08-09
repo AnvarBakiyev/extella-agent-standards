@@ -27,6 +27,12 @@ automation:
                              # Закрытый список ключей, только скаляры, секретов быть не может.
     method: "state"          # человекочитаемое имя метода (для интерфейса; вызов идёт по params)
     schema: ""               # схема ответа, напр. extella.automation_state.v1
+    agent_scope: ""          # как получить X-Agent-Id — закрытый набор:
+                             #   AGENT_FROM_COMPONENT | AGENT_USER_SELECTED | ACCOUNT_GLOBAL
+    agent_scope_ref: ""      # component_id агента из components.platform_agents.
+                             # Обязателен для первых двух режимов, запрещён для ACCOUNT_GLOBAL.
+    expert_global: false     # точный флаг Expert при run; отдельный от X-Agent-Id.
+                             # Для ACCOUNT_GLOBAL обязан быть true.
     execution_device: ""     # стабильный id таргета, НА КОТОРОМ исполняется эксперт
     data_device: ""          # стабильный id таргета, ГДЕ лежат данные (может отличаться)
     evidence: "exact_target" # доказательство, что ответ пришёл с ТОГО устройства.
@@ -42,11 +48,14 @@ automation:
 components:
   # Платформенные агенты — СКРЫТЫЕ технические компоненты автоматизации.
   platform_agents:
-    - platform_agent_id: ""  # стабильный id вида agent_...; по имени связывать запрещено.
+    - component_id: ""       # стабильная строка, уникальная в пределах паспорта.
+                             # state_reader.agent_scope_ref ссылается сюда, не на индекс и не на agent id.
+      platform_agent_id: ""  # стабильный id вида agent_...; по имени связывать запрещено.
                              # Если агента выбирает пользователь на первом экране продукта
                              # (решение владельца 30.07.2026) — пиши USER_SELECTED и обязательно
                              # заполни binding_ref, иначе Console сочтёт ссылку мёртвой.
-      binding_ref: ""        # где на устройстве лежит фактическая привязка (файл привязки)
+      binding_ref: ""        # точный локатор <путь>:<поле>, напр.
+                             # ~/extella_baga/agent_binding.json:agent_id
       role: ""               # зачем этот агент в автоматизации
       provider_expected: "alibaba"   # канон: клиентские агенты только платформенный Qwen
   experts: []                # [{name, required}]

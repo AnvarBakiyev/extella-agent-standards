@@ -28,7 +28,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from check_agent_passport import load_passport                      # единый разбор файла
-from check_automation_passport import check_report, GOOD            # единый источник правил
+from check_automation_passport import (                             # единый источник правил
+    check_report, GOOD, GOOD_THIN,
+)
 from check_agent_passport import GOOD_JSON as AGENT_GOOD_JSON       # образец паспорта агента
 import build_agent_cabinet as agent_cabinet                         # кабинет агента-компонента
 
@@ -68,7 +70,10 @@ def build(doc, agent_passports=None):
     agents = []
     for item in comp.get("platform_agents") or []:
         agents.append({
+            "component_id": item.get("component_id"),
             "platform_agent_id": item.get("platform_agent_id"),
+            # Это локатор, а не прочитанный id: проекция не создаёт второй источник истины.
+            "binding_ref": item.get("binding_ref"),
             "role_ru": item.get("role") or "роль не описана",
             "role_en": item.get("role") or "role not described",
             "provider_expected": item.get("provider_expected"),
@@ -124,6 +129,10 @@ def build(doc, agent_passports=None):
                 # Точный объект вызова: Console зовёт эксперта по нему, а не по имени продукта.
                 "params": reader.get("params") or {},
                 "schema": reader.get("schema"),
+                # Скоуп заголовка и флаг Expert ортогональны для component modes.
+                "agent_scope": reader.get("agent_scope"),
+                "agent_scope_ref": reader.get("agent_scope_ref"),
+                "expert_global": reader.get("expert_global"),
                 "execution_device": reader.get("execution_device"),
                 "data_device": reader.get("data_device"),
                 "evidence": reader.get("evidence"),
@@ -132,6 +141,10 @@ def build(doc, agent_passports=None):
                 "note_en": "The call is pinned with a targets array and the answer must carry the "
                            "device id: a single target is silently ignored and the answer may come "
                            "from a foreign machine.",
+                "scope_note_ru": "agent_scope_ref ссылается на стабильный component_id; "
+                                 "литеральный agent id в читателе не хранится.",
+                "scope_note_en": "agent_scope_ref points to a stable component_id; the reader "
+                                 "stores no literal agent id.",
             } if reader.get("expert") else None,
             "health": svc.get("health"),
             "state": svc.get("state"),
@@ -226,6 +239,24 @@ def selftest():
         ("markdown собирается", "Automation Cabinet" in as_markdown(cab)),
     ]
     for label, cond in checks:
+        print(("PASS: " if cond else "FAIL: ") + label)
+        ok = ok and bool(cond)
+
+    thin = build(json.loads(json.dumps(GOOD_THIN)))
+    thin_reader = thin["state_contract"]["reader"]
+    thin_agent = thin["composition"]["platform_agents"][0]
+    scope_checks = [
+        ("проекция сохраняет agent_scope и ссылку на component_id",
+         thin_reader["agent_scope"] == "AGENT_USER_SELECTED"
+         and thin_reader["agent_scope_ref"] == "primary_agent"),
+        ("проекция сохраняет expert_global отдельно от agent_scope",
+         thin_reader["expert_global"] is False),
+        ("компонент проецирует стабильный component_id",
+         thin_agent["component_id"] == "primary_agent"),
+        ("компонент проецирует точный binding_ref, а не прочитанный agent id",
+         thin_agent["binding_ref"] == "~/extella_probe/agent_binding.json:agent_id"),
+    ]
+    for label, cond in scope_checks:
         print(("PASS: " if cond else "FAIL: ") + label)
         ok = ok and bool(cond)
 
