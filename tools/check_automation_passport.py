@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from check_agent_passport import load_passport, is_blank   # единый разбор файла и понятие «пусто»
 
-AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9_\-]{6,}$")
+AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9_\-]{6,64}$")
 SCHEDULE_KINDS = {"external_cron", "internal", "in_service"}
 # Канон: клиентские автоматизации работают на платформенном Qwen (провайдер alibaba).
 ALLOWED_PROVIDER = "alibaba"
@@ -63,9 +63,30 @@ DEVICE_INDIRECTIONS = {DEVICE_FROM_HOST, DEVICE_FROM_REF}
 # поэтому паспорт вправе объявить не конкретный id, а способ его узнать.
 USER_SELECTED_AGENT = "USER_SELECTED"
 
+# Какой X-Agent-Id использует state reader. Это отдельная ось от `expert_global`:
+# эксперт может быть global=true, но всё равно читаться под заголовком владеющего агента.
+AGENT_FROM_COMPONENT = "AGENT_FROM_COMPONENT"
+AGENT_USER_SELECTED = "AGENT_USER_SELECTED"
+ACCOUNT_GLOBAL = "ACCOUNT_GLOBAL"
+STATE_READER_AGENT_SCOPES = {AGENT_FROM_COMPONENT, AGENT_USER_SELECTED, ACCOUNT_GLOBAL}
+
 # Ссылка на секрет выглядит как «где лежит», а не как сам секрет. Живой секрет в паспорте —
 # это утечка в git и в кабинет клиента, поэтому ошибка, а не предупреждение.
 SECRET_VALUE_RE = re.compile(r"[A-Za-z0-9_\-]{24,}")
+
+
+def _component_id(component):
+    """Stable component id: the contract intentionally invents no spelling grammar."""
+    value = component.get("component_id") if isinstance(component, dict) else None
+    return value.strip() if isinstance(value, str) else ""
+
+
+def _binding_locator(value):
+    """Return true for an exact <path>:<field> locator; split from the right for C:\\ paths."""
+    if not isinstance(value, str):
+        return False
+    path, separator, field = value.rpartition(":")
+    return bool(separator and path.strip() and field.strip())
 
 
 def _issue(errors, code, path, ru, en):
@@ -85,6 +106,7 @@ def check_report(doc):
     comp = doc.get("components") if isinstance(doc.get("components"), dict) else {}
     ops = doc.get("operations") if isinstance(doc.get("operations"), dict) else {}
     budgets = doc.get("budgets") if isinstance(doc.get("budgets"), dict) else {}
+    agents = comp.get("platform_agents") if isinstance(comp.get("platform_agents"), list) else []
 
     # Пустой шаблон — говорим это одной фразой, а не двадцатью ошибками.
     name = a.get("name") if isinstance(a.get("name"), dict) else {}
@@ -157,6 +179,10 @@ def check_report(doc):
     #   service      — HTTP-контракт продукта со своим сервером (наследие).
     svc = a.get("service") if isinstance(a.get("service"), dict) else {}
     reader = a.get("state_reader") if isinstance(a.get("state_reader"), dict) else {}
+    # Переходное предупреждение относится только к legacy-паспорту, где поля НЕТ.
+    # Явно добавленное пустое/null/нестроковое значение — уже декларация v2 и ошибка,
+    # иначе поле можно было бы вписать пустым и навсегда остаться в warning-режиме.
+    scope_declared = bool(reader) and "agent_scope" in reader
     has_service = any(not is_blank(svc.get(f)) for f in ("health", "state"))
     if not reader and not has_service:
         _issue(errors, "AUTOMATION_STATE_SOURCE_REQUIRED", "automation.state_reader",
@@ -281,8 +307,115 @@ def check_report(doc):
                    "evidence %r is unknown — allowed: %s"
                    % (evidence, ", ".join(sorted(STATE_READER_EVIDENCE))))
 
+        # Агентский скоуп — это способ получить X-Agent-Id, а expert_global отдельно
+        # объявляет флаг Expert. На переходе старый паспорт без agent_scope остаётся
+        # проходимым с ОДНИМ предупреждением; как только поле объявлено, весь v2-контракт
+        # проверяется строго и никакие неверные значения предупреждениями не становятся.
+        raw_scope = reader.get("agent_scope")
+        if not scope_declared:
+            _warn(warns, "AUTOMATION_STATE_SCOPE_REQUIRED",
+                  "automation.state_reader.agent_scope",
+                  "не объявлен агентский скоуп читателя состояния — до миграции паспорт "
+                  "проходит с предупреждением, но Console обязана показать «состояние недоступно»",
+                  "the state reader agent scope is not declared — the passport remains valid "
+                  "during migration, but the Console must show «state unavailable»")
+        else:
+            scope = raw_scope.strip() if isinstance(raw_scope, str) else ""
+
+            component_ids = {}
+            for i, component in enumerate(agents):
+                base = "components.platform_agents[%d]" % i
+                cid = _component_id(component)
+                if not cid:
+                    _issue(errors, "AUTOMATION_AGENT_COMPONENT_ID_REQUIRED",
+                           base + ".component_id",
+                           "у компонента нет стабильного строкового component_id — ссылка по "
+                           "индексу сдвинется при правке состава",
+                           "the component has no stable string component_id — an index-based "
+                           "reference moves whenever the composition changes")
+                    continue
+                component_ids.setdefault(cid, []).append(component)
+            for cid, matches in component_ids.items():
+                if len(matches) > 1:
+                    _issue(errors, "AUTOMATION_AGENT_COMPONENT_ID_DUPLICATE",
+                           "components.platform_agents",
+                           "component_id «%s» встречается %d раза — ссылка должна разрешаться "
+                           "ровно в один компонент" % (cid, len(matches)),
+                           "component_id %r occurs %d times — a reference must resolve to exactly "
+                           "one component" % (cid, len(matches)))
+
+            if not isinstance(raw_scope, str) or scope not in STATE_READER_AGENT_SCOPES:
+                _issue(errors, "AUTOMATION_STATE_SCOPE_INVALID",
+                       "automation.state_reader.agent_scope",
+                       "агентский скоуп «%s» неизвестен — допустимо: %s"
+                       % (raw_scope, ", ".join(sorted(STATE_READER_AGENT_SCOPES))),
+                       "agent scope %r is unknown — allowed: %s"
+                       % (raw_scope, ", ".join(sorted(STATE_READER_AGENT_SCOPES))))
+
+            if reader.get("expert_global") is None:
+                _issue(errors, "AUTOMATION_STATE_EXPERT_GLOBAL_REQUIRED",
+                       "automation.state_reader.expert_global",
+                       "не объявлен флаг expert_global — скоуп заголовка не говорит, как "
+                       "сохранён Expert",
+                       "expert_global is missing — the header scope does not say how the Expert "
+                       "is stored")
+            elif not isinstance(reader.get("expert_global"), bool):
+                _issue(errors, "AUTOMATION_STATE_EXPERT_GLOBAL_INVALID",
+                       "automation.state_reader.expert_global",
+                       "expert_global обязан быть логическим true или false без строковых подмен",
+                       "expert_global must be a boolean true or false, not a string substitute")
+            elif scope == ACCOUNT_GLOBAL and reader.get("expert_global") is not True:
+                _issue(errors, "AUTOMATION_STATE_EXPERT_GLOBAL_INVALID",
+                       "automation.state_reader.expert_global",
+                       "ACCOUNT_GLOBAL допустим только для Expert с expert_global: true",
+                       "ACCOUNT_GLOBAL is allowed only for an Expert with expert_global: true")
+
+            raw_ref = reader.get("agent_scope_ref")
+            if scope == ACCOUNT_GLOBAL:
+                if "agent_scope_ref" in reader:
+                    _issue(errors, "AUTOMATION_STATE_SCOPE_REF_FORBIDDEN",
+                           "automation.state_reader.agent_scope_ref",
+                           "для ACCOUNT_GLOBAL поле ссылки на компонент запрещено — удали его, "
+                           "а не оставляй пустым",
+                           "the component-reference field is forbidden for ACCOUNT_GLOBAL — "
+                           "remove it instead of leaving it blank")
+            elif scope in (AGENT_FROM_COMPONENT, AGENT_USER_SELECTED):
+                if is_blank(raw_ref):
+                    _issue(errors, "AUTOMATION_STATE_SCOPE_REF_REQUIRED",
+                           "automation.state_reader.agent_scope_ref",
+                           "для %s нужна ссылка на стабильный component_id" % scope,
+                           "%s requires a reference to a stable component_id" % scope)
+                else:
+                    ref = raw_ref.strip() if isinstance(raw_ref, str) else ""
+                    matches = component_ids.get(ref, []) if ref else []
+                    if len(matches) != 1:
+                        _issue(errors, "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED",
+                               "automation.state_reader.agent_scope_ref",
+                               "ссылка «%s» не разрешилась ровно в один компонент состава"
+                               % raw_ref,
+                               "reference %r did not resolve to exactly one composition component"
+                               % raw_ref)
+                    else:
+                        target = matches[0]
+                        aid = str(target.get("platform_agent_id") or "").strip()
+                        if scope == AGENT_FROM_COMPONENT and not AGENT_ID_RE.match(aid):
+                            _issue(errors, "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED",
+                                   "automation.state_reader.agent_scope_ref",
+                                   "AGENT_FROM_COMPONENT должен ссылаться на компонент с точным "
+                                   "platform_agent_id вида agent_...",
+                                   "AGENT_FROM_COMPONENT must reference a component with an exact "
+                                   "platform_agent_id starting with agent_")
+                        elif scope == AGENT_USER_SELECTED and (
+                                aid != USER_SELECTED_AGENT
+                                or not _binding_locator(target.get("binding_ref"))):
+                            _issue(errors, "AUTOMATION_STATE_SCOPE_BINDING_REQUIRED",
+                                   "automation.state_reader.agent_scope_ref",
+                                   "AGENT_USER_SELECTED должен ссылаться на компонент USER_SELECTED "
+                                   "с точным binding_ref вида «<путь>:<поле>»",
+                                   "AGENT_USER_SELECTED must reference a USER_SELECTED component "
+                                   "with an exact «<path>:<field>» binding_ref")
+
     # 4. Состав: платформенные агенты — компоненты, и каждый проверяется как агент
-    agents = comp.get("platform_agents") if isinstance(comp.get("platform_agents"), list) else []
     if not agents:
         _issue(errors, "AUTOMATION_AGENTS_REQUIRED", "components.platform_agents",
                "не перечислен ни один платформенный агент автоматизации",
@@ -302,13 +435,19 @@ def check_report(doc):
                    "the component has no stable agent id")
         elif aid == USER_SELECTED_AGENT:
             # Агента выбирает пользователь на первом экране продукта. Тогда паспорт обязан
-            # сказать, ГДЕ лежит фактическая привязка, иначе Console считает ссылку мёртвой.
+            # дать точный локатор <путь>:<поле>, иначе Console не сможет прочитать ровно id.
             if is_blank(ag.get("binding_ref")):
                 _issue(errors, "AUTOMATION_AGENT_BINDING_REF_REQUIRED", base + ".binding_ref",
                        "агент выбирается пользователем, но не сказано, где хранится привязка — "
                        "Console не сможет прочитать фактический id и посчитает ссылку мёртвой",
                        "the agent is user-selected but the binding location is not declared — the "
                        "Console cannot read the actual id and will treat the reference as dead")
+            elif scope_declared and not _binding_locator(ag.get("binding_ref")):
+                _issue(errors, "AUTOMATION_AGENT_BINDING_REF_REQUIRED", base + ".binding_ref",
+                       "binding_ref обязан быть точным локатором «<путь>:<поле>», например "
+                       "«~/extella_baga/agent_binding.json:agent_id»",
+                       "binding_ref must be an exact «<path>:<field>» locator, for example "
+                       "«~/extella_baga/agent_binding.json:agent_id»")
         elif not AGENT_ID_RE.match(aid):
             _issue(errors, "AUTOMATION_AGENT_ID_INVALID", base + ".platform_agent_id",
                    "id «%s» не похож на стабильный идентификатор вида agent_..." % aid,
@@ -452,7 +591,8 @@ GOOD = {
         "help_surface": "панель автоматизации, кнопка «? Как это работает»",
     },
     "components": {
-        "platform_agents": [{"platform_agent_id": "agent_eUSxxxxxxxxxx", "role": "квалификация лида",
+        "platform_agents": [{"component_id": "lead_qualifier",
+                             "platform_agent_id": "agent_eUSxxxxxxxxxx", "role": "квалификация лида",
                              "provider_expected": "alibaba"}],
         "experts": [{"name": "ta_birthday_scan", "required": True}],
         "schedules": [{"id": "campaigns_birthday", "kind": "external_cron", "cadence": "daily"},
@@ -479,14 +619,18 @@ GOOD_THIN = {
             "execution_device": "DEVICE_FROM_HOST",
             "data_device": "DEVICE_FROM_HOST",
             "evidence": "exact_target",
+            "agent_scope": "AGENT_USER_SELECTED",
+            "agent_scope_ref": "primary_agent",
+            "expert_global": False,
         },
         "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
     },
     "components": {
-        "platform_agents": [{"platform_agent_id": "USER_SELECTED",
+        "platform_agents": [{"component_id": "primary_agent",
+                             "platform_agent_id": "USER_SELECTED",
                              "role": "мозг продукта, выбирается пользователем",
                              "provider_expected": "alibaba",
-                             "binding_ref": "~/extella_probe/agent_binding.json"}],
+                             "binding_ref": "~/extella_probe/agent_binding.json:agent_id"}],
         "experts": [{"name": "probe_call", "required": True}],
         "schedules": [], "integrations": [], "knowledge": [], "rules": [],
     },
@@ -615,6 +759,145 @@ def selftest():
         else:
             ok = False
             print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+
+    # Переход v2: старый корректный reader без agent_scope остаётся готовым, получает
+    # только предупреждение о миграции и не краснеет на ещё отсутствующих v2-полях.
+    legacy = json.loads(json.dumps(GOOD_THIN))
+    legacy_reader = legacy["automation"]["state_reader"]
+    legacy_reader.pop("agent_scope", None)
+    legacy_reader.pop("agent_scope_ref", None)
+    legacy_reader.pop("expert_global", None)
+    legacy["components"]["platform_agents"][0].pop("component_id", None)
+    legacy["components"]["platform_agents"][0]["binding_ref"] = \
+        "~/extella_probe/agent_binding.json"
+    legacy_report = check_report(legacy)
+    legacy_v2_errors = [e for e in legacy_report["errors"]
+                        if e["code"].startswith("AUTOMATION_STATE_SCOPE_")
+                        or e["code"].startswith("AUTOMATION_STATE_EXPERT_GLOBAL_")
+                        or e["code"].startswith("AUTOMATION_AGENT_COMPONENT_ID_")]
+    if (legacy_report["ready"] and not legacy_v2_errors
+            and [w["code"] for w in legacy_report["warnings"]].count(
+                "AUTOMATION_STATE_SCOPE_REQUIRED") == 1):
+        print("PASS: legacy reader без agent_scope — только переходное предупреждение")
+    else:
+        ok = False
+        print("FAIL: legacy reader без agent_scope не сохранил переходную совместимость")
+
+    scope_cases = []
+
+    invalid_scope = json.loads(json.dumps(GOOD_THIN))
+    invalid_scope["automation"]["state_reader"]["agent_scope"] = "FIRST_AGENT"
+    scope_cases.append(("скоуп вне закрытого набора", invalid_scope,
+                        "AUTOMATION_STATE_SCOPE_INVALID"))
+
+    blank_scope = json.loads(json.dumps(GOOD_THIN))
+    blank_scope["automation"]["state_reader"]["agent_scope"] = ""
+    scope_cases.append(("явно пустой скоуп не считается legacy", blank_scope,
+                        "AUTOMATION_STATE_SCOPE_INVALID"))
+
+    ref_required = json.loads(json.dumps(GOOD_THIN))
+    ref_required["automation"]["state_reader"].pop("agent_scope_ref", None)
+    scope_cases.append(("компонентный скоуп без ссылки", ref_required,
+                        "AUTOMATION_STATE_SCOPE_REF_REQUIRED"))
+
+    ref_unresolved = json.loads(json.dumps(GOOD_THIN))
+    ref_unresolved["automation"]["state_reader"]["agent_scope_ref"] = "missing_component"
+    scope_cases.append(("ссылка не разрешилась в component_id", ref_unresolved,
+                        "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED"))
+
+    binding_required = json.loads(json.dumps(GOOD_THIN))
+    binding_required["components"]["platform_agents"][0]["binding_ref"] = "file_without_field.json"
+    scope_cases.append(("USER_SELECTED без точного binding_ref", binding_required,
+                        "AUTOMATION_STATE_SCOPE_BINDING_REQUIRED"))
+
+    ref_forbidden = json.loads(json.dumps(GOOD_THIN))
+    ref_forbidden["automation"]["state_reader"]["agent_scope"] = "ACCOUNT_GLOBAL"
+    ref_forbidden["automation"]["state_reader"]["expert_global"] = True
+    scope_cases.append(("ACCOUNT_GLOBAL со ссылкой", ref_forbidden,
+                        "AUTOMATION_STATE_SCOPE_REF_FORBIDDEN"))
+
+    blank_ref_forbidden = json.loads(json.dumps(GOOD_THIN))
+    blank_ref_reader = blank_ref_forbidden["automation"]["state_reader"]
+    blank_ref_reader["agent_scope"] = "ACCOUNT_GLOBAL"
+    blank_ref_reader["agent_scope_ref"] = ""
+    blank_ref_reader["expert_global"] = True
+    scope_cases.append(("ACCOUNT_GLOBAL с пустым полем ссылки", blank_ref_forbidden,
+                        "AUTOMATION_STATE_SCOPE_REF_FORBIDDEN"))
+
+    component_missing = json.loads(json.dumps(GOOD_THIN))
+    component_missing["components"]["platform_agents"][0].pop("component_id", None)
+    scope_cases.append(("нет component_id в v2", component_missing,
+                        "AUTOMATION_AGENT_COMPONENT_ID_REQUIRED"))
+
+    component_duplicate = json.loads(json.dumps(GOOD_THIN))
+    duplicate_component = json.loads(json.dumps(
+        component_duplicate["components"]["platform_agents"][0]))
+    duplicate_component["platform_agent_id"] = "agent_other123456"
+    duplicate_component.pop("binding_ref", None)
+    component_duplicate["components"]["platform_agents"].append(duplicate_component)
+    scope_cases.append(("дубль component_id", component_duplicate,
+                        "AUTOMATION_AGENT_COMPONENT_ID_DUPLICATE"))
+
+    global_required = json.loads(json.dumps(GOOD_THIN))
+    global_required["automation"]["state_reader"].pop("expert_global", None)
+    scope_cases.append(("нет expert_global", global_required,
+                        "AUTOMATION_STATE_EXPERT_GLOBAL_REQUIRED"))
+
+    global_invalid = json.loads(json.dumps(GOOD_THIN))
+    global_invalid["automation"]["state_reader"]["expert_global"] = "false"
+    scope_cases.append(("expert_global не boolean", global_invalid,
+                        "AUTOMATION_STATE_EXPERT_GLOBAL_INVALID"))
+
+    account_not_global = json.loads(json.dumps(GOOD_THIN))
+    account_reader = account_not_global["automation"]["state_reader"]
+    account_reader["agent_scope"] = "ACCOUNT_GLOBAL"
+    account_reader.pop("agent_scope_ref", None)
+    account_reader["expert_global"] = False
+    scope_cases.append(("ACCOUNT_GLOBAL с expert_global false", account_not_global,
+                        "AUTOMATION_STATE_EXPERT_GLOBAL_INVALID"))
+
+    component_wrong_kind = json.loads(json.dumps(GOOD_THIN))
+    component_wrong_kind["automation"]["state_reader"]["agent_scope"] = "AGENT_FROM_COMPONENT"
+    scope_cases.append(("AGENT_FROM_COMPONENT указывает на USER_SELECTED", component_wrong_kind,
+                        "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED"))
+
+    for label, case, code in scope_cases:
+        if any(e["code"] == code for e in check_report(case)["errors"]):
+            print("PASS: %s — поймано" % label)
+        else:
+            ok = False
+            print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+
+    component_modes_ready = True
+    for mode, expert_global in (("AGENT_USER_SELECTED", False),
+                                ("AGENT_USER_SELECTED", True),
+                                ("AGENT_FROM_COMPONENT", False),
+                                ("AGENT_FROM_COMPONENT", True)):
+        component_scope = json.loads(json.dumps(GOOD_THIN))
+        reader_case = component_scope["automation"]["state_reader"]
+        reader_case["agent_scope"] = mode
+        reader_case["expert_global"] = expert_global
+        if mode == "AGENT_FROM_COMPONENT":
+            component = component_scope["components"]["platform_agents"][0]
+            component["platform_agent_id"] = "agent_owner123456"
+            component.pop("binding_ref", None)
+        component_modes_ready = component_modes_ready and check_report(component_scope)["ready"]
+    if component_modes_ready:
+        print("PASS: оба компонентных скоупа принимают expert_global true|false независимо")
+    else:
+        ok = False
+        print("FAIL: компонентный скоуп ошибочно выводит expert_global")
+
+    account_global = json.loads(json.dumps(GOOD_THIN))
+    account_reader = account_global["automation"]["state_reader"]
+    account_reader["agent_scope"] = "ACCOUNT_GLOBAL"
+    account_reader.pop("agent_scope_ref", None)
+    account_reader["expert_global"] = True
+    if check_report(account_global)["ready"]:
+        print("PASS: ACCOUNT_GLOBAL без ссылки и с expert_global true проходит")
+    else:
+        ok = False
+        print("FAIL: корректный ACCOUNT_GLOBAL не прошёл")
 
     empty = check_report({"automation": {"automation_id": "", "name": {"ru": "", "en": ""}}})
     if any(e["code"] == "AUTOMATION_TEMPLATE_EMPTY" for e in empty["errors"]) and len(empty["errors"]) == 1:
