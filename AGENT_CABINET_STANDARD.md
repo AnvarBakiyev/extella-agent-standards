@@ -3,7 +3,7 @@
 Названия частей системы: `NAMING.md`. Кабинет = **Agent Cabinet**, парк = **Evolution Console**,
 полигон = **Evolution Lab**, цикл изменения = **Evolution Loop**, содержание агента = **Agent Genome**.
 
-Владелец: Анвар · Дата: 26.07.2026 · Версия: 1.1
+Владелец: Анвар · Дата: 09.08.2026 · Версия: 1.2
 Референс для сравнения: Microsoft Agent 365 (админ-центр управления агентами)
 
 ## 1. Зачем
@@ -216,7 +216,7 @@ MUST быть рядом и сравнимы:
 | Объект | Файл | Проверялка | Генератор кабинета |
 |---|---|---|---|
 | агент | `templates/agent_passport.yaml` | `tools/check_agent_passport.py` | `tools/build_agent_cabinet.py` (`extella.agent_cabinet.v1.1`) |
-| **автоматизация** | `templates/automation_passport.yaml` | `tools/check_automation_passport.py` (самопроверка 26/26) | `tools/build_automation_cabinet.py` (`extella.automation_cabinet.v1`, самопроверка 13/13) |
+| **автоматизация** | `templates/automation_passport.yaml` | `tools/check_automation_passport.py` (самопроверка 49/49) | `tools/build_automation_cabinet.py` (`extella.automation_cabinet.v1`, самопроверка 17/17) |
 | **ответ `/api/state`** | отдаёт сама служба | `tools/check_state_contract.py` (самопроверка 13/13) | — |
 
 Обязательное в паспорте автоматизации:
@@ -224,8 +224,9 @@ MUST быть рядом и сравнимы:
 1. **стабильный `automation_id`** — не имя и не путь; по имени связывать запрещено;
 2. **контракт состояния** `service.health` + `service.state` — без него Console показывала бы
    «порт отвечает» как «работает»;
-3. **состав**: платформенные агенты (каждый — со стабильным id и ожидаемым провайдером
-   `alibaba`), способности, расписания с явным видом (`external_cron | internal | in_service`),
+3. **состав**: платформенные агенты (каждый — со стабильным `component_id`, фактическим
+   `platform_agent_id` или `USER_SELECTED` и ожидаемым провайдером `alibaba`), способности,
+   расписания с явным видом (`external_cron | internal | in_service`),
    интеграции с ПРАВАМИ (см. §6.2), знания, правила;
 4. **границы** `limits` и **пояснение** `help_surface` — те же правила, что у агента (§3.20);
 5. **два языка** в названии и описаниях (§3.26);
@@ -253,6 +254,9 @@ Console работает на чужой машине. Порт `127.0.0.1` та
 | `expert` | имя эксперта-диспетчера, который отдаёт состояние |
 | `method` | метод внутри диспетчера, если у продукта есть таблица маршрутов |
 | `schema` | контракт ответа; незнакомая схема = «состояние недоступно», а не умолчания |
+| `agent_scope` | как получить `X-Agent-Id`: `AGENT_FROM_COMPONENT` / `AGENT_USER_SELECTED` / `ACCOUNT_GLOBAL` |
+| `agent_scope_ref` | стабильный `component_id` из состава; обязателен для первых двух режимов, запрещён для `ACCOUNT_GLOBAL` |
+| `expert_global` | точный флаг `global` Expert; обязательный boolean, не выводится из скоупа заголовка |
 | `execution_device` | стабильный id таргета, НА КОТОРОМ исполняется эксперт |
 | `data_device` | стабильный id таргета, ГДЕ лежат данные (у Баға это разные машины) |
 | `evidence` | сегодня единственное допустимое значение — `exact_target` |
@@ -267,11 +271,31 @@ Console работает на чужой машине. Порт `127.0.0.1` та
 - `evidence` обязателен, потому что закрепление одиночным `target` платформа игнорирует
   МОЛЧА: вызов идёт массивом `targets`, а ответ обязан нести id устройства.
 
-**Привязка агента может быть не id, а способом его узнать.** Агента выбирает пользователь
-на первом экране продукта (решение владельца 30.07.2026), поэтому компонент вправе объявить
-`platform_agent_id: USER_SELECTED` — и тогда обязателен `binding_ref` с адресом файла
-привязки на устройстве. Без него Console не прочитает фактический id и посчитает ссылку
-мёртвой.
+**Ссылка на агентский скоуп идёт через компонент, не через индекс и не через второй agent id.**
+Каждый элемент `components.platform_agents[]` получает непустой строковый `component_id`,
+уникальный в пределах паспорта. `agent_scope_ref` ссылается только на него: перестановка состава
+не ломает ссылку, а `platform_agent_id` продолжает жить в одном месте.
+
+Три режима закрыты:
+
+- `AGENT_FROM_COMPONENT` ссылается на компонент с точным `platform_agent_id` вида `agent_...`;
+- `AGENT_USER_SELECTED` ссылается на компонент с `platform_agent_id: USER_SELECTED`. У компонента
+  обязателен точный локатор `binding_ref` формы `<путь>:<поле>`, например
+  `~/extella_baga/agent_binding.json:agent_id`; путь без имени поля не разрешает привязку;
+- `ACCOUNT_GLOBAL` не несёт `agent_scope_ref` и допустим только с `expert_global: true`.
+
+Для двух компонентных режимов `expert_global` ортогонален скоупу: и `false`, и `true` допустимы,
+потому что в проде существуют оба сочетания. Флаг нельзя выводить из `agent_scope`.
+
+Переход fail-closed: отсутствие `agent_scope` пока даёт одно предупреждение
+`AUTOMATION_STATE_SCOPE_REQUIRED`, а Console показывает `STATE_READER_SCOPE_UNAVAILABLE` и не
+выбирает первого агента. Как только поле объявлено, неверные значения — ошибки:
+`AUTOMATION_STATE_SCOPE_INVALID`, `AUTOMATION_STATE_SCOPE_REF_REQUIRED`,
+`AUTOMATION_STATE_SCOPE_REF_UNRESOLVED`, `AUTOMATION_STATE_SCOPE_BINDING_REQUIRED`,
+`AUTOMATION_STATE_SCOPE_REF_FORBIDDEN`. Структуру v2 дополнительно защищают
+`AUTOMATION_AGENT_COMPONENT_ID_REQUIRED`, `AUTOMATION_AGENT_COMPONENT_ID_DUPLICATE`,
+`AUTOMATION_STATE_EXPERT_GLOBAL_REQUIRED`, `AUTOMATION_STATE_EXPERT_GLOBAL_INVALID`.
+После миграции шести продуктов предупреждение `AUTOMATION_STATE_SCOPE_REQUIRED` повышается до ошибки.
 
 ### 6.0в. Класс поверхности: что вообще показывать в парке
 
