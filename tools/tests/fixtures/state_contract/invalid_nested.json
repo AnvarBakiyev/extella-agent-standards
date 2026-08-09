@@ -1,0 +1,38 @@
+{
+  "enabled": true,
+  "active_version": "01.2.3",
+  "last_run": {
+    "at": "not-a-date",
+    "ts": "2026-08-10T09:14:00Z"
+  },
+  "last_result": [],
+  "last_error": {
+    "code": "",
+    "message_ru": 7
+  },
+  "schedules": [
+    null,
+    {
+      "id": " nightly ",
+      "active": 1,
+      "next_run": []
+    },
+    {
+      "id": "manual",
+      "active": false
+    }
+  ],
+  "checked_at": "2026-02-30T09:20:00Z",
+  "bound_to": {
+    "hosting_profile": "local",
+    "host": " ",
+    "platform_profile_id": false,
+    "account_ref": "ABCDEF12",
+    "agent_ids": [
+      "agent_owner123456",
+      "agent_owner123456",
+      false
+    ],
+    "since": "2026-13-10T09:20:00Z"
+  }
+}
