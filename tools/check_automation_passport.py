@@ -402,7 +402,7 @@ def check_report(doc):
                         target = matches[0]
                         raw_aid = target.get("platform_agent_id")
                         aid = raw_aid if isinstance(raw_aid, str) else ""
-                        if scope == AGENT_FROM_COMPONENT and not AGENT_ID_RE.match(aid):
+                        if scope == AGENT_FROM_COMPONENT and not AGENT_ID_RE.fullmatch(aid):
                             _issue(errors, "AUTOMATION_STATE_SCOPE_REF_UNRESOLVED",
                                    "automation.state_reader.agent_scope_ref",
                                    "AGENT_FROM_COMPONENT должен ссылаться на компонент с точным "
@@ -453,7 +453,7 @@ def check_report(doc):
                        "«~/extella_baga/agent_binding.json:agent_id»",
                        "binding_ref must be an exact «<path>:<field>» locator, for example "
                        "«~/extella_baga/agent_binding.json:agent_id»")
-        elif not AGENT_ID_RE.match(aid):
+        elif not AGENT_ID_RE.fullmatch(aid):
             _issue(errors, "AUTOMATION_AGENT_ID_INVALID", base + ".platform_agent_id",
                    "id «%s» не похож на стабильный идентификатор вида agent_..." % aid,
                    "id %r is not a stable identifier starting with agent_" % aid)
@@ -842,6 +842,15 @@ def selftest():
         " USER_SELECTED "
     scope_cases.append(("platform_agent_id с пробелами не считается точным", spaced_agent,
                         "AUTOMATION_STATE_SCOPE_BINDING_REQUIRED"))
+
+    newline_agent = json.loads(json.dumps(GOOD_THIN))
+    newline_agent["automation"]["state_reader"]["agent_scope"] = \
+        "AGENT_FROM_COMPONENT"
+    newline_component = newline_agent["components"]["platform_agents"][0]
+    newline_component["platform_agent_id"] = "agent_owner123456\n"
+    newline_component.pop("binding_ref", None)
+    scope_cases.append(("agent id с финальным newline не проходит regex", newline_agent,
+                        "AUTOMATION_AGENT_ID_INVALID"))
 
     ref_forbidden = json.loads(json.dumps(GOOD_THIN))
     ref_forbidden["automation"]["state_reader"]["agent_scope"] = "ACCOUNT_GLOBAL"
