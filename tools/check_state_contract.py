@@ -11,8 +11,9 @@
 Без этого выдача платному клиенту бессмысленна: он не отличит свой контур от чужого.
 
 Правило честности то же, что во всём продукте: **неизвестное значение — `null`, а не
-правдоподобная подстановка**. Проверялка требует, чтобы поле ПРИСУТСТВОВАЛО; `null` в нём —
-допустимый и честный ответ, отсутствие поля — ошибка.
+правдоподобная подстановка**. Проверялка требует, чтобы поле ПРИСУТСТВОВАЛО. `null`
+допустим только там, где его явно разрешает схема `extella.automation_state.v1`; в частности,
+`enabled` всегда является boolean-фактом.
 
 Как пользоваться:
   python3 check_state_contract.py ответ.json
@@ -23,14 +24,17 @@
 Коды выхода: 0 — контракт соблюдён, 1 — есть ошибки, 2 — ответ не прочитан.
 """
 import json
+import math
 import os
 import re
 import sys
+from datetime import datetime
 
-# Поля верхнего уровня: должны присутствовать всегда, значение может быть null.
+# Поля верхнего уровня присутствуют всегда; допустимость null задаётся правилом каждого поля.
 REQUIRED_STATE_FIELDS = ("enabled", "active_version", "last_run", "last_result",
                          "last_error", "schedules", "checked_at", "bound_to")
 HOSTING_PROFILES = {"local", "server", "client_server"}
+LAST_RESULTS = {"ok", "failed", "partial"}
 # bound_to: что именно клиент обязан увидеть про свою привязку.
 REQUIRED_BOUND_FIELDS = ("hosting_profile", "host", "platform_profile_id",
                          "account_ref", "agent_ids", "since")
@@ -39,7 +43,16 @@ REQUIRED_BOUND_FIELDS = ("hosting_profile", "host", "platform_profile_id",
 ACCOUNT_REF_RE = re.compile(r"^[0-9a-f]{8,32}$")
 # Похоже на живой секрет: длинная непрерывная строка из «токенных» символов.
 SECRET_LIKE_RE = re.compile(r"^[A-Za-z0-9_\-]{24,}$")
-ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")
+AGENT_ID_RE = re.compile(r"^agent_[A-Za-z0-9_\-]{6,64}$")
+ISO_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?"
+    r"(?:Z|[+-]\d{2}:\d{2})?$"
+)
+SEMVER_RE = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?"
+    r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+)
 
 
 def _issue(errors, code, path, ru, en):
@@ -50,6 +63,116 @@ def _issue(errors, code, path, ru, en):
 def _warn(warns, code, path, ru, en):
     warns.append({"code": code, "severity": "warning", "path": path,
                   "message_ru": ru, "message_en": en})
+
+
+def _is_number(value):
+    """JSON number, but never bool (bool is a subclass of int in Python)."""
+    return (isinstance(value, (int, float)) and not isinstance(value, bool)
+            and math.isfinite(value))
+
+
+def _is_iso_timestamp(value):
+    """The exact timestamp syntax used by Console, plus a real calendar-date check."""
+    if (not isinstance(value, str) or value != value.strip()
+            or len(value) > 160 or not ISO_RE.fullmatch(value)):
+        return False
+    try:
+        # Keep compatibility with Python versions whose fromisoformat does not accept Z.
+        datetime.fromisoformat(value[:-1] + "+00:00" if value.endswith("Z") else value)
+    except ValueError:
+        return False
+    return True
+
+
+def _is_semver(value):
+    """SemVer 2.0.0, aligned with the Console parser (including prerelease/build)."""
+    if not isinstance(value, str) or value != value.strip():
+        return False
+    match = SEMVER_RE.fullmatch(value)
+    if not match:
+        return False
+    for identifier in (match.group(4) or "").split("."):
+        if identifier.isdigit() and len(identifier) > 1 and identifier.startswith("0"):
+            return False
+    return True
+
+
+def _is_nonblank_string(value):
+    return isinstance(value, str) and bool(value.strip()) and value == value.strip()
+
+
+def _is_timestamp(value):
+    return _is_number(value) or _is_iso_timestamp(value)
+
+
+def _check_last_run(value, errors):
+    if value is None or _is_timestamp(value):
+        return
+    if isinstance(value, dict):
+        # Console gives `at` precedence when both keys exist. Invalid `at` therefore cannot be
+        # hidden behind a valid `ts` fallback.
+        key = "at" if "at" in value else "ts" if "ts" in value else None
+        if key and _is_timestamp(value.get(key)):
+            return
+        path = "last_run." + key if key else "last_run"
+        _issue(errors, "STATE_LAST_RUN_INVALID", path,
+               "last_run-объект обязан содержать корректную ISO 8601/числовую метку at или ts",
+               "a last_run object must contain a valid ISO 8601/numeric at or ts timestamp")
+        return
+    _issue(errors, "STATE_LAST_RUN_INVALID", "last_run",
+           "last_run обязан быть ISO 8601 строкой, конечным числом, объектом с at/ts или null",
+           "last_run must be an ISO 8601 string, finite number, object with at/ts, or null")
+
+
+def _check_last_error(value, errors):
+    if value is None:
+        return
+    if not isinstance(value, dict):
+        _issue(errors, "STATE_ERROR_SHAPE", "last_error",
+               "last_error обязан быть объектом {code, message_ru, message_en} или null",
+               "last_error must be an object {code, message_ru, message_en} or null")
+        return
+    for field in ("code", "message_ru", "message_en"):
+        if not isinstance(value.get(field), str) or not value[field].strip():
+            _issue(errors, "STATE_ERROR_%s_REQUIRED" % field.upper(),
+                   "last_error." + field,
+                   "у ошибки нет строкового «%s» — ошибка обязана быть с кодом и на двух "
+                   "языках (§3.26)" % field,
+                   "the error has no string «%s» — errors ship with a code and in both "
+                   "languages (§3.26)" % field)
+
+
+def _check_schedules(value, errors):
+    if not isinstance(value, list):
+        _issue(errors, "STATE_SCHEDULES_SHAPE", "schedules",
+               "schedules обязан быть массивом", "schedules must be an array")
+        return
+    for index, schedule in enumerate(value):
+        base = "schedules[%d]" % index
+        if not isinstance(schedule, dict):
+            _issue(errors, "STATE_SCHEDULE_SHAPE", base,
+                   "расписание обязано быть объектом",
+                   "each schedule must be an object")
+            continue
+        if not _is_nonblank_string(schedule.get("id")):
+            _issue(errors, "STATE_SCHEDULE_ID_REQUIRED", base + ".id",
+                   "у расписания нет стабильного строкового id",
+                   "the schedule has no stable string id")
+        if not isinstance(schedule.get("active"), bool):
+            _issue(errors, "STATE_SCHEDULE_ACTIVE_REQUIRED", base + ".active",
+                   "active обязан быть boolean-фактом",
+                   "active must be a boolean fact")
+        if "next_run" not in schedule:
+            _issue(errors, "STATE_SCHEDULE_NEXT_RUN_REQUIRED", base + ".next_run",
+                   "next_run обязан присутствовать; неизвестное значение передаётся как null",
+                   "next_run must be present; an unknown value is represented as null")
+        else:
+            next_run = schedule.get("next_run")
+            valid_string = isinstance(next_run, str) and bool(next_run.strip())
+            if next_run is not None and not _is_number(next_run) and not valid_string:
+                _issue(errors, "STATE_SCHEDULE_NEXT_RUN_INVALID", base + ".next_run",
+                       "next_run обязан быть непустой строкой, конечным числом или null",
+                       "next_run must be a non-empty string, finite number, or null")
 
 
 def _check_bound_to(bound, errors, warns):
@@ -75,21 +198,29 @@ def _check_bound_to(bound, errors, warns):
                    "different things: write null" % field)
 
     hosting = bound.get("hosting_profile")
-    if hosting is not None and str(hosting).strip().lower() not in HOSTING_PROFILES:
+    if hosting is not None and (
+            not isinstance(hosting, str) or hosting not in HOSTING_PROFILES):
         _issue(errors, "BOUND_TO_HOSTING_INVALID", "bound_to.hosting_profile",
                "размещение «%s» неизвестно — допустимо: %s"
                % (hosting, ", ".join(sorted(HOSTING_PROFILES))),
                "hosting_profile %r is unknown — allowed: %s"
                % (hosting, ", ".join(sorted(HOSTING_PROFILES))))
 
+    for field in ("host", "platform_profile_id"):
+        value = bound.get(field)
+        if value is not None and not _is_nonblank_string(value):
+            _issue(errors, "BOUND_TO_%s_INVALID" % field.upper(), "bound_to." + field,
+                   "«%s» обязан быть непустой строкой или null" % field,
+                   "«%s» must be a non-empty string or null" % field)
+
     ref = bound.get("account_ref")
-    if ref is not None:
-        if not ACCOUNT_REF_RE.match(str(ref)):
-            _issue(errors, "BOUND_TO_ACCOUNT_REF_INVALID", "bound_to.account_ref",
-                   "account_ref обязан быть коротким необратимым отпечатком аккаунта (8–32 hex), "
-                   "а не токеном и не адресом почты — состояние отдаётся клиенту",
-                   "account_ref must be a short irreversible account fingerprint (8–32 hex), not a "
-                   "token and not an e-mail — the state is served to the client")
+    if ref is not None and (
+            not isinstance(ref, str) or not ACCOUNT_REF_RE.fullmatch(ref)):
+        _issue(errors, "BOUND_TO_ACCOUNT_REF_INVALID", "bound_to.account_ref",
+               "account_ref обязан быть коротким необратимым отпечатком аккаунта (8–32 hex), "
+               "а не токеном и не адресом почты — состояние отдаётся клиенту",
+               "account_ref must be a short irreversible account fingerprint (8–32 hex), not a "
+               "token and not an e-mail — the state is served to the client")
 
     # Секрет в состоянии — утечка клиенту. Проверяем весь блок, а не одно поле.
     for key, value in bound.items():
@@ -110,12 +241,26 @@ def _check_bound_to(bound, errors, warns):
             _warn(warns, "BOUND_TO_AGENT_IDS_EMPTY", "bound_to.agent_ids",
                   "список агентов пуст — клиент не увидит, чей мозг работает в его автоматизации",
                   "the agent list is empty — the client cannot see which agent runs the automation")
+        else:
+            seen = set()
+            for index, agent_id in enumerate(agent_ids):
+                path = "bound_to.agent_ids[%d]" % index
+                if not isinstance(agent_id, str) or not AGENT_ID_RE.fullmatch(agent_id):
+                    _issue(errors, "BOUND_TO_AGENT_ID_INVALID", path,
+                           "agent_ids содержит не стабильный platform agent id вида agent_...",
+                           "agent_ids contains a value that is not a stable agent_... platform id")
+                elif agent_id in seen:
+                    _issue(errors, "BOUND_TO_AGENT_ID_DUPLICATE", path,
+                           "один platform agent id указан в привязке дважды",
+                           "the same platform agent id appears in the binding twice")
+                else:
+                    seen.add(agent_id)
 
     since = bound.get("since")
-    if since is not None and not ISO_RE.match(str(since)):
-        _warn(warns, "BOUND_TO_SINCE_FORMAT", "bound_to.since",
-              "дата привязки не в формате ISO 8601 — Console не сможет её сравнить",
-              "the binding date is not ISO 8601 — the Console cannot compare it")
+    if since is not None and not _is_iso_timestamp(since):
+        _issue(errors, "BOUND_TO_SINCE_FORMAT", "bound_to.since",
+               "дата привязки не в формате ISO 8601 — Console не сможет её сравнить",
+               "the binding date is not ISO 8601 — the Console cannot compare it")
 
 
 def check_report(doc):
@@ -134,27 +279,44 @@ def check_report(doc):
                    "the state has no «%s» field — the Console must tell «unknown» from «none», so "
                    "the field must exist even when null" % field)
 
-    err = doc.get("last_error")
-    if isinstance(err, dict):
-        for field in ("code", "message_ru", "message_en"):
-            if not str(err.get(field) or "").strip():
-                _issue(errors, "STATE_ERROR_%s_REQUIRED" % field.upper(), "last_error." + field,
-                       "у ошибки нет «%s» — ошибка обязана быть с кодом и на двух языках (§3.26)"
-                       % field,
-                       "the error has no «%s» — errors ship with a code and in both languages "
-                       "(§3.26)" % field)
-    elif err is not None:
-        _issue(errors, "STATE_ERROR_SHAPE", "last_error",
-               "last_error обязан быть объектом {code, message_ru, message_en} или null",
-               "last_error must be an object {code, message_ru, message_en} or null")
+    if "enabled" in doc and not isinstance(doc.get("enabled"), bool):
+        _issue(errors, "STATE_ENABLED_TYPE", "enabled",
+               "enabled обязан быть boolean-фактом true/false",
+               "enabled must be a true/false boolean fact")
+
+    if "active_version" in doc:
+        version = doc.get("active_version")
+        if version is not None and not _is_semver(version):
+            _issue(errors, "STATE_ACTIVE_VERSION_INVALID", "active_version",
+                   "active_version обязан быть SemVer 2.0.0 строкой или null",
+                   "active_version must be a SemVer 2.0.0 string or null")
+
+    if "last_run" in doc:
+        _check_last_run(doc.get("last_run"), errors)
+
+    if "last_result" in doc:
+        result = doc.get("last_result")
+        if result is not None and (
+                not isinstance(result, str) or result not in LAST_RESULTS):
+            _issue(errors, "STATE_LAST_RESULT_INVALID", "last_result",
+                   "last_result обязан быть ok, failed, partial или null",
+                   "last_result must be ok, failed, partial, or null")
+
+    if "last_error" in doc:
+        _check_last_error(doc.get("last_error"), errors)
+
+    if "schedules" in doc:
+        _check_schedules(doc.get("schedules"), errors)
 
     if "bound_to" in doc:
         _check_bound_to(doc.get("bound_to"), errors, warns)
 
-    checked = doc.get("checked_at")
-    if checked is not None and not ISO_RE.match(str(checked)):
-        _warn(warns, "STATE_CHECKED_AT_FORMAT", "checked_at",
-              "checked_at не в формате ISO 8601", "checked_at is not ISO 8601")
+    if "checked_at" in doc:
+        checked = doc.get("checked_at")
+        if checked is not None and not _is_iso_timestamp(checked):
+            _issue(errors, "STATE_CHECKED_AT_FORMAT", "checked_at",
+                   "checked_at не в формате ISO 8601 или не null",
+                   "checked_at is neither an ISO 8601 timestamp nor null")
 
     return {"ready": not errors, "errors": errors, "warnings": warns}
 
@@ -165,7 +327,8 @@ GOOD = {
     "last_run": {"at": "2026-07-28T09:14:00Z", "kind": "campaign"},
     "last_result": "ok",
     "last_error": None,
-    "schedules": [{"id": "campaigns_birthday", "active": True}],
+    "schedules": [{"id": "campaigns_birthday", "active": True,
+                   "next_run": "2026-07-29T09:00:00Z"}],
     "checked_at": "2026-07-28T09:20:00Z",
     "bound_to": {
         "hosting_profile": "local",
@@ -205,6 +368,43 @@ RULE_CHECKS = [
     ("нет даты привязки", "BOUND_TO_SINCE_MISSING"),
 ]
 
+# Regression fixture for the exact hole this revision closes. Before strict validation every
+# value below passed because only top-level field presence was checked.
+STRICT_BAD = {
+    "enabled": "yes",
+    "active_version": {},
+    "last_run": {"garbage": 1},
+    "last_result": "error",
+    "last_error": {"code": 17, "message_ru": "ошибка", "message_en": "error"},
+    "schedules": [{"id": "nightly", "active": "true"}],
+    "checked_at": 1770000000,
+    "bound_to": {
+        "hosting_profile": "LOCAL",
+        "host": 8766,
+        "platform_profile_id": "",
+        "account_ref": 12345678,
+        "agent_ids": ["not-an-agent"],
+        "since": 1770000000,
+    },
+}
+
+STRICT_RULE_CHECKS = [
+    ("enabled не boolean", "STATE_ENABLED_TYPE"),
+    ("active_version не SemVer", "STATE_ACTIVE_VERSION_INVALID"),
+    ("last_run без at/ts", "STATE_LAST_RUN_INVALID"),
+    ("last_result вне enum", "STATE_LAST_RESULT_INVALID"),
+    ("код last_error не строка", "STATE_ERROR_CODE_REQUIRED"),
+    ("active расписания не boolean", "STATE_SCHEDULE_ACTIVE_REQUIRED"),
+    ("у расписания нет next_run", "STATE_SCHEDULE_NEXT_RUN_REQUIRED"),
+    ("hosting_profile не точный enum", "BOUND_TO_HOSTING_INVALID"),
+    ("host не строка", "BOUND_TO_HOST_INVALID"),
+    ("platform_profile_id пуст", "BOUND_TO_PLATFORM_PROFILE_ID_INVALID"),
+    ("account_ref не hex-строка", "BOUND_TO_ACCOUNT_REF_INVALID"),
+    ("agent_ids содержит не platform id", "BOUND_TO_AGENT_ID_INVALID"),
+    ("since не ISO 8601", "BOUND_TO_SINCE_FORMAT"),
+    ("checked_at не ISO 8601", "STATE_CHECKED_AT_FORMAT"),
+]
+
 
 def selftest():
     print("Самопроверка контракта состояния (включая привязку bound_to):")
@@ -221,6 +421,16 @@ def selftest():
     bad_codes = {e["code"] for e in check_report(json.loads(json.dumps(BAD)))["errors"]}
     for label, code in RULE_CHECKS:
         if code in bad_codes:
+            print("PASS: %s — поймано" % label)
+        else:
+            ok = False
+            print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+
+    strict_codes = {
+        e["code"] for e in check_report(json.loads(json.dumps(STRICT_BAD)))["errors"]
+    }
+    for label, code in STRICT_RULE_CHECKS:
+        if code in strict_codes:
             print("PASS: %s — поймано" % label)
         else:
             ok = False
@@ -253,7 +463,10 @@ def selftest():
         ok = False
         print("FAIL: bound_to: null целиком — НЕ поймано")
 
-    for e in check_report(BAD)["errors"] + check_report(BAD)["warnings"]:
+    bilingual_issues = (check_report(BAD)["errors"] + check_report(BAD)["warnings"]
+                        + check_report(STRICT_BAD)["errors"]
+                        + check_report(STRICT_BAD)["warnings"])
+    for e in bilingual_issues:
         if not e.get("message_ru") or not e.get("message_en"):
             ok = False
             print("FAIL: сообщение без одного из языков: %s" % e["code"])

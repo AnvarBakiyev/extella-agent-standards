@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "active_version": null,
+  "last_run": null,
+  "last_result": null,
+  "last_error": null,
+  "schedules": [],
+  "checked_at": null,
+  "bound_to": {
+    "hosting_profile": null,
+    "host": null,
+    "platform_profile_id": null,
+    "account_ref": null,
+    "agent_ids": null,
+    "since": null
+  }
+}
