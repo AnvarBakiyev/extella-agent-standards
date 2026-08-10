@@ -7,14 +7,28 @@
 # через несколько часов после написания, потому что правило сменилось, а проверка нет.
 #
 # Использование:
-#   bash tools/run_all_gates.sh            # все самопроверки
-#   bash tools/run_all_gates.sh --quiet    # только итог и провалы
+#   bash tools/run_all_gates.sh                    # все самопроверки (как раньше)
+#   bash tools/run_all_gates.sh --quiet            # только итог и провалы
+#   bash tools/run_all_gates.sh --stage demo       # только то, что требует стадия
+#
+# Про --stage. Прежде тут гонялись все гейты всегда, и это была та самая полная цена
+# «сразу как в проде»: на показе клиенту она стоила дороже продукта. Объём берётся у
+# tools/stage_gates.py, чтобы список жил в одном месте (stages.yaml), а не в двух.
 #
 # Коды выхода: 0 — все зелёные, 1 — есть провалившиеся.
 set -u
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-QUIET="${1:-}"
+QUIET=""
+STAGE=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --quiet) QUIET="--quiet" ;;
+    --stage) STAGE="${2:-}"; shift ;;
+    *) echo "неизвестный аргумент: $1" >&2; exit 2 ;;
+  esac
+  shift
+done
 FAILED=""
 OK=0
 
@@ -32,6 +46,21 @@ run() {
 }
 
 printf "\n\033[1mСамопроверки стандартов Extella\033[0m\n"
+
+run stage_gates          # сам файл стадий обязан быть цел, иначе объём считается неверно
+
+if [ -n "$STAGE" ]; then
+  # Стадия задана — гоняем ровно её набор. Ошибку неизвестной стадии выдаёт stage_gates.py.
+  LIST="$(python3 "$ROOT/tools/stage_gates.py" --stage "$STAGE" --json)" || exit 1
+  printf "  стадия %s\n" "$STAGE"
+  for gate in $(printf '%s' "$LIST" | python3 -c "import json,sys; print(' '.join(json.load(sys.stdin)['гейты']))"); do
+    run "$gate"
+  done
+  printf "\n\033[1mИТОГ (стадия %s):\033[0m " "$STAGE"
+  if [ -z "$FAILED" ]; then echo "зелёных $OK, провалов нет"; exit 0; fi
+  echo "зелёных $OK, ПРОВАЛИЛИСЬ:$FAILED"
+  exit 1
+fi
 
 run check_agent_passport
 run check_automation_passport
