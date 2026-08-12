@@ -27,6 +27,7 @@
 Коды выхода: 0 — договор соблюдён, 1 — расхождение.
 """
 import json
+import os
 import re
 import sys
 import urllib.request
@@ -38,14 +39,40 @@ from pathlib import Path
 #
 #   python3 check_ui_api_contract.py <путь-к-продукту> [порт]
 #
-REG_DIR = Path.home() / "extella-plugins" / "_registry"
+# Тулбар и плагины — уходящий канал доставки; канонический — Extella OS (решение
+# владельца 12.08.2026). Поэтому источник истины об интерфейсе теперь САМ ПРОДУКТ:
+# `ui:` в его паспорте (файл + порт). Реестр карточек остаётся необязательным
+# запасным источником для продуктов, которые ещё живут в тулбаре, и его отсутствие
+# больше не мешает проверке. Путь переопределяется EXTELLA_CARDS_DIR.
+REG_DIR = Path(os.environ.get("EXTELLA_CARDS_DIR")
+               or Path.home() / "extella-plugins" / "_registry")
+
+
+def из_паспорта(root: Path):
+    """Интерфейс и порт, объявленные продуктом. Первый источник, не запасной."""
+    for имя in ("docs/automation_passport.yaml", "docs/agent_passport.yaml",
+                "automation_passport.yaml", "agent_passport.yaml"):
+        путь = root / имя
+        if not путь.is_file():
+            continue
+        try:
+            import yaml
+            doc = yaml.safe_load(путь.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        ui = (doc.get("ui") or (doc.get("automation") or {}).get("ui") or {})
+        файл, порт = str(ui.get("file") or ""), str(ui.get("port") or "")
+        if файл and (root / файл).exists():
+            return root / файл, порт or None
+    return None, None
 
 
 def guess(root: Path, port_arg: str | None):
-    """Файл интерфейса и порт: из карточки плагина, иначе по обычным местам."""
+    """Файл интерфейса и порт: из паспорта продукта, потом карточка, потом обычные места."""
     port = port_arg
-    ui = None
-    for card in sorted(REG_DIR.glob("*.json")) if REG_DIR.exists() else []:
+    ui, порт_паспорта = из_паспорта(root)
+    port = port or порт_паспорта
+    for card in (sorted(REG_DIR.glob("*.json")) if (ui is None and REG_DIR.exists()) else []):
         try:
             d = json.loads(card.read_text(encoding="utf-8"))
         except Exception:
