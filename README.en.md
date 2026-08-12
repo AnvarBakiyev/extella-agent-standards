@@ -57,9 +57,11 @@ fast work dangerous:
 
 ## Where to start
 
+**One entry point: [README.md](README.md)** (Russian) — it is written for an assistant to
+execute and links everything else. There is no separate "getting started" file.
+
 | File | What it answers |
 |---|---|
-| `START_HERE.md` | entry point |
 | `AGENT_BUILD_GUIDE.md` | how to build one — read it whole |
 | `BUILD_STAGES.md` | stages, stop-rules, how a building chat should behave |
 | `DEPLOY_REQUIREMENTS.md` | delivery channels, sections A–H, acceptance before publishing |
