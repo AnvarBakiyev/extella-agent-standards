@@ -144,9 +144,17 @@ def main(argv):
         return 1
     import glob
     drifted = 0
-    files = sorted(glob.glob(os.path.join(ROOT, "passports", "*.yaml")))
+    # Публичный репозиторий стандартов не хранит паспорта живых продуктов: они
+    # раскрывают состав аккаунта. Путь задаётся EXTELLA_PASSPORTS_DIR (у нас — приватный
+    # портал); по умолчанию ./passports, где лежит только обезличенный образец.
+    каталог = os.environ.get("EXTELLA_PASSPORTS_DIR") or os.path.join(ROOT, "passports")
+    files = [f for f in sorted(glob.glob(os.path.join(каталог, "*.yaml")))
+             if not os.path.basename(f).startswith("EXAMPLE")]
     if not files:
-        print("паспортов нет — сверять не с чем")
+        # Не «0», а честный отказ: иначе сверка дрейфа выглядит пройденной,
+        # ничего не сверив. Каталог называем — чтобы было видно, где искали.
+        print(f"ПРОПУЩЕНО: паспортов не найдено в {каталог}. "
+              f"Укажите EXTELLA_PASSPORTS_DIR — иначе дрейф не проверяется.")
         return 0
     for f in files:
         with open(f, encoding="utf-8") as fh:

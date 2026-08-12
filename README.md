@@ -1,3 +1,5 @@
+**English:** [README.en.md](README.en.md) — what this is and how to start.
+
 # Стандарты агентов Extella
 
 Здесь лежит всё, по чему строится агент Extella, и проверялки, которые говорят, готов он
