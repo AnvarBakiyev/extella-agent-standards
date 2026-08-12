@@ -1,24 +1,34 @@
+# ОБРАЗЕЦ паспорта агента — для чтения и копирования.
+#
+# Паспорта живых продуктов в этом репозитории НЕ хранятся: они раскрывают состав
+# аккаунта компании. Свои паспорта держите там, где вам удобно, и указывайте путь
+# переменной EXTELLA_PASSPORTS_DIR — гейты (`check_agent_drift`,
+# `build_capability_registry`) читают её. Без неё сверка дрейфа честно сообщает,
+# что паспортов не нашла, и ничего не проверяет.
+#
+# Файлы с именем EXAMPLE* гейтами пропускаются намеренно.
+
 ---
 # Паспорт написан 29.07.2026 ПО ФАКТУ: права и модель сняты живым agent/get, а не взяты
 # из документа. Решение Анвара — сначала фотография, потом уборка.
 agent:
-  name: "Kazakh Lawyer"
-  platform_agent_id: "agent_Lu25PvPrKqLn1rqINlbA_"  # canon-ok: паспорт описывает ИМЕННО этого агента
+  name: "Example agent"
+  platform_agent_id: "agent_EXAMPLE0000000000"  # canon-ok: паспорт описывает ИМЕННО этого агента
   owner: "Анвар (CEO Extella)"
-  business_goal: "Контрактный юрист для малого бизнеса Казахстана: разбор договора по живому ГК, замечания и согласование правок."
+  business_goal: "Подбирает и бронирует туры для примерна: живой поиск по Tourvisor, ответы клиенту, контроль заявок."
   model_profile: "qwen-3.7"        # живая модель: qwen3.7-max-2026-06-08
   version: "0.1.0"
   languages: ["ru", "en"]
   hosting_profile: "client_server"
   immutable_bundle_id: "pack-62997fe"
-  data_classification: "contract_pii"
+  daex_classification: "personal_example_pii"
 
 capabilities:
-  - name: "kazakh_lawyer_main"
+  - name: "example_main"
     version: "0.1.0"
-    what: "Контрактный юрист для малого бизнеса Казахстана: разбор договора по живому ГК, замечания и согласование правок."
+    what: "Подбирает и бронирует туры для примерна: живой поиск по Tourvisor, ответы клиенту, контроль заявок."
     kind: "expert"
-    ref: "kz_contract_review"
+    ref: "ex_wa_inbound_tick"
     scope: "agent"
     global: false
     permissions: []
