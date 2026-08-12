@@ -34,7 +34,11 @@ from build_capability_registry import find_passports
 
 HERE = Path(__file__).resolve().parents[1]
 TABLE = HERE / "surface_classes.yaml"
-DEFAULT_REGISTRY = Path.home() / "extella-plugins" / "_registry"
+# Каталог карточек уходящего тулбара. Канонический канал — Extella OS, поэтому путь
+# настраивается (EXTELLA_CARDS_DIR), а его отсутствие — не провал: проверка объявленных
+# классов работает и без установленных карточек.
+DEFAULT_REGISTRY = Path(os.environ.get("EXTELLA_CARDS_DIR")
+                        or Path.home() / "extella-plugins" / "_registry")
 PASSPORT_ROOTS = [Path.home() / "Documents"]
 CLASSES = {"automation", "system", "installed_app", "probe"}
 
