@@ -652,7 +652,7 @@ BAD_STATE = {
         "state_reader": {"expert": "", "schema": "",
                          "params": {"secret": "нет такого параметра",
                                     "body_json": "ya29AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"},
-                         "execution_device": "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4",
+                         "execution_device": "00000000-0000-4000-8000-000000000001",
                          "data_device": "",
                          "evidence": "поверьте на слово"},
         "limits": ["наружу не пишет"], "help_surface": "кнопка «?» в панели",
