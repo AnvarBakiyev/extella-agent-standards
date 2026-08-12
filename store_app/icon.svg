@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Палитра светлой темы правила по дизайну: бумага #FAF9F5, акцент #C57E33, чернила #0A0A0A.
+       Линейный знак, без градиентов и теней: раскрытое руководство и строки текста. -->
+  <rect width="512" height="512" rx="96" fill="#FAF9F5"/>
+  <rect x="1" y="1" width="510" height="510" rx="95" fill="none" stroke="#D7E0DC" stroke-width="2"/>
+  <g fill="none" stroke="#0A0A0A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 150 C 214 124, 168 118, 128 122 L128 372 C 168 368, 214 374, 256 400"/>
+    <path d="M256 150 C 298 124, 344 118, 384 122 L384 372 C 344 368, 298 374, 256 400"/>
+  </g>
+  <g fill="none" stroke="#C57E33" stroke-width="12" stroke-linecap="round">
+    <path d="M168 186 L222 192"/>
+    <path d="M168 232 L222 238"/>
+    <path d="M168 278 L206 282"/>
+    <path d="M290 192 L344 186"/>
+    <path d="M290 238 L344 232"/>
+    <path d="M290 282 L328 278"/>
+  </g>
+  <path d="M256 150 L256 400" fill="none" stroke="#0A0A0A" stroke-width="14" stroke-linecap="round"/>
+</svg>
