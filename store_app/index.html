@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Разработка на Extella</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --a:#D4944A;--petrol:#5FA8A0;
+  --bg:#0A0A0A;--s1:#141414;--s2:#181818;--s3:#1E1E1E;
+  --bd:rgba(243,238,229,.09);--bd2:rgba(243,238,229,.18);
+  --tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C;
+  --r:5px;
+  --serif:'Source Serif 4','Lora',Georgia,serif;
+  --sans:'Source Sans 3',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+}
+:root[data-lm="1"]{
+  --a:#C57E33;--petrol:#2F6B66;
+  --bg:#FAF9F5;--s1:#FFFFFF;--s2:#F5F3EC;--s3:#EFECE2;
+  --bd:#D7E0DC;--bd2:#B7CEC9;
+  --tx:#0A0A0A;--tx2:#2A2A2A;--tx3:#8C8C8C;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:28px 22px 64px}
+
+h1{font-family:var(--serif);font-weight:600;font-size:26px;line-height:1.2;letter-spacing:0;margin:0 0 10px}
+h2{font-family:var(--serif);font-weight:600;font-size:20px;line-height:1.25;letter-spacing:0;margin:0}
+h3{font-family:var(--serif);font-weight:600;font-size:15px;line-height:1.3;margin:20px 0 6px}
+.lead{font-size:17px;color:var(--tx2);margin:0 0 4px}
+p{margin:0 0 12px;color:var(--tx2)}
+p.tight{margin-bottom:6px}
+strong{color:var(--tx);font-weight:600}
+a{color:var(--a);text-decoration:none;border-bottom:1px solid var(--bd2)}
+ul,ol{margin:0 0 12px;padding-left:20px;color:var(--tx2)}
+li{margin-bottom:6px}
+
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);margin:0 0 4px}
+.search{width:100%;font-family:var(--sans);font-size:14px;color:var(--tx);background:var(--s1);
+  border:1px solid var(--bd2);border-radius:var(--r);padding:9px 12px;margin:16px 0 6px}
+.search::placeholder{color:var(--tx3)}
+.count{font-family:var(--mono);font-size:11px;color:var(--tx3);min-height:16px;margin-bottom:14px}
+
+section{background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;overflow:hidden}
+.head{display:flex;align-items:baseline;gap:10px;padding:14px 16px;cursor:pointer;user-select:none}
+.head:hover{background:var(--s2)}
+.num{font-family:var(--mono);font-size:11px;color:var(--tx3);min-width:16px}
+.head .sub{font-size:13px;color:var(--tx3);margin-left:auto;text-align:right}
+.body{padding:0 16px 16px 42px;display:none}
+section.open .body{display:block}
+.chev{width:9px;height:9px;border-right:1px solid var(--tx3);border-bottom:1px solid var(--tx3);
+  transform:rotate(45deg);flex:0 0 auto;margin-top:6px;transition:transform .12s}
+section.open .chev{transform:rotate(-135deg)}
+
+.cmd{position:relative;background:var(--s3);border:1px solid var(--bd);border-radius:var(--r);
+  padding:34px 12px 11px;margin:8px 0 14px}
+.cmd code{font-family:var(--mono);font-size:12px;color:var(--tx);white-space:pre-wrap;word-break:break-word;display:block}
+.copy{position:absolute;top:8px;right:8px;font-family:var(--sans);font-size:12px;
+  color:var(--tx2);background:transparent;border:1px solid var(--bd2);border-radius:4px;
+  padding:4px 9px;cursor:pointer}
+.copy:hover{color:var(--tx);border-color:var(--a)}
+.copy[data-done="1"]{color:var(--petrol);border-color:var(--petrol)}
+.copy-note{font-size:12px;color:var(--tx3);margin:-8px 0 12px}
+
+code.inl{font-family:var(--mono);font-size:12px;background:var(--s3);border-radius:4px;padding:1px 5px;color:var(--tx)}
+
+.note{border-left:2px solid var(--a);padding:2px 0 2px 12px;margin:12px 0;font-size:13px;color:var(--tx2)}
+.note strong{color:var(--tx)}
+.trap{border-left:2px solid var(--petrol);padding:2px 0 2px 12px;margin:12px 0;font-size:13px;color:var(--tx2)}
+
+table{width:100%;border-collapse:collapse;margin:8px 0 14px;font-size:13px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--bd);color:var(--tx2);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);font-weight:400}
+td strong{color:var(--tx)}
+
+.empty{font-size:13px;color:var(--tx3);padding:14px 2px}
+footer{margin-top:26px;font-size:13px;color:var(--tx3)}
+footer a{color:var(--a)}
+mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0 2px}
+:root[data-lm="1"] mark{background:rgba(197,126,51,.2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="label">руководство</p>
+  <h1>Разработка на Extella</h1>
+  <p class="lead">Как построить агента, довести его до магазина и не сломать чужое по дороге</p>
+  <p>Это не стиль-гайд, а рабочий канон: почти каждое правило здесь куплено настоящей поломкой.
+  Быстрее всего — отдать это своему Claude Code или Codex со словами «настройся по этой
+  инструкции и сделай мне такого-то агента». Он выполнит, а ты прочитаешь то, что тебе важно.</p>
+
+  <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
+  <div class="count" id="count"></div>
+  <div class="empty" id="empty" style="display:none">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
+
+  <section class="open">
+    <div class="head"><span class="num">01</span><h2>С чего начать</h2><span class="chev"></span></div>
+    <div class="body">
+      <p>Порядок один и тот же, кем бы ты ни был. Отличается только объём проверок, и его считает
+      машина, а не человек.</p>
+      <h3>Токен — это действие человека</h3>
+      <p>Токен выдаёт себе владелец аккаунта в интерфейсе Extella. Ассистент его не создаёт и не
+      просит переслать в чат: токен полноправный, им можно удалить агента.</p>
+      <h3>Подключение Extella как MCP-сервера</h3>
+      <div class="cmd"><button class="copy">Копировать</button><code>claude mcp add --transport http extella https://api.extella.ai/mcp/ --header "X-Auth-Token: ТВОЙ_ТОКЕН"</code></div>
+      <p class="copy-note">Подставь свой токен вместо заглушки. В историю чата он попадать не должен.</p>
+      <h3>Проверка связи фактом</h3>
+      <p>Первым делом попроси список агентов. Пустой список — это ответ, а не поломка: значит агентов
+      ещё нет. Ошибка авторизации — значит токен или заголовок неверные.</p>
+      <h3>Сколько проверок применимо именно тебе</h3>
+      <div class="cmd"><button class="copy">Копировать</button><code>python3 tools/stage_gates.py --stage build --json</code></div>
+      <p>Стадий две. <strong>Стройка</strong> — от первой строки до работающей вещи у заказчика:
+      две обязательных проверки. <strong>Прод</strong> — продаётся любому покупателю, ошибка стоит
+      денег: двадцать одна. Остальное включают <strong>факты</strong>, а не ярлыки: появились данные
+      клиента — включается маскирование; продукт едет на чужую машину — паспорт, узкие права,
+      контракт состояния.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="num">02</span><h2>Канон платформы</h2><span class="chev"></span></div>
+    <div class="body">
+      <p>Шесть вещей, нарушение которых ломается не у тебя, а у клиента.</p>
+      <h3>Модель одна для всех клиентских агентов</h3>
+      <p>Платформенная модель, а не свой ключ от чужого поставщика. Продукт, показанный на чужой
+      модели, — нечестный тест: у покупателя он поведёт себя иначе.</p>
+      <h3>Скоуп решает всё</h3>
+      <p>У каждого агента свой мир. Эксперт, который зовётся и работает, может не показываться в
+      списке — и наоборот. Проверять доступность именем у конкретного агента, а не по флагу и не
+      по списку.</p>
+      <div class="trap"><strong>Ловушка:</strong> признак «общий» не означает «видят все агенты».
+      Есть живой эксперт с этим признаком, которого два других агента не находят вовсе.</div>
+      <h3>Если код зовёт эксперта — эксперт обязан ехать с кодом</h3>
+      <p>Самый частый класс «работает у нас, молча не работает у клиента»: движок жил у автора, а
+      клиентам раскладывался код, который в него стучится.</p>
+      <h3>Свежий агент рождается с полными правами</h3>
+      <p>Включая удаление других агентов. Сузить инструменты — обязательный шаг, а не улучшение.
+      У нас уже приезжал продукт, умевший снести агента покупателя.</p>
+      <h3>Отложенный прогон возвращает номер задачи</h3>
+      <p>Таймаут не означает провал. Забирай результат по номеру задачи, а не считай вызов
+      неудачным: на этом теряли дни.</p>
+      <h3>Факт о платформе старше суток — перепроверяй</h3>
+      <p>Живая схема менялась дважды за один день. Вчерашняя запись — не основание остановить
+      работу.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="num">03</span><h2>Порядок стройки</h2><span class="chev"></span></div>
+    <div class="body">
+      <p><strong>Сначала способность, интерфейс сверху.</strong> Строй умение через агента и его
+      экспертов, докажи живым прогоном, и только потом делай поверхность.</p>
+      <p>Причина простая: поверхность меняется чаще способности. Готовая способность переживает
+      смену поверхности без переделки, а красивый экран без доказанной способности переделывается
+      целиком. Старую поверхность держи запасной, пока новая не доказана живым сценарием.</p>
+      <h3>Роль агента живёт файлом</h3>
+      <p>Инструкция — файл в репозитории, прошивается целиком, у изменения есть версия и путь
+      назад. Менять своего агента можно всегда. Запрещено не изменение, а изменение бесследное —
+      и любое изменение чужого живого.</p>
+      <h3>Проверка обязана уметь падать</h3>
+      <p>Сломай нарочно одно поле и убедись, что сверка это увидела. Проверка, которая не может
+      провалиться, хуже отсутствия проверки: она даёт ложную уверенность.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="num">04</span><h2>Путь до магазина</h2><span class="chev"></span></div>
+    <div class="body">
+      <p>Листинг собирается из независимых частей, и брать можно любой поднабор. Развилка
+      «архив или страница» — ложная: одна версия несёт и то, и другое.</p>
+      <table>
+        <tr><th>часть</th><th>лимит</th><th>что даёт покупателю</th></tr>
+        <tr><td><strong>Агент</strong></td><td>—</td><td>разворачивается его собственный агент со всеми правилами, памятью и экспертами</td></tr>
+        <tr><td><strong>Архив</strong></td><td>до 100 МБ</td><td>локальная часть: служба, данные, ключи, доступ к файлам</td></tr>
+        <tr><td><strong>Страница</strong></td><td>HTML до 3 МБ, zip до 20 МБ</td><td>окно интерфейса и ярлык на столе</td></tr>
+        <tr><td><strong>Установщик</strong></td><td>—</td><td>эксперт, который разворачивает локальную часть</td></tr>
+        <tr><td><strong>Иконка</strong></td><td>до 5 МБ</td><td>значок в магазине</td></tr>
+      </table>
+      <p>Решает один вопрос: <strong>где живут данные</strong>. Нельзя уезжать с машины — значит
+      есть архив. Всё остальное — следствие.</p>
+
+      <h3>Права приложения объявляются при публикации</h3>
+      <div class="note"><strong>Пустые права = продукт молча мёртв.</strong> Страница откроется
+      целой, а каждый вызов агента вернёт отказ. По умолчанию не выдаётся ничего.</div>
+      <p>Проси минимум: покупатель читает список прав до покупки и может отозвать их в любой
+      момент. Значит отказ в правах — <strong>штатное состояние</strong> продукта, которое надо
+      назвать словами, а не показать пустым экраном.</p>
+      <p>Отдельное право — запуск на компьютере покупателя. Без него закрепление за устройством
+      вырезается, и эксперт уходит в облако: там нет ни локальных файлов, ни ключей.</p>
+
+      <h3>Скорость решает архитектуру</h3>
+      <p>Вызов со страницы до устройства — <strong>от тринадцати до семнадцати секунд</strong>.
+      Локальный мост отвечал за шесть миллисекунд. Значит не двадцать мелких запросов, а
+      <strong>один вызов-снимок</strong>: собери состояние на устройстве и отдай одним ответом.
+      Перенос «как есть» даёт неработоспособный интерфейс.</p>
+
+      <h3>Порядок сдачи</h3>
+      <ol>
+        <li>архив без секретов — он уезжает покупателю целиком;</li>
+        <li>права объявлены и минимальны;</li>
+        <li>предрелиз: продукт виден только автору;</li>
+        <li>покупка себе и установка;</li>
+        <li><strong>первый запуск чистым состоянием</strong> — без твоих конфигов;</li>
+        <li>один сценарий живьём от начала до конца;</li>
+        <li>остановка. Кнопку публикации жмёт человек: это необратимо и видно всем.</li>
+      </ol>
+      <p>Ключи самого клиента — внешние сервисы, номера, учётные системы — <strong>не
+      блокер</strong>. Продукт без них обязан быть честным, а не сломанным: попроси ключ в
+      онбординге и скажи словами, что пока не подключено.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="num">05</span><h2>Границы, которые не переходят</h2><span class="chev"></span></div>
+    <div class="body">
+      <p>Быстро — не значит «можно всё». Эти шесть правил дешёвые, и именно их нарушение делает
+      быструю работу опасной.</p>
+      <table>
+        <tr><td><strong>Наружу — только черновики</strong></td><td>письма, платежи, публикации готовит агент, отправляет человек</td></tr>
+        <tr><td><strong>Данные клиента — в контуре клиента</strong></td><td>на показе можно: клиент сам их дал. Нельзя выносить в облако, в архив магазина, в чужой показ</td></tr>
+        <tr><td><strong>Без разрушающих прав</strong></td><td>никакого удаления у клиентского агента без написанной причины</td></tr>
+        <tr><td><strong>Чужое живое не трогать</strong></td><td>свой агент развивается со следом и откатом, чужие объекты не меняются вовсе</td></tr>
+        <tr><td><strong>Секреты не едут</strong></td><td>архив уезжает покупателю целиком, ассеты страницы публичны</td></tr>
+        <tr><td><strong>Отказ виден словами</strong></td><td>пустой экран — дефект на любой стадии: человек решит, что продукт сломан</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="num">06</span><h2>Грабли, на которые наступают все</h2><span class="chev"></span></div>
+    <div class="body">
+      <h3>Подстановка в видимом тексте</h3>
+      <p>Платформа заменяет свои метки настоящими значениями. Если написать такую метку в
+      <strong>видимом</strong> тексте страницы, пользователь увидит чужой токен вместо примера.
+      Литералы пиши мнемониками.</p>
+      <h3>Асимметрия записи и чтения</h3>
+      <p>Эксперт пишется одним набором полей, а читается другим. Сверка, написанная по интуиции,
+      читает пустоту и <strong>всегда зелёная</strong>. Сравнивай по содержимому.</p>
+      <h3>Страница, добавленная после покупки</h3>
+      <p>Ярлык ставится в момент установки. Добавил интерфейс позже — на столе останется только
+      агент, и человек решит, что окна нет. Лечится переустановкой.</p>
+      <h3>Ассеты берутся от последней версии</h3>
+      <p>Покупатель закреплён за своей версией страницы, а картинки и стили получает от свежей.
+      Значит менять их можно только совместимо, иначе сломаешь тех, кто купил раньше.</p>
+      <h3>Установщик, который ждёт ответа</h3>
+      <p>Любой вопрос в консоли — повисшая покупка. Установщик неинтерактивен и возвращает
+      честный код: списание происходит после установки, поэтому честный отказ дешевле молчания.</p>
+      <h3>Работа во временной папке</h3>
+      <p>Ветка, живущая только в системной временной папке, исчезает вместе с ней. Пушь сразу,
+      а не в конце: так почти потерялся целый день работы.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="head"><span class="num">07</span><h2>Готовый промпт для ассистента</h2><span class="chev"></span></div>
+    <div class="body">
+      <p>Скопируй и отдай своему Claude Code или Codex. Дальше он сделает сам.</p>
+      <div class="cmd"><button class="copy">Копировать</button><code>Настройся по стандартам Extella и построй мне агента.
+
+1. Склонируй github.com/AnvarBakiyev/extella-agent-standards и прочитай README.md целиком — это единый вход. Потом DEPLOY_REQUIREMENTS.md раздел H и BUILD_STAGES.md.
+2. Токен я дам сам. Не проси переслать его в чат и не создавай своих.
+3. Объяви стадию и факты, объём проверок возьми у машины: python3 tools/stage_gates.py --stage build --json
+4. Строй сначала способность через агента и его экспертов, докажи живым прогоном, интерфейс делай сверху.
+5. Сузь инструменты агента — свежий агент рождается с правом удалять других.
+6. Доведи до предрелиза сам: права объявлены, покупка себе, установка, первый запуск чистым состоянием. Остановись перед публикацией — эту кнопку нажму я.
+7. Отчёт тремя частями: закрыл / не моё / не закрыл честно.
+
+Стоп-правила: наружу только черновики, данные клиента только в контуре клиента, без разрушающих прав, чужое живое не трогать, секреты не едут в архив, отказ виден словами.</code></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Полный канон, машинные проверки и разборы поломок —
+    <a href="https://github.com/AnvarBakiyev/extella-agent-standards" target="_blank" rel="noopener">github.com/AnvarBakiyev/extella-agent-standards</a>.
+    Проверки там же: они и есть спецификация, а не текст рядом с ней.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  // Тема приходит от хоста, своего переключателя нет.
+  function applyTheme(t){
+    if(t === 'light') document.documentElement.setAttribute('data-lm','1');
+    else document.documentElement.removeAttribute('data-lm');
+  }
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if (d.type === 'etb_theme') applyTheme(d.theme);
+    if (d.type === 'etb_init')  applyTheme(d.theme);
+  });
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
+
+  var sections = [].slice.call(document.querySelectorAll('section'));
+
+  sections.forEach(function(s){
+    s.querySelector('.head').addEventListener('click', function(){ s.classList.toggle('open'); });
+  });
+
+  // Копирование: подпись кнопки обещает ровно то, что произойдёт, а отказ говорит, что делать.
+  document.addEventListener('click', function(e){
+    var b = e.target;
+    if (!b.classList || !b.classList.contains('copy')) return;
+    var text = b.parentNode.querySelector('code').textContent;
+    var было = 'Копировать';
+    function ok(){ b.textContent = 'Скопировано'; b.dataset.done = '1';
+      setTimeout(function(){ b.textContent = было; b.dataset.done = ''; }, 1600); }
+    function нет(){ b.textContent = 'Выдели и скопируй сам'; b.dataset.done = '';
+      setTimeout(function(){ b.textContent = было; }, 2600); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, нет);
+    } else {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        var done = document.execCommand('copy'); document.body.removeChild(ta);
+        done ? ok() : нет();
+      } catch (err) { нет(); }
+    }
+  });
+
+  // Поиск: показывает только подходящие разделы и раскрывает их.
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  var empty = document.getElementById('empty');
+  var исходный = sections.map(function(s){ return s.innerHTML; });
+
+  function снять(){
+    sections.forEach(function(s,i){ s.innerHTML = исходный[i];
+      s.querySelector('.head').addEventListener('click', function(){ s.classList.toggle('open'); }); });
+  }
+  // Подсветка идёт по текстовым узлам, а не по элементам: иначе абзацы с выделениями
+  // внутри молча пропускаются, и человек видит одну метку там, где совпадений пять.
+  function подсветить(корень, слово){
+    var walker = document.createTreeWalker(корень, NodeFilter.SHOW_TEXT, {
+      acceptNode: function(n){
+        if (!n.nodeValue || n.nodeValue.toLowerCase().indexOf(слово) < 0) return NodeFilter.FILTER_REJECT;
+        var p = n.parentNode.nodeName;
+        if (p === 'SCRIPT' || p === 'STYLE' || p === 'MARK' || p === 'CODE') return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var узлы = [], n;
+    while ((n = walker.nextNode())) узлы.push(n);
+    узлы.forEach(function(узел){
+      var текст = узел.nodeValue, низ = текст.toLowerCase(), поз = 0, куски = document.createDocumentFragment(), i;
+      while ((i = низ.indexOf(слово, поз)) >= 0) {
+        if (i > поз) куски.appendChild(document.createTextNode(текст.slice(поз, i)));
+        var m = document.createElement('mark');
+        m.textContent = текст.slice(i, i + слово.length);
+        куски.appendChild(m);
+        поз = i + слово.length;
+      }
+      if (поз < текст.length) куски.appendChild(document.createTextNode(текст.slice(поз)));
+      узел.parentNode.replaceChild(куски, узел);
+    });
+  }
+
+  q.addEventListener('input', function(){
+    var слово = q.value.trim().toLowerCase();
+    снять();
+    if (!слово) {
+      sections.forEach(function(s,i){ s.style.display = ''; s.classList.toggle('open', i === 0); });
+      count.textContent = ''; empty.style.display = 'none';
+      return;
+    }
+    var найдено = 0;
+    sections.forEach(function(s){
+      var есть = s.textContent.toLowerCase().indexOf(слово) >= 0;
+      s.style.display = есть ? '' : 'none';
+      s.classList.toggle('open', есть);
+      if (есть) { найдено++; подсветить(s, слово); }
+    });
+    count.textContent = найдено ? ('разделов: ' + найдено) : '';
+    empty.style.display = найдено ? 'none' : '';
+  });
+})();
+</script>
+</body>
+</html>
