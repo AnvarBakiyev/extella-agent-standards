@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Решения</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--a:#D4944A;--petrol:#5FA8A0;--bg:#0A0A0A;--s1:#141414;--s2:#181818;--s3:#1E1E1E;
+  --bd:rgba(243,238,229,.09);--bd2:rgba(243,238,229,.18);--tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C;
+  --r:5px;--serif:'Source Serif 4',Georgia,serif;--sans:'Source Sans 3',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace}
+:root[data-lm="1"]{--a:#C57E33;--petrol:#2F6B66;--bg:#FAF9F5;--s1:#FFFFFF;--s2:#F5F3EC;
+  --s3:#EFECE2;--bd:#D7E0DC;--bd2:#B7CEC9;--tx:#0A0A0A;--tx2:#2A2A2A;--tx3:#8C8C8C}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.55}
+.wrap{max-width:720px;margin:0 auto;padding:26px 22px 60px}
+h1{font-family:var(--serif);font-weight:600;font-size:26px;margin:0 0 4px}
+.lead{font-size:15px;color:var(--tx2);margin:0 0 18px}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);margin:0 0 4px}
+input,textarea,select{font-family:var(--sans);font-size:14px;color:var(--tx);background:var(--s1);
+  border:1px solid var(--bd2);border-radius:var(--r);padding:9px 12px;width:100%}
+textarea{min-height:64px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.row > *{flex:1 1 140px}
+.btn{font:600 14px var(--sans);color:var(--tx);background:transparent;border:1px solid var(--bd2);
+  border-radius:var(--r);padding:9px 15px;cursor:pointer;flex:0 0 auto}
+.btn.main{background:var(--a);border-color:var(--a);color:#0A0A0A}
+.btn[disabled]{opacity:.55;cursor:progress}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:14px 16px;margin:10px 0}
+.d{border-left:2px solid var(--bd2);padding-left:12px;margin:12px 0}
+.d.ждёт{border-left-color:var(--a)}
+.d.закрыто{opacity:.5}
+.d .т{font-size:15px;color:var(--tx)}
+.d .м{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:3px}
+.статус{font-family:var(--mono);font-size:11px;color:var(--tx3);margin:14px 0}
+.статус b{color:var(--petrol);font-weight:500}
+.пусто{color:var(--tx3);font-size:13px;padding:16px 0}
+.ошибка{border-left:2px solid var(--a);padding-left:12px;color:var(--tx2);font-size:13px;margin:12px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="label">издание для основателя</p>
+  <h1>Решения</h1>
+  <p class="lead">Что решено, когда и когда это пора перепроверить. Всё лежит на этом
+  компьютере и никуда не уходит.</p>
+
+  <div class="card">
+    <textarea id="текст" placeholder="Что решено. Одной фразой, как сказал бы вслух"></textarea>
+    <div class="row">
+      <input id="тема" placeholder="Тема: издания, найм, платформа">
+      <select id="срок">
+        <option value="0">перепроверять не надо</option>
+        <option value="1">перепроверить завтра</option>
+        <option value="7" selected>через неделю</option>
+        <option value="30">через месяц</option>
+      </select>
+      <button class="btn main" id="записать">Записать</button>
+    </div>
+  </div>
+
+  <input id="поиск" placeholder="Найти среди решений" style="margin-top:14px">
+  <div class="статус" id="статус">открываю журнал…</div>
+  <div id="список"></div>
+</div>
+
+<script>
+var EXT = { app_token: "{{app_token}}" };
+var УСТРОЙСТВО = "";          // подставляется при сборке издания: закрепление за машиной
+var снимок = null;            // всё, что пришло одним вызовом; дальше работаем без сети
+
+function applyTheme(t){
+  if (t === 'light') document.documentElement.setAttribute('data-lm','1');
+  else document.documentElement.removeAttribute('data-lm');
+}
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type === 'etb_theme' || d.type === 'etb_init') applyTheme(d.theme);
+});
+if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
+
+function текстом(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+function статус(т, хорошо){
+  document.getElementById('статус').innerHTML = хорошо ? '<b>'+текстом(т)+'</b>' : текстом(т);
+}
+
+// Один вызов-снимок: до устройства идти 13-17 секунд, поэтому ходим туда редко
+// и приносим всё сразу. Дальше поиск и отрисовка — мгновенно, без сети.
+function позвать(параметры){
+  if (!EXT.app_token || EXT.app_token.indexOf('{'+'{') === 0) {
+    return Promise.reject(new Error('страница открыта не через ярлык Extella'));
+  }
+  var тело = { app_token: EXT.app_token, expert_name: 'fnd_journal', params: параметры };
+  if (УСТРОЙСТВО) тело.targets = [УСТРОЙСТВО];
+  return fetch('https://os.extella.ai/api/app-agent/run', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(тело)
+  }).then(function(r){ return r.text().then(function(t){
+      if (r.status === 403) throw new Error('нет права «запускать экспертов на устройстве» — '
+        + 'включите его в правах приложения, журнал лежит на вашей машине');
+      if (!r.ok) throw new Error('платформа ответила ' + r.status);
+      var d = JSON.parse(t), res = d.result;
+      return typeof res === 'string' ? JSON.parse(res) : res;
+  }); });
+}
+
+function нарисовать(){
+  var слово = document.getElementById('поиск').value.trim().toLowerCase();
+  var все = (снимок && снимок['решения']) || [];
+  var видимые = слово ? все.filter(function(р){
+      return (р['текст']+' '+р['тема']).toLowerCase().indexOf(слово) >= 0; }) : все;
+  var узел = document.getElementById('список');
+  if (!видимые.length) {
+    узел.innerHTML = '<div class="пусто">' +
+      (все.length ? 'Ничего не нашлось — сотрите запрос.'
+                  : 'Пока пусто. Запишите первое решение — потом спасибо себе скажете.') +
+      '</div>';
+    return;
+  }
+  var сегодня = new Date().toISOString().slice(0,10);
+  узел.innerHTML = видимые.map(function(р){
+    var ждёт = !р['закрыто'] && р['перепроверить'] && р['перепроверить'] <= сегодня;
+    var классы = 'd' + (ждёт ? ' ждёт' : '') + (р['закрыто'] ? ' закрыто' : '');
+    var метка = р['когда'] + ' · ' + текстом(р['тема'])
+      + (ждёт ? ' · ПОРА ПЕРЕПРОВЕРИТЬ' : (р['перепроверить'] ? ' · проверить ' + р['перепроверить'] : ''))
+      + (р['закрыто'] ? ' · закрыто' : '');
+    return '<div class="'+классы+'"><div class="т">'+текстом(р['текст'])+'</div>'
+         + '<div class="м">'+метка+'</div></div>';
+  }).join('');
+}
+
+function обновить(сообщение){
+  статус(сообщение || 'иду на ваш компьютер за журналом… это до 15 секунд');
+  return позвать({ действие: 'список' }).then(function(с){
+    снимок = с;
+    нарисовать();
+    var ж = (с['пора_перепроверить'] || []).length;
+    статус('решений ' + с['всего'] + ' · открытых ' + с['открытых']
+           + (ж ? ' · пора перепроверить: ' + ж : '') + ' · журнал на вашей машине', true);
+  }).catch(function(e){
+    document.getElementById('список').innerHTML =
+      '<div class="ошибка">' + текстом(e.message) + '</div>';
+    статус('журнал не открылся');
+  });
+}
+
+document.getElementById('поиск').addEventListener('input', нарисовать);
+
+document.getElementById('записать').onclick = function(){
+  var кнопка = this, текст = document.getElementById('текст');
+  if (!текст.value.trim()) { текст.focus(); return; }
+  кнопка.disabled = true; кнопка.textContent = 'Записываю…';
+  позвать({ действие: 'добавить', текст: текст.value,
+            тема: document.getElementById('тема').value,
+            перепроверить_через: document.getElementById('срок').value })
+    .then(function(){ текст.value = ''; return обновить('записано, перечитываю журнал…'); })
+    .catch(function(e){ статус('не записалось: ' + e.message); })
+    .then(function(){ кнопка.disabled = false; кнопка.textContent = 'Записать'; });
+};
+
+обновить();
+</script>
+</body>
+</html>
