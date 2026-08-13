@@ -200,7 +200,7 @@ HTML ≤ 3 МБ или zip с `index.html` в корне ≤ 20 МБ) и `icon`.
 |---|---|
 | [`BUILD_STAGES.md`](BUILD_STAGES.md) | стадии, стоп-правила, какие проверки включает какой факт масштаба |
 | [`DEPLOY_REQUIREMENTS.md`](DEPLOY_REQUIREMENTS.md) | каналы доставки, разделы A–H, приёмка перед публикацией, замеры платформы |
-| [`AGENT_BUILD_GUIDE.md`](AGENT_BUILD_GUIDE.md) | метод «прочитай факт → миграция → гейт → живая проверка», решения при стройке и канон |
+| [`AGENT_BUILD_GUIDE.md`](AGENT_BUILD_GUIDE.md) | решения при стройке, канон, цикл «построил → проверил → починил» и метод работы с большим артефактом |
 | [`PUBLISH_YOUR_AGENT.md`](PUBLISH_YOUR_AGENT.md) | как оформить репозиторий, чтобы агента поставили одной ссылкой |
 | [`AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) · [`EVOLUTION_PHILOSOPHY.md`](EVOLUTION_PHILOSOPHY.md) | зачем система устроена именно так |
 | `tools/` | **проверялки — и есть спецификация**; у каждой `--selftest` |
