@@ -99,8 +99,18 @@ function позвать(параметры){
       if (r.status === 403) throw new Error('нет права «запускать экспертов на устройстве» — '
         + 'включите его в правах приложения, журнал лежит на вашей машине');
       if (!r.ok) throw new Error('платформа ответила ' + r.status);
+      // Платформа заворачивает ответ дважды: шлюз ОС кладёт ответ ядра в result,
+      // а ядро кладёт результат эксперта в свой result — строкой. Разворачиваем
+      // до дна и только потом разбираем.
       var d = JSON.parse(t), res = d.result;
-      return typeof res === 'string' ? JSON.parse(res) : res;
+      if (res && typeof res === 'object' && 'result' in res) res = res.result;
+      if (typeof res === 'string') {
+        try { res = JSON.parse(res); }
+        catch (e) { throw new Error('журнал ответил непонятным: ' + String(res).slice(0, 80)); }
+      }
+      if (!res || typeof res !== 'object') throw new Error('журнал вернул пустой ответ');
+      if (res['ошибка']) throw new Error(res['ошибка']);
+      return res;
   }); });
 }
 
@@ -132,6 +142,10 @@ function нарисовать(){
 function обновить(сообщение){
   статус(сообщение || 'иду на ваш компьютер за журналом… это до 15 секунд');
   return позвать({ действие: 'список' }).then(function(с){
+    // Успехом считаем не «пришёл ответ», а «ответ той формы, что мы ждём».
+    if (typeof с['всего'] !== 'number') {
+      throw new Error('журнал ответил не тем: нет числа решений. Обновите приложение');
+    }
     снимок = с;
     нарисовать();
     var ж = (с['пора_перепроверить'] || []).length;
