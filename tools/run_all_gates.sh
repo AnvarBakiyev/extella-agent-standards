@@ -92,6 +92,7 @@ run check_manifest_copies
 run check_surface_classes
 run check_app_scopes
 run check_edition
+run check_compose
 run deploy_edition
 run build_agent_cabinet
 run build_automation_cabinet
