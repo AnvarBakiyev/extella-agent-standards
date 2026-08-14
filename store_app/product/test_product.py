@@ -17,6 +17,10 @@ spec = importlib.util.spec_from_file_location("codex_setup", HERE / "codex_setup
 codex_setup = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(codex_setup)
 
+deploy_spec = importlib.util.spec_from_file_location("deploy_product", HERE / "deploy_product.py")
+deploy_product = importlib.util.module_from_spec(deploy_spec)
+deploy_spec.loader.exec_module(deploy_product)
+
 
 class ProductTests(unittest.TestCase):
     def test_archive_contains_local_marketplace_and_valid_hashes(self):
@@ -56,6 +60,17 @@ class ProductTests(unittest.TestCase):
         self.assertIn("/api/add-version-stream/", source)
         self.assertNotIn("/api/publish-stream", source)
         self.assertNotIn("/publish\"", source)
+
+    def test_live_acceptance_unwraps_two_result_envelopes(self):
+        value = deploy_product.unwrap_run_result({
+            "result": {"result": json.dumps({
+                "status": "success",
+                "code": "ready",
+                "model_called": False,
+                "agent_called": False,
+            })}
+        })
+        self.assertEqual(value["code"], "ready")
 
 
 if __name__ == "__main__":
