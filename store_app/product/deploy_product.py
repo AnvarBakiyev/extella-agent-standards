@@ -20,7 +20,7 @@ import uuid
 OS_BASE = "https://os.extella.ai"
 CORE_BASE = "https://api.extella.ai"
 LISTING_ID = "880d12e4-f082-486e-b92a-57e4eb09866d"
-VERSION = "3.0.2"
+VERSION = "3.0.3"
 SCOPES = ["expert.run", "device.run"]
 SETUP_STEPS = ("preflight", "install", "credentials", "bridge", "verify")
 HERE = pathlib.Path(__file__).resolve().parent
