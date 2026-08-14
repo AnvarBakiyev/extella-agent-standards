@@ -223,7 +223,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняе�
     if (!appTokenГотов()) {
       return Promise.reject(new Error('Обнови приложение в магазине: эта версия ещё не умеет устанавливать Codex.'));
     }
-    return fetch('https://os.extella.ai/api/app-agent/run', {
+    return fetch('/api/app-agent/run', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({

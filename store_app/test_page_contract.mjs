@@ -31,6 +31,7 @@ test("shell contains one build-time app token marker", () => {
 });
 
 test("one click runs every reviewed no-model setup step in order", () => {
+  assert.match(template, /fetch\('\/api\/app-agent\/run'/);
   assert.match(
     template,
     /\['preflight', 'install', 'credentials', 'bridge', 'verify'\]/,
