@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Подготовить установочный Expert и версию 3.0.0 существующего листинга.
+"""Подготовить установочный Expert и новую версию существующего листинга.
 
 По умолчанию только показывает план. `--prepare-agent` сохраняет и перечитывает
 Expert у канонического source-agent, но не меняет магазин. `--add-version`
-добавляет page + archive + минимальные права как предрелиз. Необратимый endpoint
-Publish здесь намеренно отсутствует: его вызывает только человек.
+добавляет page + Expert + минимальные права. У опубликованного листинга это публичный
+релиз и требует явного `--allow-public-version`; Publish здесь намеренно отсутствует.
 """
 
 import argparse
@@ -20,7 +20,7 @@ import uuid
 OS_BASE = "https://os.extella.ai"
 CORE_BASE = "https://api.extella.ai"
 LISTING_ID = "880d12e4-f082-486e-b92a-57e4eb09866d"
-VERSION = "3.0.3"
+VERSION = "3.0.4"
 SCOPES = ["expert.run", "device.run"]
 SETUP_STEPS = ("preflight", "install", "credentials", "bridge", "verify")
 HERE = pathlib.Path(__file__).resolve().parent
@@ -224,13 +224,13 @@ def verify_version(item: dict) -> None:
             raw_scopes = []
     if set(raw_scopes) != set(SCOPES) or version.get("archive_ext") or int(version.get("expert_count") or 0) < 1:
         raise DeployError("версия появилась, но страница, права или Expert не совпали")
-    print(f"Предрелиз {VERSION} добавлен и подтверждён чтением: page + 1 Expert + 2 права")
+    print(f"Версия {VERSION} добавлена и подтверждена чтением: page + 1 Expert + 2 права")
 
 
 def version_record(item: dict) -> dict:
     matches = [version for version in item.get("versions", []) if version.get("version") == VERSION]
     if len(matches) != 1 or not matches[0].get("id"):
-        raise DeployError(f"предрелиз {VERSION} не найден чтением состояния")
+        raise DeployError(f"версия {VERSION} не найдена чтением состояния")
     return matches[0]
 
 
@@ -242,10 +242,10 @@ def purchase(item: dict, agent_id: str) -> None:
         body={"deploy_mode": "existing", "target_agent_id": agent_id},
     )
     if status != 200:
-        raise DeployError(f"покупка предрелиза ответила HTTP {status}")
+        raise DeployError(f"покупка версии ответила HTTP {status}")
     done = stream_done(raw)
     print(
-        "Предрелиз установлен владельцу: "
+        "Версия установлена владельцу: "
         + ("ярлык создан" if done.get("webapp_shortcut") else "ярлык не подтверждён потоком")
     )
 
@@ -279,7 +279,7 @@ def accept(*, grant_rights: bool, setup_action: str | None) -> None:
     if not match or len(match.group(1)) < 40:
         raise DeployError("страница не получила app_token")
     if "['preflight', 'install', 'credentials', 'bridge', 'verify']" not in page:
-        raise DeployError(f"установлена прежняя страница: предрелиз {VERSION} ещё не выбран")
+        raise DeployError(f"установлена прежняя страница: версия {VERSION} ещё не выбрана")
     app_token = match.group(1)
 
     status, raw = request(OS_BASE, f"/api/app-permissions/{LISTING_ID}")
