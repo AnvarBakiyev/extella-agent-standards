@@ -62,6 +62,7 @@ class ProductTests(unittest.TestCase):
         self.assertNotIn("/publish\"", source)
         self.assertIn('VERSION = "3.0.3"', source)
         self.assertIn('files={"page": PAGE}', source)
+        self.assertIn("--allow-public-version", source)
 
     def test_live_acceptance_unwraps_two_result_envelopes(self):
         value = deploy_product.unwrap_run_result({

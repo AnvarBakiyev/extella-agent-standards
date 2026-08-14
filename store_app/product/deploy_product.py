@@ -184,9 +184,14 @@ def prepare_agent(agent_id: str) -> None:
     print("Expert установки: записан в source-agent и сверен посимвольно")
 
 
-def add_version(item: dict, agent_id: str) -> None:
+def add_version(item: dict, agent_id: str, allow_public_version: bool) -> None:
     if any(version.get("version") == VERSION for version in item.get("versions", [])):
         raise DeployError(f"версия {VERSION} уже существует; состояние надо перечитать, а не повторять")
+    if item.get("published") is True and not allow_public_version:
+        raise DeployError(
+            "листинг уже опубликован: add-version сразу станет публичным. "
+            "После явного решения владельца повтори с --allow-public-version"
+        )
     if not PAGE.is_file():
         raise DeployError(f"нет собранного файла {PAGE.name}")
     fields = {
@@ -333,6 +338,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare-agent", action="store_true")
     parser.add_argument("--add-version", action="store_true")
+    parser.add_argument("--allow-public-version", action="store_true")
     parser.add_argument("--purchase", action="store_true")
     parser.add_argument("--verify-version", action="store_true")
     parser.add_argument("--accept", action="store_true")
@@ -349,7 +355,7 @@ def main() -> int:
     if args.prepare_agent:
         prepare_agent(agent_id)
     if args.add_version:
-        add_version(listing(), agent_id)
+        add_version(listing(), agent_id, args.allow_public_version)
     if args.verify_version:
         verify_version(listing())
     if args.purchase:
