@@ -464,7 +464,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняе�
 
   document.getElementById('codex-connect').onclick = function(){
     var кнопка = this, было = 'Подключить Codex';
-    var шаги = ['preflight', 'prepare', 'install', 'credentials', 'bridge', 'verify'];
+    var шаги = ['preflight', 'install', 'credentials', 'bridge', 'verify'];
     кнопка.disabled = true;
     кнопка.textContent = 'Подключаю…';
     состояниеCodex('Проверяю Codex, ставлю подписанный мост и связываю аккаунт. Это может занять несколько минут.');

@@ -33,7 +33,7 @@ test("shell contains one build-time app token marker", () => {
 test("one click runs every reviewed no-model setup step in order", () => {
   assert.match(
     template,
-    /\['preflight', 'prepare', 'install', 'credentials', 'bridge', 'verify'\]/,
+    /\['preflight', 'install', 'credentials', 'bridge', 'verify'\]/,
   );
   assert.match(template, /params: \{action: action\}/);
 });
