@@ -91,6 +91,15 @@ footer a{color:var(--a)}
 .btn[data-done="1"]{border-color:var(--petrol);color:var(--petrol)}
 .btn.main[data-done="1"]{background:transparent}
 
+.codex{background:var(--s2);border:1px solid var(--bd2);border-radius:6px;
+  padding:14px 16px;margin:14px 0 16px}
+.codex-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.codex h3{margin:0 0 3px;font-size:17px}
+.codex p{margin:0;font-size:13px}
+.codex-state{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:9px;min-height:18px}
+.codex-state.ok{color:var(--petrol)}
+.codex-state.bad{color:var(--a)}
+
 .news{background:var(--s2);border:1px solid var(--bd);border-radius:6px;
   padding:14px 16px;margin:12px 0 0;display:none}
 .news.open{display:block}
@@ -116,6 +125,17 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   <div class="stale" id="устарело"></div>
   <div class="news" id="новости"></div>
 
+  <div class="codex" id="codex-card">
+    <div class="codex-row">
+      <div>
+        <h3>Codex ↔ Extella</h3>
+        <p>Одна установка на этом Mac. Проверки и подключение не запускают модель.</p>
+      </div>
+      <button class="btn main" id="codex-connect">Подключить Codex</button>
+    </div>
+    <div class="codex-state" id="codex-state">Готов к проверке. Реальные запросы в Codex могут расходовать план или API.</div>
+  </div>
+
   <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
   <div class="count" id="count"></div>
   <div class="empty" id="empty" style="display:none">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
@@ -135,8 +155,9 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
 // Содержимое подставляется сборщиком из content.json — единственного источника правды.
 // Оболочка отдаётся магазином, текст живёт в репозитории и обновляется коммитом.
 var СНИМОК = /*СОДЕРЖИМОЕ*/null/*КОНЕЦ*/;
+var APP_TOKEN = /*APP_TOKEN*/"";
 var ИСТОЧНИК = "https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/store_app/content.json";
-var ВЕРСИЯ_ОБОЛОЧКИ = 2;   // растёт, когда меняется сама страница, а не текст
+var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняется сама страница, а не текст
 
 (function(){
   var текущее = СНИМОК;
@@ -162,6 +183,66 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 2;   // растёт, когда меняе�
   function текстом(s){
     var d = document.createElement('div'); d.textContent = String(s == null ? '' : s);
     return d.innerHTML;
+  }
+
+  // BEGIN_H17_PARSER
+  // H17: шлюз ОС и ядро заворачивают результат независимо. Эксперт обязан
+  // вернуть JSON-строку; Python repr намеренно не угадываем и показываем как отказ.
+  function разобрать_ответ_эксперта(value){
+    for (var depth = 0; depth < 4; depth++) {
+      if (value && typeof value === 'object' && value.result !== undefined) {
+        value = value.result;
+        continue;
+      }
+      if (typeof value === 'string') {
+        try { value = JSON.parse(value); }
+        catch (_) { throw new Error('Установщик вернул не JSON. Поддержка уже получила код H17.'); }
+        continue;
+      }
+      break;
+    }
+    if (!value || typeof value !== 'object' || typeof value.status !== 'string' ||
+        typeof value.code !== 'string') {
+      throw new Error('Установщик ответил не той формой, которую ждёт приложение.');
+    }
+    return value;
+  }
+  // END_H17_PARSER
+
+  function appTokenГотов(){
+    return APP_TOKEN && APP_TOKEN.indexOf('{' + '{') < 0 && APP_TOKEN.length > 40;
+  }
+
+  function состояниеCodex(текст, класс){
+    var узел = document.getElementById('codex-state');
+    узел.textContent = текст;
+    узел.className = 'codex-state' + (класс ? (' ' + класс) : '');
+  }
+
+  function вызватьCodexSetup(action){
+    if (!appTokenГотов()) {
+      return Promise.reject(new Error('Обнови приложение в магазине: эта версия ещё не умеет устанавливать Codex.'));
+    }
+    return fetch('https://os.extella.ai/api/app-agent/run', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        app_token: APP_TOKEN,
+        expert_name: 'extella_codex_product_setup',
+        params: {action: action}
+      })
+    }).then(function(r){
+      return r.text().then(function(raw){
+        if (r.status === 403) {
+          throw new Error('Разреши приложению запуск Expert на устройстве и повтори.');
+        }
+        if (!r.ok) throw new Error('ОС ответила ' + r.status + '. Повтори через минуту.');
+        var outer;
+        try { outer = JSON.parse(raw); }
+        catch (_) { throw new Error('ОС вернула не JSON.'); }
+        return разобрать_ответ_эксперта(outer);
+      });
+    });
   }
 
   function нарисовать(содержимое){
@@ -380,6 +461,27 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 2;   // растёт, когда меняе�
   };
 
   document.getElementById('обновить').onclick = function(){ подтянуть(true); };
+
+  document.getElementById('codex-connect').onclick = function(){
+    var кнопка = this, было = 'Подключить Codex';
+    кнопка.disabled = true;
+    кнопка.textContent = 'Подключаю…';
+    состояниеCodex('Проверяю Codex, ставлю подписанный мост и связываю аккаунт. Это может занять несколько минут.');
+    вызватьCodexSetup('install').then(function(result){
+      if (result.status !== 'success' || result.code !== 'ready' ||
+          result.model_called !== false || result.agent_called !== false) {
+        throw new Error(result.message || 'Установщик не подтвердил готовность Codex.');
+      }
+      кнопка.textContent = 'Codex подключён';
+      кнопка.dataset.done = '1';
+      состояниеCodex('Готово: мост ' + String(result.plugin_version || '') +
+        ' проверен без запуска модели. Теперь Codex вызывается только по явной просьбе.', 'ok');
+    }).catch(function(error){
+      кнопка.disabled = false;
+      кнопка.textContent = было;
+      состояниеCodex((error && error.message) || 'Не удалось подключить Codex.', 'bad');
+    });
+  };
 
   // Клавиатура: «/» — в поиск, Esc — сбросить. Мелочь, но руководство листают часто.
   document.addEventListener('keydown', function(e){
