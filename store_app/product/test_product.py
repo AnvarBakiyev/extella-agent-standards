@@ -51,6 +51,12 @@ class ProductTests(unittest.TestCase):
         self.assertEqual(value["code"], "unsupported_action")
         self.assertFalse(value["model_called"])
 
+    def test_deploy_can_add_prerelease_but_cannot_publish(self):
+        source = (HERE / "deploy_product.py").read_text()
+        self.assertIn("/api/add-version-stream/", source)
+        self.assertNotIn("/api/publish-stream", source)
+        self.assertNotIn("/publish\"", source)
+
 
 if __name__ == "__main__":
     unittest.main()
