@@ -98,7 +98,12 @@ run deploy_edition
 run build_agent_cabinet
 run build_automation_cabinet
 run build_capability_registry
-run_command store_product_expert node "$ROOT/store_app/product/build_expert.mjs" --check
+# СНЯТО 14.08.2026: этот гейт искал файл по абсолютному пути ВНЕ репозитория
+# (рабочая копия автора), поэтому был зелёным ровно на одной машине и падал
+# стеком у всех остальных. Проверка, зелёная только у автора, создаёт ложную
+# уверенность и приучает пролистывать красное. Вернуть — когда источник будет
+# внутри репозитория или гейт научится честно говорить «источника нет».
+# run_command store_product_expert node "$ROOT/store_app/product/build_expert.mjs" --check
 run_command store_page_contract node "$ROOT/store_app/test_page_contract.mjs"
 run_command store_product python3 "$ROOT/store_app/product/test_product.py"
 
