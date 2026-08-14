@@ -60,7 +60,7 @@ class ProductTests(unittest.TestCase):
         self.assertIn("/api/add-version-stream/", source)
         self.assertNotIn("/api/publish-stream", source)
         self.assertNotIn("/publish\"", source)
-        self.assertIn('VERSION = "3.0.2"', source)
+        self.assertIn('VERSION = "3.0.3"', source)
         self.assertIn('files={"page": PAGE}', source)
 
     def test_live_acceptance_unwraps_two_result_envelopes(self):

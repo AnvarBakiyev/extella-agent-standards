@@ -2,7 +2,7 @@ def extella_codex_product_setup(action="preflight") -> str:
     import json, os, platform, secrets, shutil, subprocess, urllib.request
     step = action
     BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-codex-bridge.git"
-    BUILDER_REF = "v0.3.4"
+    BUILDER_REF = "v0.3.5"
     # Independent agent-building standards contract; do not advance with bridge-only releases.
     STANDARDS_REF = "v0.3.0"
     MARKETPLACE = "extella-codex"
@@ -67,6 +67,12 @@ def extella_codex_product_setup(action="preflight") -> str:
             token = str(account_config().get("auth_token", "") or "").strip()
         except Exception:
             token = ""
+        if not token:
+            try:
+                token = open(os.path.join(os.path.expanduser("~"),
+                    ".extella", "api_token.txt"), encoding="utf-8").read().strip()
+            except Exception:
+                token = ""
         return token
 
     def validate_token(token):
@@ -155,7 +161,7 @@ def extella_codex_product_setup(action="preflight") -> str:
             return result("error", "plugin_install_failed",
                 "Не удалось установить Extella Codex Bridge. Можно безопасно повторить.")
         return result("success", "plugin_installed",
-            "Extella Codex Bridge установлен.", plugin_version="0.3.4")
+            "Extella Codex Bridge установлен.", plugin_version="0.3.5")
 
     if step == "credentials":
         token = current_token()
@@ -240,7 +246,7 @@ def extella_codex_product_setup(action="preflight") -> str:
             return result("error", "verification_failed",
                 "Не удалось проверить итоговую конфигурацию Codex.")
         return result("success", "ready", "Codex подключён к Extella.",
-            plugin_version="0.3.4", restart_required=False,
+            plugin_version="0.3.5", restart_required=False,
             live_enabled=True, authorization_scope="account",
             execution_policy_version=health.get("execution_policy_version"),
             default_execution_profile_id=health.get("default_execution_profile_id"),
