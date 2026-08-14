@@ -90,6 +90,7 @@ run register_new_agents
 run check_agent_repo
 run check_manifest_copies
 run check_surface_classes
+run check_app_scopes
 run check_edition
 run deploy_edition
 run build_agent_cabinet
