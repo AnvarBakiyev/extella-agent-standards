@@ -165,6 +165,58 @@ def купить(version_id: str, сказать=print) -> dict:
                     f"Проверь, доступен ли листинг, и повтори")
 
 
+
+# --- настоящие исполнители шагов ----------------------------------------------
+
+def поставить_скилл(имя: str, откуда: pathlib.Path, куда: pathlib.Path, сказать=print) -> dict:
+    """Скилл ассистента — это файлы. Ставим копированием, снимаем удалением."""
+    if not откуда.exists():
+        raise Отказ(f"скилла «{имя}» нет в архиве издания ({откуда.name}) — "
+                    f"состав обещает то, чего не приложено")
+    цель = куда / имя
+    if цель.exists():
+        сказать(f"    скилл «{имя}» уже стоит — не трогаю")
+        return {"изменено": False, "путь": str(цель)}
+    цель.parent.mkdir(parents=True, exist_ok=True)
+    if откуда.is_dir():
+        shutil.copytree(откуда, цель)
+    else:
+        цель.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(откуда, цель / откуда.name)
+    return {"изменено": True, "путь": str(цель)}
+
+
+def взять_репозиторий(владелец_репо: str, тег: str, куда: pathlib.Path, сказать=print) -> dict:
+    """Только по ТЕГУ: из ветки приедет что угодно, что в неё запушили (H14).
+
+    Берём архив релиза, а не git clone: не требует git на машине человека
+    и не тащит историю, которая ему не нужна.
+    """
+    if not тег or тег in {"main", "master", "HEAD", "latest", "dev"}:
+        raise Отказ(f"репозиторий указан по ветке «{тег}» — нужен тег релиза")
+    адрес = f"https://codeload.github.com/{владелец_репо}/tar.gz/refs/tags/{тег}"
+    try:
+        with urllib.request.urlopen(адрес, timeout=180) as о:
+            данные = о.read()
+    except Exception as e:
+        raise Отказ(f"не скачал {владелец_репо}@{тег} ({e}). Проверь, что тег существует "
+                    f"и репозиторий доступен")
+    import hashlib, io, tarfile, tempfile
+    сумма = hashlib.sha256(данные).hexdigest()
+    куда.mkdir(parents=True, exist_ok=True)
+    корень = куда.resolve()
+    with tarfile.open(fileobj=io.BytesIO(данные)) as t:
+        for член in t.getmembers():
+            цель = (корень / член.name).resolve()
+            if not str(цель).startswith(str(корень) + os.sep):
+                raise Отказ(f"архив пишет за свои пределы ({член.name}) — отменено")
+            if член.issym() or член.islnk():
+                raise Отказ(f"в архиве ссылка ({член.name}) — отклонено")
+        t.extractall(корень)
+    сказать(f"    {len(данные)} байт, sha256 {сумма[:12]}…")
+    return {"изменено": True, "путь": str(корень), "сумма": сумма}
+
+
 # --- сборка целиком -----------------------------------------------------------
 
 def поставить(d: dict, подтверждено: bool, сказать=print) -> int:
