@@ -1,0 +1,16 @@
+checks:
+  - kind: python
+    min_version: "3.10"
+    fix_ru: "обнови Extella Desktop: установщику нужен Python 3.10+"
+  - kind: command
+    name: codex
+    level: warn
+    fix_ru: "установи Codex CLI и войди в ChatGPT, затем нажми «Подключить Codex»"
+  - kind: command
+    name: node
+    level: warn
+    fix_ru: "установи Node.js 20+, затем нажми «Подключить Codex»"
+  - kind: command
+    name: launchctl
+    level: warn
+    fix_ru: "автоматическое подключение поддерживается на macOS"

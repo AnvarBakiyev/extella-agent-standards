@@ -45,6 +45,20 @@ run() {
   fi
 }
 
+run_command() {
+  local name="$1"
+  shift
+  local out
+  if out="$("$@" 2>&1)"; then
+    OK=$((OK + 1))
+    [ "$QUIET" = "--quiet" ] || printf "  ✓ %-30s %s\n" "$name" "$(echo "$out" | tail -1)"
+  else
+    FAILED="$FAILED $name"
+    printf "  ✗ %-30s ПРОВАЛ\n" "$name"
+    printf '%s\n' "$out" | tail -20 | sed 's/^/      /'
+  fi
+}
+
 printf "\n\033[1mСамопроверки стандартов Extella\033[0m\n"
 
 run stage_gates          # сам файл стадий обязан быть цел, иначе объём считается неверно
@@ -81,6 +95,8 @@ run deploy_edition
 run build_agent_cabinet
 run build_automation_cabinet
 run build_capability_registry
+run_command store_page_contract node "$ROOT/store_app/test_page_contract.mjs"
+run_command store_product python3 "$ROOT/store_app/product/test_product.py"
 
 printf "\n\033[1mИТОГ:\033[0m "
 if [ -z "$FAILED" ]; then
