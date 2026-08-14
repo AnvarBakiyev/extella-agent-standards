@@ -29,3 +29,11 @@ test("page rejects Python repr and an unexpected result shape", () => {
 test("shell contains one build-time app token marker", () => {
   assert.equal((template.match(/\/\*APP_TOKEN\*\/""/g) || []).length, 1);
 });
+
+test("one click runs every reviewed no-model setup step in order", () => {
+  assert.match(
+    template,
+    /\['preflight', 'prepare', 'install', 'credentials', 'bridge', 'verify'\]/,
+  );
+  assert.match(template, /params: \{action: action\}/);
+});

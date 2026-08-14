@@ -20,13 +20,13 @@ import uuid
 OS_BASE = "https://os.extella.ai"
 CORE_BASE = "https://api.extella.ai"
 LISTING_ID = "880d12e4-f082-486e-b92a-57e4eb09866d"
-VERSION = "3.0.0"
+VERSION = "3.0.1"
 SCOPES = ["expert.run", "device.run"]
+SETUP_STEPS = ("preflight", "prepare", "install", "credentials", "bridge", "verify")
 HERE = pathlib.Path(__file__).resolve().parent
 STORE = HERE.parent
 EXPERT = HERE / "expert_extella_codex_product_setup.py"
 PAGE = STORE / "index.html"
-ARCHIVE = STORE / "dist" / "extella-development-3.0.0.zip"
 
 
 class DeployError(Exception):
@@ -184,10 +184,9 @@ def prepare_agent(agent_id: str) -> None:
 
 def add_version(item: dict, agent_id: str) -> None:
     if any(version.get("version") == VERSION for version in item.get("versions", [])):
-        raise DeployError("версия 3.0.0 уже существует; состояние надо перечитать, а не повторять")
-    for path in (PAGE, ARCHIVE):
-        if not path.is_file():
-            raise DeployError(f"нет собранного файла {path.name}")
+        raise DeployError(f"версия {VERSION} уже существует; состояние надо перечитать, а не повторять")
+    if not PAGE.is_file():
+        raise DeployError(f"нет собранного файла {PAGE.name}")
     fields = {
         "version": VERSION,
         "price_credits": "0",
@@ -200,7 +199,7 @@ def add_version(item: dict, agent_id: str) -> None:
         OS_BASE,
         f"/api/add-version-stream/{LISTING_ID}",
         fields=fields,
-        files={"page": PAGE, "archive": ARCHIVE},
+        files={"page": PAGE},
     )
     if status != 200:
         raise DeployError(f"добавление версии ответило HTTP {status}")
@@ -216,15 +215,15 @@ def add_version(item: dict, agent_id: str) -> None:
             raw_scopes = json.loads(raw_scopes)
         except Exception:
             raw_scopes = []
-    if set(raw_scopes) != set(SCOPES) or not version.get("archive_ext") or int(version.get("expert_count") or 0) < 1:
-        raise DeployError("версия появилась, но архив, права или Expert не совпали")
-    print("Предрелиз 3.0.0 добавлен и подтверждён чтением: page + archive + 1 Expert + 2 права")
+    if set(raw_scopes) != set(SCOPES) or version.get("archive_ext") or int(version.get("expert_count") or 0) < 1:
+        raise DeployError("версия появилась, но страница, права или Expert не совпали")
+    print(f"Предрелиз {VERSION} добавлен и подтверждён чтением: page + 1 Expert + 2 права")
 
 
 def version_record(item: dict) -> dict:
     matches = [version for version in item.get("versions", []) if version.get("version") == VERSION]
     if len(matches) != 1 or not matches[0].get("id"):
-        raise DeployError("предрелиз 3.0.0 не найден чтением состояния")
+        raise DeployError(f"предрелиз {VERSION} не найден чтением состояния")
     return matches[0]
 
 
@@ -299,27 +298,31 @@ def accept(*, grant_rights: bool, setup_action: str | None) -> None:
     if setup_action:
         if not set(SCOPES).issubset(granted):
             raise DeployError("для живого setup сначала нужны оба согласия покупателя")
-        status, raw = request(
-            OS_BASE,
-            "/api/app-agent/run",
-            body={
-                "app_token": app_token,
-                "expert_name": "extella_codex_product_setup",
-                "params": {"action": setup_action},
-            },
-            timeout=600,
-        )
-        if status != 200:
-            raise DeployError(f"app-agent/run ответил HTTP {status}")
-        result = unwrap_run_result(as_json(raw, "app-agent/run"))
-        if result.get("model_called") is not False or result.get("agent_called") is not False:
-            raise DeployError("setup нарушил безмодельный контракт")
-        if setup_action == "install" and (result.get("status") != "success" or result.get("code") != "ready"):
-            raise DeployError(f"установка не готова: {result.get('code')}")
-        print(
-            f"Живой {setup_action}: status={result['status']} · code={result['code']} · "
-            "модель не вызвана"
-        )
+        actions = SETUP_STEPS if setup_action == "full" else (setup_action,)
+        for action in actions:
+            status, raw = request(
+                OS_BASE,
+                "/api/app-agent/run",
+                body={
+                    "app_token": app_token,
+                    "expert_name": "extella_codex_product_setup",
+                    "params": {"action": action},
+                },
+                timeout=600,
+            )
+            if status != 200:
+                raise DeployError(f"app-agent/run на этапе {action} ответил HTTP {status}")
+            result = unwrap_run_result(as_json(raw, "app-agent/run"))
+            if result.get("model_called") is not False or result.get("agent_called") is not False:
+                raise DeployError("setup нарушил безмодельный контракт")
+            if result.get("status") != "success":
+                raise DeployError(f"этап {action} не готов: {result.get('code')}")
+            if action == "verify" and result.get("code") != "ready":
+                raise DeployError(f"итоговая проверка не готова: {result.get('code')}")
+            print(
+                f"Живой {action}: status={result['status']} · code={result['code']} · "
+                "модель не вызвана"
+            )
 
 
 def main() -> int:
@@ -329,11 +332,11 @@ def main() -> int:
     parser.add_argument("--purchase", action="store_true")
     parser.add_argument("--accept", action="store_true")
     parser.add_argument("--grant-rights", action="store_true")
-    parser.add_argument("--setup", choices=("status", "install"))
+    parser.add_argument("--setup", choices=(*SETUP_STEPS, "full"))
     args = parser.parse_args()
     item = listing()
     agent_id = source_agent(item)
-    print("План: существующий листинг · версия 3.0.0 · цена 0 · page + archive")
+    print(f"План: существующий листинг · версия {VERSION} · цена 0 · page + agent")
     print("Права: expert.run + device.run · source-agent найден · идентификатор не выводится")
     if not args.prepare_agent and not args.add_version and not args.purchase and not args.accept:
         print("Сухой прогон: ничего не изменено")

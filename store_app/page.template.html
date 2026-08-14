@@ -464,10 +464,23 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняе�
 
   document.getElementById('codex-connect').onclick = function(){
     var кнопка = this, было = 'Подключить Codex';
+    var шаги = ['preflight', 'prepare', 'install', 'credentials', 'bridge', 'verify'];
     кнопка.disabled = true;
     кнопка.textContent = 'Подключаю…';
     состояниеCodex('Проверяю Codex, ставлю подписанный мост и связываю аккаунт. Это может занять несколько минут.');
-    вызватьCodexSetup('install').then(function(result){
+    var цепочка = Promise.resolve(null);
+    шаги.forEach(function(шаг){
+      цепочка = цепочка.then(function(){
+        return вызватьCodexSetup(шаг).then(function(result){
+          if (result.status !== 'success' || result.model_called !== false ||
+              result.agent_called !== false) {
+            throw new Error(result.message || ('Этап ' + шаг + ' завершился ошибкой.'));
+          }
+          return result;
+        });
+      });
+    });
+    цепочка.then(function(result){
       if (result.status !== 'success' || result.code !== 'ready' ||
           result.model_called !== false || result.agent_called !== false) {
         throw new Error(result.message || 'Установщик не подтвердил готовность Codex.');
