@@ -10,6 +10,7 @@ Publish здесь намеренно отсутствует: его вызыв�
 import argparse
 import json
 import pathlib
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -220,22 +221,131 @@ def add_version(item: dict, agent_id: str) -> None:
     print("Предрелиз 3.0.0 добавлен и подтверждён чтением: page + archive + 1 Expert + 2 права")
 
 
+def version_record(item: dict) -> dict:
+    matches = [version for version in item.get("versions", []) if version.get("version") == VERSION]
+    if len(matches) != 1 or not matches[0].get("id"):
+        raise DeployError("предрелиз 3.0.0 не найден чтением состояния")
+    return matches[0]
+
+
+def purchase(item: dict, agent_id: str) -> None:
+    version = version_record(item)
+    status, raw = request(
+        OS_BASE,
+        f"/api/purchase-stream/{version['id']}",
+        body={"deploy_mode": "existing", "target_agent_id": agent_id},
+    )
+    if status != 200:
+        raise DeployError(f"покупка предрелиза ответила HTTP {status}")
+    done = stream_done(raw)
+    print(
+        "Предрелиз установлен владельцу: "
+        + ("ярлык создан" if done.get("webapp_shortcut") else "ярлык не подтверждён потоком")
+    )
+
+
+def unwrap_run_result(value) -> dict:
+    for _ in range(4):
+        if isinstance(value, dict) and "result" in value:
+            value = value["result"]
+            continue
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except Exception as error:
+                raise DeployError("app-agent/run нарушил H17: вернул не JSON") from error
+            continue
+        break
+    if not isinstance(value, dict) or not isinstance(value.get("status"), str) or not isinstance(value.get("code"), str):
+        raise DeployError("app-agent/run вернул неожиданную форму")
+    return value
+
+
+def accept(*, grant_rights: bool, setup_action: str | None) -> None:
+    status, raw = request(OS_BASE, f"/api/purchase-check/{LISTING_ID}")
+    if status != 200 or as_json(raw).get("purchased") is not True:
+        raise DeployError("покупка не подтверждена чтением состояния")
+
+    status, page = request(OS_BASE, f"/app-page/{LISTING_ID}/")
+    if status != 200:
+        raise DeployError(f"страница приложения ответила HTTP {status}")
+    match = re.search(r'var APP_TOKEN = /\*APP_TOKEN\*/"([^"{}]+)";', page)
+    if not match or len(match.group(1)) < 40:
+        raise DeployError("страница не получила app_token")
+    app_token = match.group(1)
+
+    status, raw = request(OS_BASE, f"/api/app-permissions/{LISTING_ID}")
+    permissions = as_json(raw, "права приложения") if status == 200 else {}
+    if set(permissions.get("requested") or []) != set(SCOPES):
+        raise DeployError("запрошенные права отличаются от продуктового контракта")
+    if grant_rights:
+        status, raw = request(OS_BASE, f"/api/app-permissions/{LISTING_ID}", body={"scopes": SCOPES})
+        if status != 200:
+            raise DeployError(f"выдача прав ответила HTTP {status}")
+        status, raw = request(OS_BASE, f"/api/app-permissions/{LISTING_ID}")
+        permissions = as_json(raw, "права приложения") if status == 200 else {}
+    granted = set(permissions.get("granted") or [])
+
+    status, raw = request(OS_BASE, "/api/desktop-state")
+    state = as_json(raw, "состояние рабочего стола") if status == 200 else {}
+    shortcuts = (state.get("state") or {}).get("shortcuts") or {}
+    if not any(LISTING_ID in str(value.get("url") or "") for value in shortcuts.values() if isinstance(value, dict)):
+        raise DeployError("ярлык приложения не подтверждён чтением состояния")
+
+    print(
+        "Приёмка OS: покупка есть · страница 200 · app_token подставлен · ярлык есть · "
+        f"прав выдано {len(granted)} из {len(SCOPES)}"
+    )
+    if setup_action:
+        if not set(SCOPES).issubset(granted):
+            raise DeployError("для живого setup сначала нужны оба согласия покупателя")
+        status, raw = request(
+            OS_BASE,
+            "/api/app-agent/run",
+            body={
+                "app_token": app_token,
+                "expert_name": "extella_codex_product_setup",
+                "params": {"action": setup_action},
+            },
+            timeout=600,
+        )
+        if status != 200:
+            raise DeployError(f"app-agent/run ответил HTTP {status}")
+        result = unwrap_run_result(as_json(raw, "app-agent/run"))
+        if result.get("model_called") is not False or result.get("agent_called") is not False:
+            raise DeployError("setup нарушил безмодельный контракт")
+        if setup_action == "install" and (result.get("status") != "success" or result.get("code") != "ready"):
+            raise DeployError(f"установка не готова: {result.get('code')}")
+        print(
+            f"Живой {setup_action}: status={result['status']} · code={result['code']} · "
+            "модель не вызвана"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare-agent", action="store_true")
     parser.add_argument("--add-version", action="store_true")
+    parser.add_argument("--purchase", action="store_true")
+    parser.add_argument("--accept", action="store_true")
+    parser.add_argument("--grant-rights", action="store_true")
+    parser.add_argument("--setup", choices=("status", "install"))
     args = parser.parse_args()
     item = listing()
     agent_id = source_agent(item)
     print("План: существующий листинг · версия 3.0.0 · цена 0 · page + archive")
     print("Права: expert.run + device.run · source-agent найден · идентификатор не выводится")
-    if not args.prepare_agent and not args.add_version:
+    if not args.prepare_agent and not args.add_version and not args.purchase and not args.accept:
         print("Сухой прогон: ничего не изменено")
         return 0
     if args.prepare_agent:
         prepare_agent(agent_id)
     if args.add_version:
         add_version(listing(), agent_id)
+    if args.purchase:
+        purchase(listing(), agent_id)
+    if args.accept:
+        accept(grant_rights=args.grant_rights, setup_action=args.setup)
     return 0
 
 
