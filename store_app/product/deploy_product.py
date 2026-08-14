@@ -3,9 +3,8 @@
 
 По умолчанию только показывает план. `--prepare-agent` сохраняет и перечитывает
 Expert у канонического source-agent, но не меняет магазин. `--add-version`
-добавляет page + archive + минимальные права; для уже опубликованного листинга
-требует отдельный флаг `--allow-live-version`, потому что новая версия может
-стать доступна покупателям без отдельного Publish.
+добавляет page + archive + минимальные права как предрелиз. Необратимый endpoint
+Publish здесь намеренно отсутствует: его вызывает только человек.
 """
 
 import argparse
@@ -182,14 +181,9 @@ def prepare_agent(agent_id: str) -> None:
     print("Expert установки: записан в source-agent и сверен посимвольно")
 
 
-def add_version(item: dict, agent_id: str, allow_live: bool) -> None:
+def add_version(item: dict, agent_id: str) -> None:
     if any(version.get("version") == VERSION for version in item.get("versions", [])):
         raise DeployError("версия 3.0.0 уже существует; состояние надо перечитать, а не повторять")
-    if item.get("published") and not allow_live:
-        raise DeployError(
-            "листинг уже опубликован: add-version может сразу открыть 3.0.0 покупателям. "
-            "После решения владельца повтори с --allow-live-version"
-        )
     for path in (PAGE, ARCHIVE):
         if not path.is_file():
             raise DeployError(f"нет собранного файла {path.name}")
@@ -223,14 +217,13 @@ def add_version(item: dict, agent_id: str, allow_live: bool) -> None:
             raw_scopes = []
     if set(raw_scopes) != set(SCOPES) or not version.get("archive_ext") or int(version.get("expert_count") or 0) < 1:
         raise DeployError("версия появилась, но архив, права или Expert не совпали")
-    print("Версия 3.0.0 добавлена и подтверждена чтением: page + archive + 1 Expert + 2 права")
+    print("Предрелиз 3.0.0 добавлен и подтверждён чтением: page + archive + 1 Expert + 2 права")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare-agent", action="store_true")
     parser.add_argument("--add-version", action="store_true")
-    parser.add_argument("--allow-live-version", action="store_true")
     args = parser.parse_args()
     item = listing()
     agent_id = source_agent(item)
@@ -242,7 +235,7 @@ def main() -> int:
     if args.prepare_agent:
         prepare_agent(agent_id)
     if args.add_version:
-        add_version(listing(), agent_id, args.allow_live_version)
+        add_version(listing(), agent_id)
     return 0
 
 
