@@ -1,0 +1,16 @@
+{
+  "name": "Решения · издание для основателя",
+  "издание": "edition-founder",
+  "listing_id": "a1dd57d1-5322-4e34-b38a-a23cdc99535d",
+  "version_id": "cfee9d3f-1d01-4ffe-9702-cc02d0ffb61f",
+  "agent_id": "agent_NoMXszYp9cz6ff6qkR-RZ",
+  "версия": "0.1.0",
+  "цена": 0,
+  "состояние": "предрелиз — виден только автору",
+  "права": [
+    "expert.run",
+    "device.run"
+  ],
+  "устройство": "закреплено за машиной владельца",
+  "данные": "~/.extella/founder/journal.json на машине владельца"
+}
