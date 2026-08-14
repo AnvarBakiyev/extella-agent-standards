@@ -55,12 +55,12 @@ class ProductTests(unittest.TestCase):
         self.assertEqual(value["code"], "unsupported_step")
         self.assertFalse(value["model_called"])
 
-    def test_deploy_can_add_prerelease_but_cannot_publish(self):
+    def test_deploy_requires_public_version_guard_and_cannot_publish_listing(self):
         source = (HERE / "deploy_product.py").read_text()
         self.assertIn("/api/add-version-stream/", source)
         self.assertNotIn("/api/publish-stream", source)
         self.assertNotIn("/publish\"", source)
-        self.assertIn('VERSION = "3.0.3"', source)
+        self.assertIn('VERSION = "3.0.4"', source)
         self.assertIn('files={"page": PAGE}', source)
         self.assertIn("--allow-public-version", source)
 
