@@ -20,9 +20,9 @@ import uuid
 OS_BASE = "https://os.extella.ai"
 CORE_BASE = "https://api.extella.ai"
 LISTING_ID = "880d12e4-f082-486e-b92a-57e4eb09866d"
-VERSION = "3.0.1"
+VERSION = "3.0.2"
 SCOPES = ["expert.run", "device.run"]
-SETUP_STEPS = ("preflight", "prepare", "install", "credentials", "bridge", "verify")
+SETUP_STEPS = ("preflight", "install", "credentials", "bridge", "verify")
 HERE = pathlib.Path(__file__).resolve().parent
 STORE = HERE.parent
 EXPERT = HERE / "expert_extella_codex_product_setup.py"
@@ -89,6 +89,8 @@ def request(base, path, *, body=None, fields=None, files=None, headers=None, tim
             return response.status, response.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as error:
         return error.code, error.read().decode("utf-8", "replace")[:500]
+    except (TimeoutError, urllib.error.URLError):
+        return 599, ""
 
 
 def as_json(raw: str, label="ответ") -> dict:
@@ -204,11 +206,11 @@ def add_version(item: dict, agent_id: str) -> None:
     if status != 200:
         raise DeployError(f"добавление версии ответило HTTP {status}")
     stream_done(raw)
-    fresh = listing()
-    matches = [version for version in fresh.get("versions", []) if version.get("version") == VERSION]
-    if len(matches) != 1:
-        raise DeployError("версия не подтверждена чтением состояния")
-    version = matches[0]
+    verify_version(listing())
+
+
+def verify_version(item: dict) -> None:
+    version = version_record(item)
     raw_scopes = version.get("app_scopes") or []
     if isinstance(raw_scopes, str):
         try:
@@ -271,6 +273,8 @@ def accept(*, grant_rights: bool, setup_action: str | None) -> None:
     match = re.search(r'var APP_TOKEN = /\*APP_TOKEN\*/"([^"{}]+)";', page)
     if not match or len(match.group(1)) < 40:
         raise DeployError("страница не получила app_token")
+    if "['preflight', 'install', 'credentials', 'bridge', 'verify']" not in page:
+        raise DeployError(f"установлена прежняя страница: предрелиз {VERSION} ещё не выбран")
     app_token = match.group(1)
 
     status, raw = request(OS_BASE, f"/api/app-permissions/{LISTING_ID}")
@@ -330,6 +334,7 @@ def main() -> int:
     parser.add_argument("--prepare-agent", action="store_true")
     parser.add_argument("--add-version", action="store_true")
     parser.add_argument("--purchase", action="store_true")
+    parser.add_argument("--verify-version", action="store_true")
     parser.add_argument("--accept", action="store_true")
     parser.add_argument("--grant-rights", action="store_true")
     parser.add_argument("--setup", choices=(*SETUP_STEPS, "full"))
@@ -338,13 +343,15 @@ def main() -> int:
     agent_id = source_agent(item)
     print(f"План: существующий листинг · версия {VERSION} · цена 0 · page + agent")
     print("Права: expert.run + device.run · source-agent найден · идентификатор не выводится")
-    if not args.prepare_agent and not args.add_version and not args.purchase and not args.accept:
+    if not args.prepare_agent and not args.add_version and not args.purchase and not args.verify_version and not args.accept:
         print("Сухой прогон: ничего не изменено")
         return 0
     if args.prepare_agent:
         prepare_agent(agent_id)
     if args.add_version:
         add_version(listing(), agent_id)
+    if args.verify_version:
+        verify_version(listing())
     if args.purchase:
         purchase(listing(), agent_id)
     if args.accept:
