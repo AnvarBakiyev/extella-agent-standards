@@ -52,7 +52,7 @@ class ProductTests(unittest.TestCase):
         exec((HERE / "expert_extella_codex_product_setup.py").read_text(), namespace)
         value = json.loads(namespace["extella_codex_product_setup"]("unexpected"))
         self.assertEqual(value["status"], "error")
-        self.assertEqual(value["code"], "unsupported_action")
+        self.assertEqual(value["code"], "unsupported_step")
         self.assertFalse(value["model_called"])
 
     def test_deploy_can_add_prerelease_but_cannot_publish(self):
@@ -60,6 +60,8 @@ class ProductTests(unittest.TestCase):
         self.assertIn("/api/add-version-stream/", source)
         self.assertNotIn("/api/publish-stream", source)
         self.assertNotIn("/publish\"", source)
+        self.assertIn('VERSION = "3.0.1"', source)
+        self.assertIn('files={"page": PAGE}', source)
 
     def test_live_acceptance_unwraps_two_result_envelopes(self):
         value = deploy_product.unwrap_run_result({

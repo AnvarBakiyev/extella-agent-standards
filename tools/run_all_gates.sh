@@ -95,6 +95,7 @@ run deploy_edition
 run build_agent_cabinet
 run build_automation_cabinet
 run build_capability_registry
+run_command store_product_expert node "$ROOT/store_app/product/build_expert.mjs" --check
 run_command store_page_contract node "$ROOT/store_app/test_page_contract.mjs"
 run_command store_product python3 "$ROOT/store_app/product/test_product.py"
 
