@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Издание для сборщика</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--a:#D4944A;--petrol:#5FA8A0;--bg:#0A0A0A;--s1:#141414;--s2:#181818;
+  --bd:rgba(243,238,229,.09);--bd2:rgba(243,238,229,.18);--tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C;
+  --r:5px;--serif:'Source Serif 4',Georgia,serif;--sans:'Source Sans 3',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace}
+:root[data-lm="1"]{--a:#C57E33;--petrol:#2F6B66;--bg:#FAF9F5;--s1:#FFFFFF;--s2:#F5F3EC;
+  --bd:#D7E0DC;--bd2:#B7CEC9;--tx:#0A0A0A;--tx2:#2A2A2A;--tx3:#8C8C8C}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.55}
+.wrap{max-width:720px;margin:0 auto;padding:26px 22px 60px}
+h1{font-family:var(--serif);font-weight:600;font-size:26px;margin:0 0 4px}
+h2{font-family:var(--serif);font-weight:600;font-size:17px;margin:22px 0 6px}
+.lead{font-size:15px;color:var(--tx2);margin:0 0 18px}
+.label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);margin:0 0 4px}
+.btn{font:600 14px var(--sans);color:var(--tx);background:transparent;border:1px solid var(--bd2);
+  border-radius:var(--r);padding:10px 16px;cursor:pointer}
+.btn.main{background:var(--a);border-color:var(--a);color:#0A0A0A}
+.btn[disabled]{opacity:.55;cursor:progress}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:14px 16px;margin:12px 0}
+.ч{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--bd)}
+.ч:first-child{border-top:0}
+.г{font-family:var(--mono);font-size:13px;line-height:1.5;flex:0 0 18px;color:var(--tx3)}
+.г.есть{color:var(--petrol)}
+.ч .и{font-size:15px}
+.ч .з{color:var(--tx2);font-size:13px;margin-top:2px}
+.ч .м{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:3px;word-break:break-all}
+.ч.поставлено .м{color:var(--petrol)}
+.статус{font-family:var(--mono);font-size:11px;color:var(--tx3);margin:16px 0 8px}
+.статус b{color:var(--petrol);font-weight:500}
+.ошибка{border-left:2px solid var(--a);padding-left:12px;color:var(--tx2);font-size:13px;margin:12px 0}
+.обещания{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:18px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="label">издание</p>
+  <h1>Для сборщика</h1>
+  <p class="lead">Готовое рабочее место того, кто собирает ИИ-приложения для своей компании.
+  Ниже — весь состав целиком, до покупки и без сюрпризов. Что уже стоит на этой машине,
+  отмечено галочкой.</p>
+
+  <div class="статус" id="статус">смотрю, что уже стоит…</div>
+  <div class="card" id="состав"></div>
+
+  <button class="btn main" id="поставить" style="display:none"></button>
+
+  <p class="обещания">
+    установка — около двух минут (замер: одиннадцать секунд)<br>
+    данные с этой машины наружу не уходят<br>
+    что поставили — умеем снять целиком
+  </p>
+</div>
+
+<script>
+var EXT = { app_token: "{{app_token}}" };
+var УСТРОЙСТВО = "24f37e45-8c9f-4896-b64f-0dcd0cd8b0e4";   // закрепление за машиной покупателя
+var снимок = null;
+
+function applyTheme(t){
+  if (t === 'light') document.documentElement.setAttribute('data-lm','1');
+  else document.documentElement.removeAttribute('data-lm');
+}
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type === 'etb_theme' || d.type === 'etb_init') applyTheme(d.theme);
+});
+if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) applyTheme('light');
+
+function текстом(s){ var d=document.createElement('div'); d.textContent = s==null?'':String(s); return d.innerHTML; }
+function статус(т, хорошо){
+  document.getElementById('статус').innerHTML = хорошо ? '<b>'+текстом(т)+'</b>' : текстом(т);
+}
+
+// Один вызов-снимок: до устройства идти 11-17 секунд, поэтому ходим туда редко
+// и приносим всё сразу — и состав, и его состояние.
+function позвать(параметры){
+  if (!EXT.app_token || EXT.app_token.indexOf('{'+'{') === 0) {
+    return Promise.reject(new Error('страница открыта не через ярлык Extella'));
+  }
+  var тело = { app_token: EXT.app_token, expert_name: 'bld_edition', params: параметры };
+  if (УСТРОЙСТВО) тело.targets = [УСТРОЙСТВО];
+  return fetch('https://os.extella.ai/api/app-agent/run', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(тело)
+  }).then(function(r){ return r.text().then(function(t){
+      if (r.status === 403) throw new Error('нет права «запускать экспертов на устройстве» — '
+        + 'без него издание не сможет поставить себя на вашу машину');
+      if (!r.ok) throw new Error('платформа ответила ' + r.status);
+      // Платформа заворачивает ответ дважды: шлюз ОС кладёт ответ ядра в result,
+      // ядро кладёт результат эксперта в свой result — строкой. Разворачиваем до дна.
+      var d = JSON.parse(t), res = d.result;
+      if (res && typeof res === 'object' && 'result' in res) res = res.result;
+      if (typeof res === 'string') {
+        try { res = JSON.parse(res); }
+        catch (e) { throw new Error('издание ответило непонятным: ' + String(res).slice(0, 80)); }
+      }
+      if (!res || typeof res !== 'object') throw new Error('издание вернуло пустой ответ');
+      if (res['ошибка']) throw new Error(res['ошибка']);
+      return res;
+  }); });
+}
+
+function нарисовать(){
+  var части = (снимок && снимок['части']) || [];
+  document.getElementById('состав').innerHTML = части.map(function(ч){
+    var метка = ч['итог'] ? ч['итог'] : (ч['где'] || '');
+    return '<div class="ч' + (ч['итог'] === 'поставлено' ? ' поставлено' : '') + '">'
+      + '<div class="г' + (ч['стоит'] ? ' есть' : '') + '">' + (ч['стоит'] ? '✓' : '○') + '</div>'
+      + '<div><div class="и">' + текстом(ч['имя']) + '</div>'
+      + '<div class="з">' + текстом(ч['зачем']) + '</div>'
+      + (метка ? '<div class="м">' + текстом(метка) + '</div>' : '')
+      + '</div></div>';
+  }).join('');
+
+  var не_стоит = части.filter(function(ч){ return !ч['стоит']; }).length;
+  var кнопка = document.getElementById('поставить');
+  кнопка.style.display = '';
+  кнопка.disabled = false;
+  if (!не_стоит) {
+    кнопка.textContent = 'Проверить ещё раз';
+    кнопка.className = 'btn';
+    статус('издание стоит целиком — можно работать', true);
+  } else {
+    кнопка.textContent = 'Поставить недостающее — ' + не_стоит;
+    кнопка.className = 'btn main';
+    статус('не хватает частей: ' + не_стоит + '. Ничего не меняю, пока не нажмёте');
+  }
+}
+
+function сходить(ставить){
+  var кнопка = document.getElementById('поставить');
+  кнопка.disabled = true;
+  статус(ставить ? 'ставлю на эту машину, это около минуты…' : 'смотрю, что уже стоит…');
+  позвать(ставить ? {'действие':'поставить','подтверждено':'да'} : {'действие':'состояние'})
+    .then(function(res){
+      снимок = res;
+      нарисовать();
+      var новые = res['поставлено_сейчас'] || [];
+      if (ставить && новые.length) статус('поставлено: ' + новые.join(', '), true);
+    })
+    .catch(function(e){
+      кнопка.disabled = false;
+      document.getElementById('статус').innerHTML =
+        '<span class="ошибка">' + текстом(e.message) + '</span>';
+    });
+}
+
+document.getElementById('поставить').addEventListener('click', function(){
+  var не_стоит = ((снимок && снимок['части']) || []).filter(function(ч){ return !ч['стоит']; });
+  if (!не_стоит.length) return сходить(false);
+  var список = не_стоит.map(function(ч){ return '· ' + ч['имя']; }).join('\n');
+  // Человек соглашается на изменение своей машины поимённо, а не вообще.
+  if (confirm('Поставить на этот компьютер:\n\n' + список + '\n\nНичего кроме этого не трогаю.')) {
+    сходить(true);
+  }
+});
+
+сходить(false);
+</script>
+</body>
+</html>
