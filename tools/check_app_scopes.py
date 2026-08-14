@@ -8,7 +8,7 @@
 * **прав лишку** — покупатель видит список ДО покупки. `api.full` у продукта,
   которому хватает своего агента, — причина не купить, а не мелочь.
 
-Гейт читает код страницы, выводит нужный набор и сверяет с объявленным.
+Гейт читает код страницы и приложенных Expert, выводит нужный набор и сверяет с объявленным.
 
     python3 tools/check_app_scopes.py editions/founder
     python3 tools/check_app_scopes.py --selftest
@@ -24,6 +24,8 @@ import sys
      "страница запускает эксперта"),
     (r"app-agent/message",        "agent.run",
      "страница разговаривает с агентом"),
+    (r"subprocess\.(run|Popen|call|check_call|check_output)", "device.run",
+     "Expert запускает процесс на устройстве покупателя"),
     (r"[\"']?targets[\"']?\s*[:=]", "device.run",
      "страница закрепляет вызов за устройством покупателя"),
     (r"/api/ext/core",            "api.full",
@@ -87,7 +89,11 @@ def проверить(папка: pathlib.Path) -> int:
     if not страницы:
         print("страницы нет — права приложения не нужны, проверять нечего")
         return 0
-    код = "\n".join(п.read_text() for п in страницы)
+    эксперты = [
+        п for п in папка.rglob("expert_*.py")
+        if not any(часть in {"__pycache__", "migrations", "tests"} for часть in п.parts)
+    ]
+    код = "\n".join(п.read_text() for п in страницы + эксперты)
 
     объявлено = объявленные(папка)
     if объявлено is None:
@@ -124,11 +130,13 @@ def _selftest() -> int:
         app_token: EXT.app_token, expert_name: 'x', params: {}, targets: [У]})});
     </script>"""
 
-    def случай(имя, страница, права, ждём_провал):
+    def случай(имя, страница, права, ждём_провал, эксперт=""):
         with tempfile.TemporaryDirectory() as d:
             p = pathlib.Path(d)
             (p / "index.html").write_text(страница)
             (p / "listing.json").write_text(json.dumps({"права": права}, ensure_ascii=False))
+            if эксперт:
+                (p / "expert_install.py").write_text(эксперт)
             код = проверить(p)
             ок = (код != 0) if ждём_провал else (код == 0)
             print(("  ✓ " if ок else "  ✗ ") + имя)
@@ -144,6 +152,10 @@ def _selftest() -> int:
     случай("право из комментария не считается нужным",
            "<script>// пример: /api/ext/core тут только в комментарии\n"
            "fetch('/api/app-agent/run')</script>", ["expert.run"], False)
+    случай("локальный процесс в Expert требует device.run",
+           "<script>fetch('/api/app-agent/run')</script>",
+           ["expert.run", "device.run"], False,
+           "def expert_install():\n    return subprocess.run(['true'])\n")
 
     if провалы:
         print("ИТОГ САМОПРОВЕРКИ: провалы —", "; ".join(провалы))
