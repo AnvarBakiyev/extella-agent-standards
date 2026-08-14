@@ -93,6 +93,8 @@ run check_surface_classes
 run check_app_scopes
 run check_edition
 run check_compose
+run check_listing_meta
+run make_icon
 run_command install_edition python3 "$ROOT/templates/edition/install_edition.py" --selftest
 run deploy_edition
 run build_agent_cabinet
