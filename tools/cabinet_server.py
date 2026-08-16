@@ -43,10 +43,10 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             self.send_response(код)
             self.send_header("Content-Type", тип)
             self.send_header("Content-Length", str(len(тело)))
-            # Приложение открыто внутри страницы ОС, но запрос идёт на свой же
-            # адрес. Заголовок нужен, чтобы браузер не резал чтение хранилища.
-            self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Cache-Control", "no-store")
+            # Разрешения для страницы ОС ставит end_headers — один раз на любой
+            # ответ. Слать их и здесь нельзя: два одинаковых заголовка браузер
+            # считает ошибкой и режет запрос целиком.
             self.end_headers()
             self.wfile.write(тело)
 
@@ -72,7 +72,24 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             if self.path.split("?")[0].rstrip("/").endswith((".html", "")) or \
                self.path.split("?")[0].endswith("/"):
                 self.send_header("Cache-Control", "no-store, must-revalidate")
+            # Окно ОС — страница из интернета (os.extella.ai), а мы живём на этом
+            # компьютере. Браузер такие запросы «наружу→внутрь» блокирует, пока
+            # местный сервер не разрешит их ЯВНО. Замер 16.08.2026: без этих двух
+            # заголовков окно ОС показывало «проба молчит» и пустую доску, хотя
+            # приложение было живо и по адресу открывалось.
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
             super().end_headers()
+
+        def do_OPTIONS(self):
+            # Предполётный запрос. Без него http.server отвечает 501, и браузер
+            # считает, что местного сервера нет вовсе.
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "600")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
         def guess_type(self, path):
             # http.server отдаёт HTML без указания кодировки, и браузер угадывает.
