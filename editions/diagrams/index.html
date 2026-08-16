@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Доска</title>
+<title>Схемы</title>
 <style>
 :root{--a:#D4944A;--petrol:#5FA8A0;--bg:#0A0A0A;--tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C}
 :root[data-lm="1"]{--a:#C57E33;--petrol:#2F6B66;--bg:#FAF9F5;--tx:#0A0A0A;--tx2:#2A2A2A;--tx3:#8C8C8C}
@@ -24,9 +24,9 @@ p{color:var(--tx2);margin:0 0 14px}
 
 <div class="запасной" id="запасной">
   <div class="карточка">
-    <h1>Доска</h1>
+    <h1>Схемы</h1>
     <p id="сообщение">Открываю…</p>
-    <a class="btn" id="кнопка" href="http://localhost:34785/" target="_blank" rel="noopener"
+    <a class="btn" id="кнопка" href="http://localhost:34786/?offline=1&lang=ru" target="_blank" rel="noopener"
        style="display:none">Открыть в отдельном окне</a>
     <div class="тихо" id="тихо"></div>
   </div>
@@ -56,8 +56,8 @@ window.addEventListener('message', function(e){
 });
 if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) тема('light');
 
-var АДРЕС = 'http://localhost:34785/';
-var ПРОБА = 'http://localhost:34785/favicon-32x32.png';
+var АДРЕС = 'http://localhost:34786/?offline=1&lang=ru';
+var ПРОБА = 'http://localhost:34786/images/spin.gif';
 var окно_ = document.getElementById('окно');
 var запасной = document.getElementById('запасной');
 
@@ -75,7 +75,7 @@ fetch(ПРОБА, {mode: 'no-cors', cache: 'no-store'})
       'защищённой страницы, либо приложение на этом компьютере сейчас не запущено. ' +
       'Отдельным окном оно откроется — и там будет видно, какая из двух причин.';
     document.getElementById('кнопка').style.display = '';
-    document.getElementById('тихо').textContent = 'адрес: localhost:34785 · всё на этом компьютере';
+    document.getElementById('тихо').textContent = 'адрес: localhost:34786 · всё на этом компьютере';
   });
 </script>
 </body>
