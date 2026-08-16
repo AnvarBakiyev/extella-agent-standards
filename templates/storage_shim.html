@@ -134,15 +134,23 @@
 
   // Падение приложения не должно выглядеть как пустое окно: окно ОС получит
   // причину и покажет её человеку по-русски.
-  window.addEventListener("error", function (е) {
+  function сбой(причина) {
     try {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({
-          type: "extella_сбой",
-          причина: String((е && е.message) || "ошибка").slice(0, 200)
+          type: "extella_сбой", причина: String(причина || "ошибка").slice(0, 200)
         }, "*");
       }
     } catch (x) {}
+  }
+  window.addEventListener("error", function (е) {
+    сбой((е && е.message) || "ошибка");
+  });
+  // Оборванное обещание — тоже падение, просто тихое. Приложение при этом
+  // «живо», но экран остаётся пустым, и без этого доклада причина не видна.
+  window.addEventListener("unhandledrejection", function (е) {
+    var р = е && е.reason;
+    сбой((р && (р.message || р)) || "оборванное обещание");
   });
 
   доложить(true, "");
