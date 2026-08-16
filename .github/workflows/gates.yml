@@ -19,5 +19,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Библиотеки, которые гейты ожидают на машине
+        # pyyaml нужен гейту реестра. У автора он стоял давно, поэтому гейт был
+        # зелёным только там — прогон на чистой машине это показал первым же разом.
+        run: python -m pip install --quiet pyyaml
+
       - name: Прогнать все гейты
         run: bash tools/run_all_gates.sh
