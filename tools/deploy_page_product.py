@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""Страничный продукт в магазин ОС: проверить → выложить предрелизом. Publish — владельцу.
+
+ЗАЧЕМ ОТДЕЛЬНО ОТ deploy_edition. Издание — это «тема + набор приложений + отдел
+агентов + полка». Страничный продукт проще: одна страница-окно к приложению на этом
+компьютере, без агентов, прав и темы. Натягивать на него паспорт издания — врать в
+паспорте, а выкладывать руками через форму — идти со скоростью рук.
+
+Что делает:
+  1. гоняет гейт витрины (иконка, описание от 80 знаков, 2-6 тегов с видом продукта);
+  2. нет листинга — создаёт ПРЕДРЕЛИЗ через publish-stream;
+     листинг есть — добавляет ВЕРСИЮ через add-version-stream (publish-stream создал
+     бы второй листинг-двойник);
+  3. вписывает listing_id и version_id обратно в listing.json;
+  4. показывает адрес ярлыка для стола.
+
+Publish здесь НЕТ намеренно: публичность включает владелец.
+
+    python3 tools/deploy_page_product.py editions/board
+    python3 tools/deploy_page_product.py editions/board --сухой
+    python3 tools/deploy_page_product.py editions/board --разрешить-публичную-версию
+    python3 tools/deploy_page_product.py --selftest
+
+Коды выхода: 0 — выложено (или план показан), 1 — отказ с причиной.
+"""
+
+import argparse
+import json
+import pathlib
+import subprocess
+import sys
+
+СЮДА = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(СЮДА))
+# Канон запроса и токена живёт в deploy_edition — берём ЕГО, а не копию.
+# Копия рано или поздно отстанет от платформы, и отставание будет тихим.
+from deploy_edition import ОС, Отказ, запрос, как_json, из_потока  # noqa: E402
+
+
+def гейт_витрины(папка: pathlib.Path) -> None:
+    """Без иконки, описания и тегов магазин превращается в свалку. Гейт — жёсткий."""
+    итог = subprocess.run(
+        [sys.executable, str(СЮДА / "check_listing_meta.py"), str(папка)],
+        capture_output=True, text=True)
+    print(итог.stdout.strip() or итог.stderr.strip())
+    if итог.returncode != 0:
+        raise Отказ("карточка не прошла гейт витрины — выкладывать нечего")
+
+
+def собрать_поля(карточка: dict) -> dict:
+    """Мета едет с КАЖДОЙ версией: платформа с 15.08.2026 без тега отвечает 400."""
+    теги = карточка.get("теги") or карточка.get("tags") or []
+    if isinstance(теги, str):
+        теги = [т.strip() for т in теги.split(",") if т.strip()]
+    if not теги:
+        raise Отказ("нет тегов: платформа ответит «At least one tag is required»")
+    права = карточка.get("права") or карточка.get("app_scopes") or []
+    return {
+        "version": str(карточка.get("версия") or карточка.get("version") or "0.1.0"),
+        "price_credits": str(карточка.get("цена", 0)),
+        "app_scopes": json.dumps(права, ensure_ascii=False),
+        "tags": json.dumps(теги, ensure_ascii=False),
+        "description": str(карточка.get("описание") or карточка.get("description") or "").strip(),
+        "name": str(карточка.get("name") or карточка.get("имя") or "").strip(),
+    }
+
+
+def выложить(папка: pathlib.Path, сухой: bool, публичная_версия: bool) -> int:
+    файл = папка / "listing.json"
+    if not файл.exists():
+        raise Отказ(f"нет {файл} — описывать нечего")
+    карточка = json.loads(файл.read_text())
+
+    страница = папка / "index.html"
+    if not страница.exists():
+        raise Отказ("нет index.html — собери окно: tools/make_local_app_page.py")
+    иконка = папка / str(карточка.get("иконка") or "icon.png")
+    if not иконка.exists():
+        raise Отказ(f"нет иконки {иконка.name} — сделать: tools/make_icon.py")
+
+    гейт_витрины(папка)
+    поля = собрать_поля(карточка)
+    файлы = {"page": страница, "icon": иконка}
+    имя = поля["name"]
+
+    if карточка.get("listing_id"):
+        # Листинг есть — только НОВАЯ ВЕРСИЯ. publish-stream создал бы двойника.
+        лид = карточка["listing_id"]
+        if сухой:
+            print(f"  добавил бы версию {поля['version']} к листингу {лид}")
+            return 0
+        код, текст = запрос(ОС, "/api/my-listings")
+        свои = как_json(текст, "список листингов").get("listings", []) if код == 200 else []
+        живой = next((x for x in свои if x.get("id") == лид), None)
+        if живой is None:
+            raise Отказ("листинг из listing.json не найден у текущего токена")
+        if живой.get("published") is True and not публичная_версия:
+            raise Отказ("листинг уже опубликован: новая версия станет публичной сразу. "
+                        "После решения владельца повтори с --разрешить-публичную-версию")
+        код, т = запрос(ОС, f"/api/add-version-stream/{лид}", поля=поля, файлы=файлы)
+        готово = из_потока(т, "добавление версии", код)
+        карточка["version_id"] = готово.get("version_id", карточка.get("version_id"))
+        print(f"  версия {поля['version']} добавлена к листингу {лид}")
+    else:
+        if сухой:
+            print(f"  создал бы ПРЕДРЕЛИЗ «{имя}» версии {поля['version']}")
+            print("  Publish не жму: публичность включает владелец")
+            return 0
+        код, т = запрос(ОС, "/api/publish-stream", поля=поля, файлы=файлы)
+        готово = из_потока(т, "публикация", код)
+        карточка["listing_id"] = готово["listing_id"]
+        карточка["version_id"] = готово["version_id"]
+        карточка["состояние"] = "предрелиз"
+        print(f"  листинг создан ПРЕДРЕЛИЗОМ: {карточка['listing_id']}")
+
+    файл.write_text(json.dumps(карточка, ensure_ascii=False, indent=2) + "\n")
+    лид = карточка["listing_id"]
+    print(f"  listing.json обновлён (listing_id, version_id)")
+    print(f"\n  Страница продукта: {ОС}/app-page/{лид}/")
+    print("  Ярлык на стол — ТОЛЬКО прямой, на этот адрес со слэшем, без заголовков.")
+    print("  Publish жмёт владелец: до этого продукт виден только вам.")
+    return 0
+
+
+def selftest() -> int:
+    ошибки = []
+    поля = собрать_поля({"name": "Доска", "описание": "о" * 90,
+                         "теги": ["приложение", "схемы"], "версия": "0.2.0",
+                         "цена": 0, "права": []})
+    if поля["version"] != "0.2.0":
+        ошибки.append("версия не подхватилась")
+    else:
+        print("  ✓ версия берётся из карточки")
+    if json.loads(поля["tags"]) != ["приложение", "схемы"]:
+        ошибки.append("теги не собрались")
+    else:
+        print("  ✓ теги едут с версией (иначе платформа ответит 400)")
+    if поля["app_scopes"] != "[]":
+        ошибки.append("права по умолчанию не пусты")
+    else:
+        print("  ✓ права по умолчанию пусты — страничному продукту их не нужно")
+
+    try:
+        собрать_поля({"name": "Без тегов", "описание": "о" * 90, "теги": []})
+        ошибки.append("карточка без тегов не отказала")
+    except Отказ:
+        print("  ✓ карточка без тегов отказывает до запроса к платформе")
+
+    # Главная гарантия инструмента: он умеет создать предрелиз, но НЕ умеет
+    # включить публичность. Проверяем это по собственному коду, а не по обещанию.
+    исходник = открытый_исходник()
+    # Искомое собираем по кускам: иначе проверка находит саму себя и врёт.
+    предрелиз = "/api/" + "publish" + "-stream"
+    публикация = "/api/" + "publish"
+    if предрелиз not in исходник:
+        ошибки.append("путь создания предрелиза потерян")
+    else:
+        print("  ✓ создание предрелиза на месте")
+    if публикация in исходник.replace(предрелиз, ""):
+        ошибки.append("в коде есть вызов Publish — его тут быть не должно")
+    else:
+        print("  ✓ вызова Publish в коде нет: публичность включает владелец")
+
+    if ошибки:
+        for о in ошибки:
+            print(f"  ✕ {о}")
+        print("ИТОГ САМОПРОВЕРКИ: есть отказы")
+        return 1
+    print("ИТОГ САМОПРОВЕРКИ: все проверки прошли")
+    return 0
+
+
+def открытый_исходник() -> str:
+    return pathlib.Path(__file__).read_text()
+
+
+def main() -> int:
+    р = argparse.ArgumentParser(add_help=True)
+    р.add_argument("папка", nargs="?")
+    р.add_argument("--сухой", action="store_true")
+    р.add_argument("--разрешить-публичную-версию", dest="публичная", action="store_true")
+    р.add_argument("--selftest", action="store_true")
+    а = р.parse_args()
+
+    if а.selftest:
+        return selftest()
+    if not а.папка:
+        р.print_help()
+        return 1
+    папка = pathlib.Path(а.папка).expanduser().resolve()
+    if not папка.is_dir():
+        print(f"  ✕ нет такой папки: {папка}")
+        return 1
+    try:
+        return выложить(папка, а.сухой, а.публичная)
+    except Отказ as о:
+        print(f"Не выложил: {о}")
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
