@@ -11,7 +11,8 @@ on:
   pull_request:
 
 jobs:
-  проверки:
+  gates:
+    name: Все гейты
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
