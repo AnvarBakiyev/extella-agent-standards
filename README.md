@@ -247,6 +247,7 @@ HTML ≤ 3 МБ или zip с `index.html` в корне ≤ 20 МБ) и `icon`.
 | [`DEPLOY_REQUIREMENTS.md`](DEPLOY_REQUIREMENTS.md) | каналы доставки, разделы A–H, приёмка перед публикацией, замеры платформы |
 | [`AGENT_BUILD_GUIDE.md`](AGENT_BUILD_GUIDE.md) | решения при стройке, канон, цикл «построил → проверил → починил» и метод работы с большим артефактом |
 | [`PUBLISH_YOUR_AGENT.md`](PUBLISH_YOUR_AGENT.md) | как оформить репозиторий, чтобы агента поставили одной ссылкой |
+| [`PANEL_STANDARD.md`](PANEL_STANDARD.md) | панель приложения: вид по дизайн-коду и слова без жаргона — обязателен перед выпуском |
 | [`AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) · [`EVOLUTION_PHILOSOPHY.md`](EVOLUTION_PHILOSOPHY.md) | зачем система устроена именно так |
 | `tools/` | **проверялки — и есть спецификация**; у каждой `--selftest` |
 
