@@ -28,7 +28,10 @@ h2{font-family:var(--serif);font-weight:600;font-size:17px;margin:22px 0 6px}
 .ч:first-child{border-top:0}
 .г{font-family:var(--mono);font-size:13px;line-height:1.5;flex:0 0 18px;color:var(--tx3)}
 .г.есть{color:var(--petrol)}
+.ч .тело{flex:1}
 .ч .и{font-size:15px}
+.открыть{flex:0 0 auto;align-self:center;font:600 13px system-ui;color:#0A0A0A;
+  background:var(--a);border-radius:5px;padding:8px 14px;text-decoration:none}
 .ч .з{color:var(--tx2);font-size:13px;margin-top:2px}
 .ч .м{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:3px;word-break:break-all}
 .ч.поставлено .м{color:var(--petrol)}
@@ -109,12 +112,19 @@ function нарисовать(){
   var части = (снимок && снимок['части']) || [];
   document.getElementById('состав').innerHTML = части.map(function(ч){
     var метка = ч['итог'] ? ч['итог'] : (ч['где'] || '');
+    // Из витрины надо РАБОТАТЬ, а не любоваться галочками: у готовой части сразу
+    // стоит кнопка «Открыть». Открываем отдельным окном намеренно — там у
+    // приложения есть хранилище, а внутри чужой страницы его закрывают.
+    var открыть = (ч['стоит'] && ч['адрес'])
+      ? '<a class="открыть" href="' + текстом(ч['адрес']) + '" target="_blank" '
+        + 'rel="noopener">Открыть</a>'
+      : '';
     return '<div class="ч' + (ч['итог'] === 'поставлено' ? ' поставлено' : '') + '">'
       + '<div class="г' + (ч['стоит'] ? ' есть' : '') + '">' + (ч['стоит'] ? '✓' : '○') + '</div>'
-      + '<div><div class="и">' + текстом(ч['имя']) + '</div>'
+      + '<div class="тело"><div class="и">' + текстом(ч['имя']) + '</div>'
       + '<div class="з">' + текстом(ч['зачем']) + '</div>'
       + (метка ? '<div class="м">' + текстом(метка) + '</div>' : '')
-      + '</div></div>';
+      + '</div>' + открыть + '</div>';
   }).join('');
 
   var не_стоит = части.filter(function(ч){ return !ч['стоит']; }).length;
