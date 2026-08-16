@@ -17,6 +17,25 @@
 (function () {
   var АДРЕС = "/_extella_storage";
 
+  // СНИМАЕМ ЧУЖОЙ ПЕРЕХВАТЧИК СТРАНИЦ. Приложение могло раньше поставить свой
+  // service worker на весь порт — он переживает удаление файлов и продолжает
+  // отдавать СТАРУЮ копию из кэша: правки не доезжают, а окно может остаться
+  // белым. Переименовать файлы мало — регистрация живёт в браузере отдельно.
+  // Снимаем её явно и чистим кэши; на работу приложения это не влияет — всё
+  // и так лежит на этом компьютере.
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      navigator.serviceWorker.getRegistrations().then(function (список) {
+        (список || []).forEach(function (р) { try { р.unregister(); } catch (e) {} });
+      }).catch(function () {});
+    }
+    if (window.caches && caches.keys) {
+      caches.keys().then(function (имена) {
+        (имена || []).forEach(function (и) { try { caches.delete(и); } catch (e) {} });
+      }).catch(function () {});
+    }
+  } catch (e) {}
+
   function родное_работает() {
     try {
       window.localStorage.setItem("__extella_проба", "1");
@@ -127,6 +146,19 @@
   });
 
   доложить(true, "");
+
+  // ТОЛЧОК К ПЕРЕРИСОВКЕ. Приложения на холсте (excalidraw и подобные) рисуют
+  // бережно: ждут события и пропускают кадры, пока окно считается ненужным.
+  // Во встроенном окне такого события может не случиться вовсе — приложение
+  // живое, доложило о себе, а человек смотрит в белое. Замер 16.08.2026:
+  // доска на 179 элементов появлялась только со второго кадра.
+  // Событие размера — то, на которое такие приложения перерисовываются всегда.
+  var толчок = function () { try { window.dispatchEvent(new Event("resize")); } catch (e) {} };
+  [120, 600, 1500, 3000].forEach(function (мс) { setTimeout(толчок, мс); });
+  window.addEventListener("load", толчок);
+  // Появилось внимание к окну — рисуем сразу, не дожидаясь следующего срока.
+  document.addEventListener("visibilitychange", толчок);
+  window.addEventListener("focus", толчок);
 })();
 </script>
 <!-- extella-проба: конец -->
