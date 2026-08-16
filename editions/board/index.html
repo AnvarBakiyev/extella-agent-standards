@@ -37,7 +37,7 @@ p{color:var(--tx2);margin:0 0 16px}
   <div class="карточка">
     <h1>Доска схем</h1>
     <p id="сообщение">Открываю…</p>
-    <a class="btn" id="кнопка" href="http://localhost:34785/" target="_blank" rel="noopener"
+    <a class="btn" id="кнопка" href="http://localhost:34786/" target="_blank" rel="noopener"
        style="display:none">Открыть в отдельном окне</a>
     <div class="тихо" id="тихо"></div>
   </div>
@@ -45,7 +45,7 @@ p{color:var(--tx2);margin:0 0 16px}
 
 <div class="полоска" id="полоска">
   <span id="полоска_текст"></span>
-  <a href="http://localhost:34785/" target="_blank" rel="noopener">Открыть отдельным окном</a>
+  <a href="http://localhost:34786/" target="_blank" rel="noopener">Открыть отдельным окном</a>
   <button type="button" id="полоска_закрыть" title="Скрыть">×</button>
 </div>
 
@@ -81,8 +81,8 @@ window.addEventListener('message', function(e){
 });
 if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) тема('light');
 
-var АДРЕС = 'http://localhost:34785/';
-var ПРОБА = 'http://localhost:34785/apple-touch-icon.png';
+var АДРЕС = 'http://localhost:34786/';
+var ПРОБА = 'http://localhost:34786/apple-touch-icon.png';
 var РАЗВЕДЧИК = '';
 var окно_ = document.getElementById('окно');
 var запасной = document.getElementById('запасной');
@@ -139,7 +139,7 @@ window.addEventListener('message', function(e){
   карточкой('Здесь приложению негде хранить работу: браузер закрывает хранилище ' +
             'всему, что открыто внутри чужой страницы. Отдельным окном всё ' +
             'работает, включая сохранение.',
-            'адрес: localhost:34785 · рисунки лежат файлом на вашем компьютере · причина: ' + (d.причина || 'хранилище закрыто'));
+            'адрес: localhost:34786 · рисунки лежат файлом на вашем компьютере · причина: ' + (d.причина || 'хранилище закрыто'));
 });
 
 // Проверка идёт ФОНОМ и только чтобы объяснить пустое окно, если оно пустое.
@@ -163,7 +163,7 @@ setTimeout(function(){
       // сказать прямо, чем оставить человека смотреть в белое.
       карточкой('Приложение на этом компьютере сейчас не запущено. Откройте его ' +
                 'отдельным окном: если и там пусто, служба остановлена.',
-                'адрес: localhost:34785 · рисунки лежат файлом на вашем компьютере · не отвечает');
+                'адрес: localhost:34786 · рисунки лежат файлом на вашем компьютере · не отвечает');
     });
 }, 6000);
 </script>
