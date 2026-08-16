@@ -94,6 +94,7 @@ run check_app_scopes
 run check_edition
 run check_compose
 run check_listing_meta
+run set_published
 run inject_probe
 run make_icon
 run_command install_edition python3 "$ROOT/templates/edition/install_edition.py" --selftest
