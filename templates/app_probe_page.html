@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<!-- Кодировка ПЕРВОЙ строкой: всё ниже написано по-русски, и без объявления
+     кодировки браузер прочитает кириллицу как латиницу — скрипт станет мусором
+     и молча не выполнится. На этом уже потеряли час. -->
+<title>Входная проверка приложения — Extella</title>
+<style>
+  :root{--бум:#FAF9F5;--чер:#1A1A1A;--сер:#6B7280;--рам:#E2E0DA;--зол:#C57E33;
+        --зел:#2E7D5B;--крас:#B5423E;--пан:#FFFFFF}
+  @media (prefers-color-scheme:dark){
+    :root{--бум:#141414;--чер:#EDEDED;--сер:#9AA0A6;--рам:#2E2E2E;--пан:#1C1C1C}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--бум);color:var(--чер);
+       font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .лист{max-width:760px;margin:0 auto;padding:26px 22px 60px}
+  h1{margin:0 0 5px;font-size:21px;font-weight:600}
+  .под{color:var(--сер);font-size:13.5px;margin-bottom:22px}
+  .шаг{margin:0 0 14px;padding:15px 17px;border:1px solid var(--рам);
+       border-radius:10px;background:var(--пан)}
+  .шаг b{display:block;margin-bottom:5px;font-size:14.5px}
+  .шаг p{margin:0;color:var(--сер);font-size:13.5px}
+  button{font:inherit;font-size:14px;padding:9px 17px;border-radius:8px;cursor:pointer;
+         border:1px solid var(--зол);background:var(--зол);color:#fff;margin-top:12px}
+  button.тихая{background:transparent;color:var(--чер);border-color:var(--рам)}
+  button:disabled{opacity:.45;cursor:default}
+  .итог{margin-top:18px;padding:16px 18px;border-radius:10px;border:1px solid var(--рам);
+        background:var(--пан);display:none}
+  .итог.есть{display:block}
+  .вер{font-size:15.5px;font-weight:600;margin-bottom:10px}
+  .ок{color:var(--зел)} .нет{color:var(--крас)} .вним{color:var(--зол)}
+  ul{margin:9px 0 0;padding-left:20px} li{margin:4px 0;font-size:13.5px;color:var(--сер)}
+  li b{color:var(--чер);font-weight:600}
+  code{font:12px/1.5 ui-monospace,Menlo,monospace;background:rgba(127,127,127,.13);
+       padding:1px 5px;border-radius:4px}
+  .ждём{color:var(--сер);font-size:13px;font-style:italic;margin-top:9px}
+</style>
+</head>
+<body>
+<div class="лист">
+  <h1>Входная проверка приложения</h1>
+  <div class="под">Проверяем не коды ответа, а главное:
+    <b>переживает ли ваша работа перезагрузку окна</b> — и где она лежит.</div>
+
+  <div class="шаг">
+    <b>Шаг 1. Откройте приложение и поработайте в нём</b>
+    <p>Откроется соседняя вкладка. Сделайте что-нибудь заметное: нарисуйте фигуру,
+       напишите текст, добавьте карточку. Достаточно одного действия — потом
+       вкладку можно закрыть.</p>
+    <button id="открыть">Открыть приложение</button>
+  </div>
+
+  <div class="шаг">
+    <b>Шаг 2. Вернитесь сюда и нажмите проверку</b>
+    <p>Мы посмотрим во все места, где приложение могло сохранить работу:
+       хранилище браузера, базы браузера и файл на вашем диске.</p>
+    <button id="кнопка">Проверить сохранение</button>
+    <div id="ход" class="ждём" style="display:none"></div>
+  </div>
+
+  <div class="итог" id="итог"></div>
+
+  <div class="шаг" style="margin-top:20px">
+    <b>Почему приложение открывается вкладкой, а не здесь же</b>
+    <p>Два честных ограничения. Первое: многие приложения (например Excalidraw)
+       <b>отказываются работать</b>, если их встроить со своего же адреса —
+       это их защита от встраивания самих в себя. Второе: часть приложений
+       <b>намеренно не сохраняет</b>, пока вкладка фоновая. Поэтому проверка
+       делается в обычной видимой вкладке — как у человека.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Латиницей намеренно: кириллица в адресе приезжает процентами и не совпадает.
+  var АДРЕС_ДИСКА = "/_extella_storage";
+  var ПРИЛОЖЕНИЕ  = "./index.html";
+
+  var кнопка = document.getElementById('кнопка');
+  var открыть = document.getElementById('открыть');
+  var ход = document.getElementById('ход');
+  var итог = document.getElementById('итог');
+
+  открыть.onclick = function(){ window.open(ПРИЛОЖЕНИЕ, '_blank'); };
+  function пишем(т){ ход.style.display='block'; ход.textContent = т; }
+
+  // ── Где приложение могло сохранить работу ────────────────────────────────
+  // Эта страница отдаётся с ТОГО ЖЕ адреса, что и приложение, поэтому хранилище
+  // браузера у нас с ним ОБЩЕЕ — читать его можно прямо отсюда, без встраивания.
+  function снимок(){
+    var с = { браузер:{}, базы:{}, диск:{} };
+
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var к = localStorage.key(i);
+        if(к === null) continue;
+        с.браузер[к] = (localStorage.getItem(к)||'').length;
+      }
+    }catch(e){ с.браузерОшибка = String((e && e.name) || e); }
+
+    var задачи = [];
+
+    // Базы браузера (IndexedDB) — второе частое место хранения
+    try{
+      if (window.indexedDB && indexedDB.databases) {
+        задачи.push(indexedDB.databases().then(function(список){
+          return Promise.all((список||[]).map(function(б){
+            if(!б || !б.name) return null;
+            return new Promise(function(готово){
+              var зпр = indexedDB.open(б.name);
+              зпр.onsuccess = function(){
+                var база = зпр.result;
+                var хранилища = Array.prototype.slice.call(база.objectStoreNames);
+                if(!хранилища.length){ с.базы[б.name]=0; база.close(); return готово(); }
+                var всего = 0;
+                var тр = база.transaction(хранилища,'readonly');
+                хранилища.forEach(function(имя){
+                  var зп = тр.objectStore(имя).count();
+                  зп.onsuccess = function(){ всего += зп.result||0; };
+                });
+                тр.oncomplete = function(){ с.базы[б.name]=всего; база.close(); готово(); };
+                тр.onerror   = function(){ база.close(); готово(); };
+              };
+              зпр.onerror = function(){ готово(); };
+              зпр.onblocked = function(){ готово(); };
+            });
+          }));
+        }).catch(function(){}));
+      }
+    }catch(e){}
+
+    // Наше хранилище на диске (если приложение раздаёт сервер кабинета)
+    задачи.push(fetch(АДРЕС_ДИСКА).then(function(о){ return о.ok ? о.json() : null; })
+      .then(function(д){
+        if(!д){ с.дискНедоступен = true; return; }
+        Object.keys(д).forEach(function(к){ с.диск[к] = String(д[к]||'').length; });
+      }).catch(function(){ с.дискНедоступен = true; }));
+
+    return Promise.all(задачи).then(function(){ return с; });
+  }
+
+  кнопка.onclick = function(){
+    кнопка.disabled = true;
+    итог.className = 'итог';
+    пишем('Смотрю, что сохранилось…');
+    снимок().then(function(с){
+      ход.style.display = 'none';
+      кнопка.disabled = false;
+      вердикт(с);
+    }).catch(function(о){
+      ход.style.display = 'none';
+      кнопка.disabled = false;
+      итог.className = 'итог есть';
+      итог.innerHTML = '<div class="вер нет">Проверка не прошла</div><ul><li>'+
+        String((о && о.message) || о)+'</li></ul>';
+    });
+  };
+
+  function сумма(о){
+    return Object.keys(о).reduce(function(с,к){ return с + (о[к]||0); }, 0);
+  }
+
+  function вердикт(с){
+    // Мелочь вроде языка интерфейса и темы — это не работа человека.
+    // Порог отсекает такие записи: работа занимает заметно больше.
+    var ПОРОГ = 200;
+    var объёмДиск    = сумма(с.диск);
+    var объёмБраузер = сумма(с.браузер);
+    var записейВБазах = сумма(с.базы);
+
+    var класс, заголовок, пункты = [];
+
+    if(объёмДиск > ПОРОГ){
+      класс = 'ок';
+      заголовок = 'Годно: работа сохраняется файлом на вашем диске';
+      пункты.push('Хранение: <b>файл у вас на компьютере</b>, а не в браузере.');
+      пункты.push('Это выдерживает окно ОС: браузер закрывает хранилище чужой '+
+                  'странице, а файл на диске — нет.');
+      пункты.push('Осталась проверка глазами: откройте приложение снова и убедитесь, '+
+                  'что ваша фигура на месте.');
+    } else if(объёмБраузер > ПОРОГ){
+      класс = 'вним';
+      заголовок = 'Сохраняет, но только в браузер — нужна подмена хранилища';
+      пункты.push('Приложение пишет <b>в хранилище браузера</b>. В обычной вкладке это работает.');
+      пункты.push('В окне ОС приложение становится «третьей стороной», и браузер закрывает '+
+                  'ему хранилище — работа начнёт пропадать <b>молча</b>. Это худший вид поломки: '+
+                  'ошибки нет, а работы нет.');
+      пункты.push('Лечится вставкой подмены: <code>tools/inject_probe.py путь/к/index.html</code> '+
+                  '— после неё проверку прогнать заново, ожидается «файл на диске».');
+    } else if(записейВБазах > 0){
+      класс = 'вним';
+      заголовок = 'Сохраняет в базы браузера — готового решения нет';
+      пункты.push('Приложение хранит работу в <b>базах браузера (IndexedDB)</b>. '+
+                  'Наша подмена закрывает только хранилище браузера, но не базы.');
+      пункты.push('В окне ОС такие данные тоже могут быть закрыты. '+
+                  'В магазин пока <b>не выкладывать</b> — нужен отдельный разбор.');
+    } else {
+      класс = 'нет';
+      заголовок = 'Работа НЕ сохраняется';
+      пункты.push('После вашей работы ни в одном хранилище ничего не появилось.');
+      пункты.push('Частые причины: приложению <b>нужен хозяин</b> (сборка без слоя '+
+                  'сохранения) — или вы работали в <b>фоновой вкладке</b>, где часть '+
+                  'приложений сохранение выключает.');
+      пункты.push('Проверьте ещё раз в видимой вкладке. Если пусто — '+
+                  'в магазин <b>нельзя</b>: люди потеряют работу молча.');
+    }
+
+    if(с.дискНедоступен){
+      пункты.push('Хранилище Extella не отвечает — проверка шла только по браузеру. '+
+                  'Приложение должен раздавать <code>tools/cabinet_server.py</code>.');
+    }
+    if(с.браузерОшибка){
+      пункты.push('Хранилище браузера закрыто (<b>'+с.браузерОшибка+'</b>) — '+
+                  'ровно тот случай, ради которого нужна подмена.');
+    }
+
+    var куда = [];
+    if(объёмДиск > ПОРОГ)    куда.push('на диск, '+объёмДиск+' знаков');
+    if(объёмБраузер > ПОРОГ) куда.push('в браузер, '+объёмБраузер+' знаков');
+    if(записейВБазах > 0)    куда.push('в базы браузера, записей: '+записейВБазах);
+    if(куда.length) пункты.push('Куда пишет: <b>'+куда.join(' · ')+'</b>');
+
+    итог.className = 'итог есть';
+    итог.innerHTML = '<div class="вер '+класс+'">'+заголовок+'</div><ul>'+
+      пункты.map(function(п){ return '<li>'+п+'</li>'; }).join('')+'</ul>';
+  }
+})();
+</script>
+</body>
+</html>
