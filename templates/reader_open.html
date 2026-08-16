@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Читалка</title>
+<style>
+:root{--a:#C57E33;--bg:#FAF9F5;--s1:#FFFFFF;--bd:#D7E0DC;--tx:#0A0A0A;--tx2:#4A4A4A;--tx3:#8C8C8C}
+@media (prefers-color-scheme: dark){
+  :root{--a:#D4944A;--bg:#0A0A0A;--s1:#141414;--bd:rgba(243,238,229,.18);--tx:#F5F3EE;--tx2:#C9C3B8}
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--tx);font:15px/1.6 system-ui,-apple-system,sans-serif;
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.зона{width:100%;max-width:520px;text-align:center;border:2px dashed var(--bd);
+  border-radius:14px;padding:44px 28px;background:var(--s1);transition:border-color .15s}
+.зона.над{border-color:var(--a)}
+h1{font:600 26px/1.2 Georgia,serif;margin:0 0 8px}
+p{color:var(--tx2);margin:0 0 20px}
+.btn{display:inline-block;font:600 15px system-ui;color:#0A0A0A;background:var(--a);
+  border:0;border-radius:6px;padding:13px 24px;cursor:pointer}
+.тихо{font:11px ui-monospace,Menlo,monospace;color:var(--tx3);margin-top:20px}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div class="зона" id="зона">
+  <h1>Читалка</h1>
+  <p>Перетащите сюда PDF или выберите файл. Документ открывается прямо здесь и
+     никуда не отправляется — ни в облако, ни на наш сервер.</p>
+  <label class="btn">Выбрать PDF<input type="file" id="файл" accept="application/pdf"></label>
+  <div class="тихо" id="тихо">всё на этом компьютере</div>
+</div>
+
+<script>
+// ЗАЧЕМ ЭТА СТРАНИЦА. Просмотрщик без документа показывает пустой белый лист —
+// человек читает это как «сломано». Здесь он получает понятное начало: перетащить
+// файл или выбрать.
+//
+// Файл открывается ССЫЛКОЙ НА ПАМЯТЬ (blob) и остаётся на компьютере: никакой
+// загрузки никуда не происходит. Работает это только потому, что страница лежит
+// рядом с просмотрщиком — у чужого происхождения такую ссылку не прочитать.
+var зона = document.getElementById('зона');
+var поле = document.getElementById('файл');
+
+function открыть(файл){
+  if (!файл) return;
+  if (файл.type && файл.type.indexOf('pdf') < 0) {
+    document.getElementById('тихо').textContent = 'это не PDF: ' + (файл.type || 'неизвестный тип');
+    return;
+  }
+  var адрес = URL.createObjectURL(файл);
+  location.href = 'web/viewer.html?file=' + encodeURIComponent(адрес);
+}
+
+поле.addEventListener('change', function(){ открыть(поле.files && поле.files[0]); });
+['dragenter','dragover'].forEach(function(с){
+  зона.addEventListener(с, function(e){ e.preventDefault(); зона.classList.add('над'); });
+});
+['dragleave','drop'].forEach(function(с){
+  зона.addEventListener(с, function(e){ e.preventDefault(); зона.classList.remove('над'); });
+});
+зона.addEventListener('drop', function(e){
+  открыть(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]);
+});
+</script>
+</body>
+</html>
