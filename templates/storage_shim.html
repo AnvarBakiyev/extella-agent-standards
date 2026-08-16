@@ -153,7 +153,54 @@
     сбой((р && (р.message || р)) || "оборванное обещание");
   });
 
-  доложить(true, "");
+  // ── БАЗЫ БРАУЗЕРА (IndexedDB) В ЧУЖОМ ОКНЕ ──────────────────────────────
+  // В окне ОС приложение — «третья сторона», и браузер закрывает ему не только
+  // простое хранилище, но и базы. Разница смертельна: простое хранилище просто
+  // не отдаёт данные, а базы БРОСАЮТ ИСКЛЮЧЕНИЕ на первом же обращении, и
+  // приложение падает целиком. Замер 16.08.2026: Доска схем в окне ОС падала с
+  // пустым «Uncaught» и белым экраном, хотя подмена простого хранилища работала.
+  //
+  // Заглушка не притворяется рабочей базой: она отказывает ВЕЖЛИВО, событием
+  // вместо исключения. Приложение видит «баз нет» — это состояние обычное
+  // (режим инкогнито), и переживают его почти все. Работа при этом не теряется:
+  // сама схема живёт в простом хранилище, а оно уведено на диск.
+  var базы_закрыты = false;
+  try {
+    var прб = window.indexedDB.open("__extella_проба_баз");
+    прб.onsuccess = function () {
+      try { прб.result.close(); window.indexedDB.deleteDatabase("__extella_проба_баз"); } catch (e) {}
+    };
+    прб.onerror = function () {};
+  } catch (e) {
+    базы_закрыты = true;
+    var вежливый_отказ = function () {
+      var зпр = {
+        readyState: "pending", result: null, source: null, transaction: null,
+        error: new Error("базы браузера закрыты в этом окне"),
+        onsuccess: null, onerror: null, onupgradeneeded: null, onblocked: null,
+        addEventListener: function (и, ф) { if (и === "error") this.onerror = ф; },
+        removeEventListener: function () {}
+      };
+      setTimeout(function () {
+        зпр.readyState = "done";
+        try { if (typeof зпр.onerror === "function") зпр.onerror({ target: зпр, type: "error" }); } catch (x) {}
+      }, 0);
+      return зпр;
+    };
+    try {
+      Object.defineProperty(window, "indexedDB", {
+        configurable: true,
+        value: {
+          open: вежливый_отказ,
+          deleteDatabase: вежливый_отказ,
+          databases: function () { return Promise.resolve([]); },
+          cmp: function () { return 0; }
+        }
+      });
+    } catch (x) {}
+  }
+
+  доложить(true, базы_закрыты ? "базы браузера закрыты, схема хранится на диске" : "");
 
   // ТОЛЧОК К ПЕРЕРИСОВКЕ. Приложения на холсте (excalidraw и подобные) рисуют
   // бережно: ждут события и пропускают кадры, пока окно считается ненужным.
