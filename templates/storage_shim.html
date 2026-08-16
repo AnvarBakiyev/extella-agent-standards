@@ -1,0 +1,132 @@
+<!-- extella-проба: начало. Вставляется в страницу приложения установщиком кабинета
+     и снимается начисто (tools/inject_probe.py). Чужой код не переписывается.
+
+     ЧТО ДЕЛАЕТ. Даёт приложению хранилище, которое не зависит от браузера: работа
+     ложится файлом на диск через свой же сервер (tools/cabinet_server.py).
+
+     ЗАЧЕМ. В окне ОС приложение — «третья сторона», и браузер закрывает ему
+     localStorage: drawio умирает с английской ошибкой, excalidraw открывается и
+     молча теряет рисунки. Обход «откройте отдельным окном» перекладывает проблему
+     на человека, поэтому его тут нет.
+
+     ПОЧЕМУ ЧТЕНИЕ СИНХРОННОЕ. Приложение читает хранилище на старте, до того как
+     мы успели бы что-то дождаться. Асинхронной подмены здесь не существует: либо
+     данные есть в момент первого getItem, либо приложение считает, что их нет.
+     Запросы идут на свой же адрес, это доли миллисекунды. -->
+<script>
+(function () {
+  var АДРЕС = "/_extella_storage";
+
+  function родное_работает() {
+    try {
+      window.localStorage.setItem("__extella_проба", "1");
+      window.localStorage.removeItem("__extella_проба");
+      return true;
+    } catch (e) { return false; }
+  }
+
+  var данные = {};
+  var живо = false;
+  var как = "";
+  try {
+    var x = new XMLHttpRequest();
+    x.open("GET", АДРЕС, false);          // синхронно и намеренно, см. выше
+    x.send(null);
+    как = "статус " + x.status;
+    if (x.status === 200) { данные = JSON.parse(x.responseText || "{}"); живо = true; }
+  } catch (e) { как = "запрос отклонён (" + ((e && e.name) || e) + ")"; }
+
+  // Докладываем ВСЕГДА, даже когда не получилось. Молчание в прошлый раз стоило
+  // часа поисков: окно не могло отличить «всё хорошо» от «скрипт не выполнился».
+  function доложить(ок, причина) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "extella_проба", ок: ок, причина: причина }, "*");
+      }
+    } catch (e) {}
+  }
+  if (!живо) доложить(false, "хранилище кабинета недоступно: " + как);
+
+  // Сервер кабинета не отвечает — не трогаем ничего: пусть приложение работает
+  // со своим родным хранилищем, как умеет. Ломать рабочее ради страховки нельзя.
+  if (!живо) return;
+
+  function записать(тело) {
+    try {
+      var x = new XMLHttpRequest();
+      x.open("POST", АДРЕС, true);
+      x.setRequestHeader("Content-Type", "application/json");
+      x.send(JSON.stringify(тело));
+    } catch (e) {}
+  }
+
+  var хранилище = {
+    getItem: function (k) {
+      k = String(k);
+      return Object.prototype.hasOwnProperty.call(данные, k) ? данные[k] : null;
+    },
+    setItem: function (k, v) { данные[String(k)] = String(v); записать({ ключ: String(k), значение: String(v) }); },
+    removeItem: function (k) { delete данные[String(k)]; записать({ ключ: String(k), значение: null }); },
+    clear: function () { данные = {}; записать({ очистить: true }); },
+    key: function (i) { var к = Object.keys(данные); return i < к.length ? к[i] : null; },
+    get length() { return Object.keys(данные).length; }
+  };
+
+  // Если родное хранилище работает (приложение открыто само по себе), переносим
+  // из него то, что уже накопилось: человек не должен потерять вчерашнюю работу
+  // из-за того, что мы поменяли способ хранения.
+  if (родное_работает()) {
+    try {
+      for (var i = 0; i < window.localStorage.length; i++) {
+        var к = window.localStorage.key(i);
+        if (к && !Object.prototype.hasOwnProperty.call(данные, к)) {
+          хранилище.setItem(к, window.localStorage.getItem(к));
+        }
+      }
+    } catch (e) {}
+  }
+
+  try {
+    Object.defineProperty(window, "localStorage", {
+      value: хранилище, configurable: true, writable: false
+    });
+  } catch (e) {}
+
+  // sessionStorage браузер закрывает тем же махом. Он не переживает перезапуск и
+  // на диск не пишется — достаточно памяти, лишь бы приложение не падало.
+  try {
+    window.sessionStorage.setItem("__extella_проба", "1");
+    window.sessionStorage.removeItem("__extella_проба");
+  } catch (e) {
+    var память = {};
+    try {
+      Object.defineProperty(window, "sessionStorage", {
+        configurable: true, writable: false, value: {
+          getItem: function (k) { return Object.prototype.hasOwnProperty.call(память, String(k)) ? память[String(k)] : null; },
+          setItem: function (k, v) { память[String(k)] = String(v); },
+          removeItem: function (k) { delete память[String(k)]; },
+          clear: function () { память = {}; },
+          key: function (i) { var к = Object.keys(память); return i < к.length ? к[i] : null; },
+          get length() { return Object.keys(память).length; }
+        }
+      });
+    } catch (e2) {}
+  }
+
+  // Падение приложения не должно выглядеть как пустое окно: окно ОС получит
+  // причину и покажет её человеку по-русски.
+  window.addEventListener("error", function (е) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: "extella_сбой",
+          причина: String((е && е.message) || "ошибка").slice(0, 200)
+        }, "*");
+      }
+    } catch (x) {}
+  });
+
+  доложить(true, "");
+})();
+</script>
+<!-- extella-проба: конец -->
