@@ -1,0 +1,22 @@
+name: гейты
+
+# ЗАЧЕМ. Гейты до сих пор гонялись только на машине автора. Значит, в общий
+# репозиторий мог приехать код, который у автора зелёный, а у всех остальных
+# падает — так у нас уже было с гейтом, искавшим файл вне репозитория.
+# Теперь проверка идёт на чужой машине и на каждый push и pull request.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  проверки:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Прогнать все гейты
+        run: bash tools/run_all_gates.sh
