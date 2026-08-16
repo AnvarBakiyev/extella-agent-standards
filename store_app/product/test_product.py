@@ -52,7 +52,11 @@ class ProductTests(unittest.TestCase):
         exec((HERE / "expert_extella_codex_product_setup.py").read_text(), namespace)
         value = json.loads(namespace["extella_codex_product_setup"]("unexpected"))
         self.assertEqual(value["status"], "error")
-        self.assertEqual(value["code"], "unsupported_step")
+        # Продукт рассчитан на macOS. На другой системе он отказывает РАНЬШЕ —
+        # кодом unsupported_os, и это тоже честный отказ. Прежний тест ждал
+        # только macOS-ветку и был зелёным ровно на машине автора: прогон на
+        # чистой Linux-машине 16.08.2026 это и вскрыл.
+        self.assertIn(value["code"], ("unsupported_step", "unsupported_os"))
         self.assertFalse(value["model_called"])
 
     def test_deploy_requires_public_version_guard_and_cannot_publish_listing(self):
