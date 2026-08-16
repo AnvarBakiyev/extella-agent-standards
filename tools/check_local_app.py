@@ -146,6 +146,36 @@ def порт_занят(порт: int) -> bool:
         return с.connect_ex(("127.0.0.1", порт)) == 0
 
 
+def пускает_окно_ос(порт: int) -> tuple[bool, str]:
+    """Пустит ли местный сервер страницу ОС к себе.
+
+    Окно ОС — страница из интернета (os.extella.ai), а приложение живёт на этом
+    компьютере. Браузер такие запросы «наружу → внутрь» блокирует, пока сервер
+    не разрешит их ЯВНО. Замер 16.08.2026: без разрешений окно ОС показывало
+    «проба молчит» и пустое окно, хотя приложение по адресу открывалось.
+    """
+    import http.client
+    try:
+        с = http.client.HTTPConnection("127.0.0.1", порт, timeout=3)
+        с.request("OPTIONS", "/", headers={
+            "Origin": "https://os.extella.ai",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Private-Network": "true"})
+        о = с.getresponse()
+        о.read()
+        з = {k.lower(): v for k, v in о.getheaders()}
+        с.close()
+    except OSError as е:
+        return False, f"сервер не ответил на предполётный запрос ({е})"
+    if о.status >= 400:
+        return False, f"предполётный запрос отвергнут (HTTP {о.status})"
+    нет = [и for и in ("access-control-allow-origin",
+                       "access-control-allow-private-network") if и not in з]
+    if нет:
+        return False, "нет разрешений: " + ", ".join(нет)
+    return True, ""
+
+
 def снять(папка: pathlib.Path) -> int:
     стр = папка / ИМЯ_СТРАНИЦЫ
     if стр.exists():
@@ -220,6 +250,14 @@ def проверить(папка: pathlib.Path, порт: int) -> int:
     print("\nЧТО ДЕЛАТЬ ДАЛЬШЕ")
     if порт_занят(порт):
         print(f"  порт {порт} уже раздаётся — считаю, что это ваше приложение")
+        пускает, почему = пускает_окно_ос(порт)
+        if пускает:
+            print("  ✓ сервер пускает к себе страницу ОС (разрешения на месте)")
+        else:
+            print(f"  ✕ сервер НЕ пустит окно ОС: {почему}")
+            print("    в окне ОС это выглядит как «проба молчит» и пустое окно,")
+            print("    хотя по адресу приложение открывается. Раздавать надо")
+            print("    через tools/cabinet_server.py — он эти разрешения ставит")
     else:
         print("  1) запустить раздачу с хранилищем на диске:")
         print(f"     python3 {КОРЕНЬ / 'tools' / 'cabinet_server.py'} \\")
