@@ -147,9 +147,10 @@
   // НИЧЕГО. Замер 16.08.2026: два круга правок ушли впустую, потому что причина
   // была обрезана до одного слова. Собираем всё, что есть: где упало и стек.
   window.addEventListener("error", function (е) {
+    var о = е && е.error;
+    if (о && о.__extella_ожидаемо) return;      // свой отказ — не падение
     var части = [];
     if (е && е.message) части.push(String(е.message));
-    var о = е && е.error;
     if (о && о.name && String(е.message || "").indexOf(о.name) < 0) части.push(о.name);
     if (о && о.message) части.push(о.message);
     if (е && е.filename) {
@@ -167,6 +168,9 @@
   // «живо», но экран остаётся пустым, и без этого доклада причина не видна.
   window.addEventListener("unhandledrejection", function (е) {
     var р = е && е.reason;
+    // Наш собственный вежливый отказ — не падение приложения, а объявленное
+    // состояние песочницы. Молчим о нём здесь: о нём уже сказано отдельно.
+    if (р && р.__extella_ожидаемо) return;
     сбой((р && (р.message || р)) || "оборванное обещание");
   });
 
@@ -226,10 +230,18 @@
     прб.onerror = function () {};
   } catch (e) {
     базы_закрыты = true;
+    // Помечаем СВОЙ отказ: он ожидаемый, и путать его с падением приложения
+    // нельзя. Замер 16.08.2026: непомеченный отказ доезжал до окна как
+    // «приложение не смогло запуститься» — при полностью работающей доске.
+    var свой_отказ = function () {
+      var о = new Error("базы браузера закрыты в этом окне");
+      о.__extella_ожидаемо = true;
+      return о;
+    };
     var вежливый_отказ = function () {
       var зпр = {
         readyState: "pending", result: null, source: null, transaction: null,
-        error: new Error("базы браузера закрыты в этом окне"),
+        error: свой_отказ(),
         onsuccess: null, onerror: null, onupgradeneeded: null, onblocked: null,
         addEventListener: function (и, ф) { if (и === "error") this.onerror = ф; },
         removeEventListener: function () {}
