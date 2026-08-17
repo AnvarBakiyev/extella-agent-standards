@@ -101,6 +101,12 @@ run check_app_scopes
 run check_edition
 run check_compose
 run check_listing_meta
+# Инструменты чата Доски схем: самопроверки у них есть, а в общем прогоне их не было —
+# то есть на чистой машине их никто не охранял. Гейт защищает только то, что включено.
+run check_local_app
+run cut_outbound
+run collect_licenses
+run deploy_page_product
 run set_published
 run inject_probe
 run make_icon
