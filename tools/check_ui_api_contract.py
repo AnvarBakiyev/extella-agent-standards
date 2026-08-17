@@ -48,6 +48,12 @@ REG_DIR = Path(os.environ.get("EXTELLA_CARDS_DIR")
                or Path.home() / "extella-plugins" / "_registry")
 
 
+# Объявлены явно: до 17.08.2026 они возникали только внутри main(), и самопроверка
+# падала на NameError — гейт не мог проверить сам себя.
+ROOT = Path.cwd()
+BASE = ""
+
+
 def из_паспорта(root: Path):
     """Интерфейс и порт, объявленные продуктом. Первый источник, не запасной."""
     for имя in ("docs/automation_passport.yaml", "docs/agent_passport.yaml",
@@ -540,6 +546,44 @@ def обработать(действие, payload):
     случай("отсутствие второй стороны — не успех", СТРАНИЦА, None, 1)
     случай("страница без вызовов к хосту: проверять нечего",
            "<script>console.log(1)</script>", АДАПТЕР, 2)
+
+
+    # --- сверка арности: живой дефект 17.08.2026 --------------------------------
+    def случай_арности(имя, страница, сервер, ждём_беду):
+        with tempfile.TemporaryDirectory() as d:
+            к = Path(d)
+            (к / "api.py").write_text(сервер)
+            global ROOT
+            прежний = ROOT
+            ROOT = к
+            try:
+                беды = сверить_арность(страница, сказать=lambda *_: None)
+            finally:
+                ROOT = прежний
+            ок = bool(беды) == ждём_беду
+            print(("  ✓ " if ок else "  ✗ ") + имя)
+            if not ок:
+                провалы.append(имя)
+
+    БЕРЁТ_ЧЕТЫРЕ = """
+class API:
+    def create_job_text(self, job_id, title, level, notes):
+        return {}
+"""
+    БЕРЁТ_СВОБОДНО = """
+class API:
+    def create_job_text(self, *args):
+        return {}
+"""
+    ШЛЁТ_ПЯТЬ = "const r = await api('create_job_text', [id, title, level, notes, lang]);"
+    ШЛЁТ_ТРИ = "const r = await api('create_job_text', [id, title, level]);"
+
+    случай_арности("перевес аргументов ловится (5 против 4)",
+                   ШЛЁТ_ПЯТЬ, БЕРЁТ_ЧЕТЫРЕ, True)
+    случай_арности("недостача аргументов НЕ красная (3 против 4)",
+                   ШЛЁТ_ТРИ, БЕРЁТ_ЧЕТЫРЕ, False)
+    случай_арности("метод со *args не сверяется",
+                   ШЛЁТ_ПЯТЬ, БЕРЁТ_СВОБОДНО, False)
 
     if провалы:
         print("ИТОГ САМОПРОВЕРКИ: провалы —", "; ".join(провалы))
