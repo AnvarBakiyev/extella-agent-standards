@@ -143,6 +143,7 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
         <p>Отдельная служба на этом Mac: свой порт и свой секрет, Codex не затрагивается.</p>
       </div>
       <button class="btn main" id="claude-connect">Подключить Claude</button>
+      <button class="btn" id="claude-reprovision">Обновить раздачу</button>
     </div>
     <div class="codex-state" id="claude-state">Готов к проверке. Реальные запросы в Claude могут расходовать план или API.</div>
   </div>
@@ -544,6 +545,35 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       состояние(маршрут.строка, (error && error.message) || 'Не удалось подключить.', 'bad');
     });
   }
+
+  // Раздача моста — снимок на момент установки: агент, созданный позже, моста
+  // не получит и узнает об этом только отказом в чате. Этап agents идемпотентен
+  // и сверяет каждую копию запуском, поэтому повтор безопасен и есть чем
+  // ответить на «у нового агента не работает».
+  document.getElementById('claude-reprovision').onclick = function(){
+    var кнопка = this;
+    var было = кнопка.textContent;
+    кнопка.disabled = true;
+    кнопка.textContent = 'Сверяю…';
+    состояние('claude-state', 'Сверяю раздачу моста по агентам. Модель не запускается.');
+    вызватьSetup('extella_claude_product_setup', 'agents').then(function(r){
+      if (r.status !== 'success' || r.model_called !== false ||
+          r.agent_called !== false || r.paid !== false) {
+        throw new Error(r.message || 'Пересверка не подтвердилась.');
+      }
+      // Числа показываются целиком: «готово» без них скрывает, что часть
+      // агентов осталась без моста.
+      состояние('claude-state', 'Мост запускается у ' + String(r.runnable) +
+        ' агентов. Без моста: ' + String(r.not_runnable) +
+        ', публичных пропущено: ' + String(r.skipped_public) + '.',
+        Number(r.not_runnable) > 0 ? 'bad' : 'ok');
+    }).catch(function(error){
+      состояние('claude-state', (error && error.message) || 'Не удалось обновить раздачу.', 'bad');
+    }).then(function(){
+      кнопка.disabled = false;
+      кнопка.textContent = было;
+    });
+  };
 
   document.getElementById('codex-connect').onclick = function(){
     подключить({
