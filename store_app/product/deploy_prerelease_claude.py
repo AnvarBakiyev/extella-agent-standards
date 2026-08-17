@@ -32,7 +32,7 @@ DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Добавлена кнопка «Подключить Claude» "
     "и исправлен раздел 09. Живой продукт не затронут."
 )
-VERSION = "3.2.2"
+VERSION = "3.2.3"
 SCOPES = ["expert.run", "device.run"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
@@ -43,9 +43,12 @@ TAGS = ["prerelease", "claude", "codex", "bridge"]
 LIVE_TAGS = ["guide", "standards", "codex", "claude"]
 # Абсолютный путь к рабочей ветке моста: относительный отсчёт от этого файла
 # уводил в соседний каталог и срывал запуск уже после начала записи.
+# Слитый main, а не рабочий worktree. Пока путь смотрел в worktree, деплой
+# писал в магазин старый Expert, отчитывался «сверено посимвольно» — сверял он
+# копию с самой собой — и разошёлся с репозиторием незаметно.
 CLAUDE_PLUGIN = (
     pathlib.Path.home()
-    / "Extella Claude Bridge/wt-claude-poc/plugins/extella-claude-bridge"
+    / "Documents/Codex/extella-codex-bridge/plugins/extella-claude-bridge"
 )
 EXPERTS = {
     "extella_claude_product_setup": CLAUDE_PLUGIN / "experts/extella_claude_product_setup.py",

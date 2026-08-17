@@ -264,7 +264,36 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
 
   // Один вызов на оба маршрута: различается только имя эксперта. Страница не
   // выбирает ни команду, ни источник, ни устройство — всё закреплено в эксперте.
-  function вызватьSetup(expertName, action){
+  // Раздача идёт порциями и складывается здесь: один вызов на всех агентов
+  // платформа откладывает в задачу и отвечает ссылкой на неё вместо результата.
+  function раздать(expertName, показать){
+    var итог = {written:0, runnable:0, not_runnable:0, skipped_public:0, total:0};
+    function порция(offset){
+      return вызватьSetup(expertName, 'agents', {offset: offset, limit: 8})
+        .then(function(r){
+          if (r.status !== 'success' || r.model_called !== false ||
+              r.agent_called !== false || r.paid !== false) {
+            throw new Error(r.message || 'Раздача моста не подтвердилась.');
+          }
+          итог.written += Number(r.written) || 0;
+          итог.runnable += Number(r.runnable) || 0;
+          итог.not_runnable += Number(r.not_runnable) || 0;
+          итог.skipped_public += Number(r.skipped_public) || 0;
+          итог.total = Number(r.total) || итог.total;
+          if (показать) {
+            показать('Сверяю раздачу: ' + Math.min(Number(r.next_offset) || 0, итог.total) +
+              ' из ' + итог.total + '…');
+          }
+          // Признак конца берётся у установщика, а не считается здесь: список
+          // агентов может измениться между порциями.
+          if (r.finished === true) return итог;
+          return порция(Number(r.next_offset) || 0);
+        });
+    }
+    return порция(0);
+  }
+
+  function вызватьSetup(expertName, action, ещё){
     var причина = причинаБезТокена();
     if (причина) {
       return Promise.reject(new Error(причина));
@@ -275,7 +304,17 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       body: JSON.stringify({
         app_token: APP_TOKEN,
         expert_name: expertName,
-        params: {action: action}
+        // Белый список, а не копирование ключей: страницу отдаёт сервер, и
+        // всё, что она умеет передать установщику, — это поверхность атаки.
+        // Проходят два числовых поля порции и больше ничего.
+        params: (function(){
+          var p = {action: action};
+          if (ещё) {
+            p.offset = Math.max(0, parseInt(ещё.offset, 10) || 0);
+            p.limit = Math.max(1, Math.min(64, parseInt(ещё.limit, 10) || 8));
+          }
+          return p;
+        })()
       })
     }).then(function(r){
       return r.text().then(function(raw){
@@ -514,13 +553,26 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   function подключить(маршрут){
     var кнопка = document.getElementById(маршрут.кнопка);
     var было = кнопка.textContent;
-    var шаги = ['preflight', 'install', 'credentials', 'agents', 'bridge', 'verify'];
+    // 'agents' здесь не строкой: он один идёт порциями, остальные — одним вызовом.
+    var шаги = ['preflight', 'install', 'credentials', 'РАЗДАЧА', 'bridge', 'verify'];
     кнопка.disabled = true;
     кнопка.textContent = 'Подключаю…';
     состояние(маршрут.строка, маршрут.начало);
     var цепочка = Promise.resolve(null);
     шаги.forEach(function(шаг){
       цепочка = цепочка.then(function(){
+        if (шаг === 'РАЗДАЧА') {
+          return раздать(маршрут.эксперт, function(текст){
+            состояние(маршрут.строка, текст);
+          }).then(function(итог){
+            if (итог.not_runnable > 0) {
+              throw new Error('Мост не запустился у ' + итог.not_runnable + ' агентов.');
+            }
+            // Форма, которую ждёт общая проверка ниже.
+            return {status:'success', code:'agents_provisioned',
+                    model_called:false, agent_called:false, paid:false};
+          });
+        }
         return вызватьSetup(маршрут.эксперт, шаг).then(function(result){
           if (result.status !== 'success' || result.model_called !== false ||
               result.agent_called !== false || result.paid !== false) {
@@ -556,15 +608,13 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     кнопка.disabled = true;
     кнопка.textContent = 'Сверяю…';
     состояние('claude-state', 'Сверяю раздачу моста по агентам. Модель не запускается.');
-    вызватьSetup('extella_claude_product_setup', 'agents').then(function(r){
-      if (r.status !== 'success' || r.model_called !== false ||
-          r.agent_called !== false || r.paid !== false) {
-        throw new Error(r.message || 'Пересверка не подтвердилась.');
-      }
+    раздать('extella_claude_product_setup', function(текст){
+      состояние('claude-state', текст);
+    }).then(function(r){
       // Числа показываются целиком: «готово» без них скрывает, что часть
       // агентов осталась без моста.
       состояние('claude-state', 'Мост запускается у ' + String(r.runnable) +
-        ' агентов. Без моста: ' + String(r.not_runnable) +
+        ' агентов из ' + String(r.total) + '. Без моста: ' + String(r.not_runnable) +
         ', публичных пропущено: ' + String(r.skipped_public) + '.',
         Number(r.not_runnable) > 0 ? 'bad' : 'ok');
     }).catch(function(error){
