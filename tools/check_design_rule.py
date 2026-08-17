@@ -35,7 +35,7 @@ SOURCE = os.path.join(os.path.dirname(ROOT), "extella-toolbar-src",
 # Обязательное содержимое абзаца. Не косметика: без токена цвет уедет мимо палитры,
 # без запрета вернутся эмодзи и капс, без контракта темы окно заведёт свой тумблер.
 REQUIRED = [
-    "Source Serif 4", "Source Sans 3", "JetBrains Mono",
+    "Source Serif 4", "Nunito", "JetBrains Mono", "#A5632A",
     "#FAF9F5", "#FFFFFF", "#F5F3EC", "#0A0A0A", "#C57E33", "#2F6B66", "#D7E0DC",
     "#141414", "#181818", "#F5F3EE", "#D4944A",
     "без градиентов", "без эмодзи", "без капса",
@@ -48,9 +48,27 @@ REQUIRED = [
 
 
 def _quote(text):
-    """Абзац-цитата: строки, начинающиеся с '>'. В обоих файлах он оформлен одинаково."""
-    lines = [l.strip()[1:].strip() for l in text.splitlines() if l.strip().startswith(">")]
-    return re.sub(r"\s+", " ", " ".join(lines)).strip()
+    """Абзац-цитата о дизайне: непрерывный блок строк '>' со словом «токены».
+
+    Раньше склеивались ВСЕ цитаты файла подряд — и когда в гиде появился второй
+    blockquote (про экспертов), сверка с источником ломалась, хотя дизайн-абзац
+    совпадал слово в слово. Теперь блоки разделяются, берётся тот, где живут
+    токены; файлы с единственной цитатой работают как прежде."""
+    groups, cur = [], []
+    for l in text.splitlines():
+        if l.strip().startswith(">"):
+            cur.append(l.strip()[1:].strip())
+        elif cur:
+            groups.append(" ".join(cur)); cur = []
+    if cur:
+        groups.append(" ".join(cur))
+    groups = [re.sub(r"\s+", " ", g).strip() for g in groups if g.strip()]
+    if not groups:
+        return ""
+    for g in groups:
+        if "токены" in g:
+            return g
+    return groups[0] if len(groups) == 1 else re.sub(r"\s+", " ", " ".join(groups)).strip()
 
 
 def check(guide_text, source_text=None):
