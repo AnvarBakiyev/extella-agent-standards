@@ -35,6 +35,60 @@ import threading
 ВЕРСИЯ = [0]
 ЗАМОК = threading.Lock()
 
+# ── Действия по кнопке ────────────────────────────────────────────────────────
+# Пульт в окне ОС нажимает кнопку — здесь выполняется НАЗВАННОЕ действие.
+# Список закрытый: произвольных команд с этого адреса запускать нельзя, иначе
+# любая открытая в браузере страница получит право хозяйничать на компьютере.
+ПУТЬ_ДЕЙСТВИЯ = "/_extella_action"
+ИНСТРУМЕНТЫ = pathlib.Path.home() / "Documents/Extella/extella-agent-standards/tools"
+ДЕЙСТВИЯ = {
+    "схема":       ("board_to_app.py", ["--нарисовать-схему", "{название}"]),
+    "приложение":  ("board_to_app.py", ["--собрать", "--slug", "{slug}", "--имя", "{название}"]),
+    "отток":       ("astra_churn_to_board.py", ["--топ", "8"]),
+    "правила":     ("board_rules_to_astra.py", []),
+    "правила_в_платформу": ("board_rules_to_astra.py", ["--в-правила", "--сухой"]),
+    "пример_правила": ("board_rules_to_astra.py", ["--пример"]),
+    "витрина":     ("check_listing_meta.py", ["{издание}"]),
+    "выложить":    ("deploy_page_product.py", ["{издание}"]),
+}
+# Publish среди действий НЕТ намеренно: публичность включает владелец в магазине.
+
+# Кому разрешено нажимать. Заголовки «всем можно» нужны, чтобы окно ОС вообще
+# достучалось до этого компьютера, — но для ДЕЙСТВИЙ это опасно: любая открытая
+# вкладка получила бы право их запускать. Поэтому здесь список поимённый.
+СВОИ_АДРЕСА = ("https://os.extella.ai", "http://localhost", "http://127.0.0.1")
+
+
+def _свой(происхождение: str) -> bool:
+    if not происхождение:
+        return True                       # запрос не из браузера (curl, эксперт)
+    return any(происхождение.startswith(а) for а in СВОИ_АДРЕСА)
+
+
+def выполнить(имя: str, параметры: dict) -> dict:
+    import re as _re
+    import subprocess as _sp
+    if имя not in ДЕЙСТВИЯ:
+        return {"ошибка": f"неизвестное действие «{имя}»"}
+    файл, образец = ДЕЙСТВИЯ[имя]
+    название = str(параметры.get("название") or "Панель")[:60]
+    slug = str(параметры.get("slug") or "")
+    if "{slug}" in " ".join(образец) and not _re.fullmatch(r"[a-z][a-z0-9-]{1,30}", slug):
+        return {"ошибка": "имя латиницей: строчные буквы, цифры и дефис"}
+    издание = str(ИНСТРУМЕНТЫ.parent / "editions" / slug)
+    аргументы = [а.replace("{название}", название).replace("{slug}", slug)
+                  .replace("{издание}", издание) for а in образец]
+    try:
+        # ТЕМ ЖЕ питоном, что крутит сервер. Звать «python3» по имени нельзя:
+        # в фоновой службе это оказался старый 3.9 из Xcode, и инструменты
+        # падали на современном синтаксисе. Замер 17.08.2026, кнопка «отток».
+        итог = _sp.run([__import__("sys").executable, str(ИНСТРУМЕНТЫ / файл), *аргументы],
+                       capture_output=True, text=True, timeout=180)
+    except _sp.TimeoutExpired:
+        return {"ошибка": "действие не уложилось в три минуты"}
+    return {"код": итог.returncode,
+            "вывод": ((итог.stdout or "") + (итог.stderr or "")).strip()[-4000:]}
+
 
 def сделать_обработчик(папка: pathlib.Path, файл_данных: pathlib.Path):
     class Обработчик(http.server.SimpleHTTPRequestHandler):
@@ -87,6 +141,11 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             super().end_headers()
 
         def do_OPTIONS(self):
+            # Действия — только своим: чужому предполёт не отдаём, и запрос
+            # до нас просто не доедет.
+            if self.path.split("?")[0] == ПУТЬ_ДЕЙСТВИЯ and \
+               not _свой(self.headers.get("Origin", "")):
+                return self._ответ(403, '{"ошибка":"чужой адрес"}'.encode())
             # Предполётный запрос. Без него http.server отвечает 501, и браузер
             # считает, что местного сервера нет вовсе.
             self.send_response(204)
@@ -118,6 +177,16 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             return super().do_GET()
 
         def do_POST(self):
+            if self.path.split("?")[0] == ПУТЬ_ДЕЙСТВИЯ:
+                if not _свой(self.headers.get("Origin", "")):
+                    return self._ответ(403, '{"ошибка":"чужой адрес"}'.encode())
+                длина = int(self.headers.get("Content-Length") or 0)
+                try:
+                    тело = json.loads(self.rfile.read(длина).decode() or "{}")
+                except json.JSONDecodeError:
+                    return self._ответ(400, '{"ошибка":"не json"}'.encode())
+                итог = выполнить(str(тело.get("действие") or ""), тело)
+                return self._ответ(200, json.dumps(итог, ensure_ascii=False).encode())
             if self.path.split("?")[0] != ПУТЬ_ХРАНИЛИЩА:
                 return self._ответ(404, '{"ошибка":"нет такого адреса"}'.encode())
             длина = int(self.headers.get("Content-Length") or 0)
