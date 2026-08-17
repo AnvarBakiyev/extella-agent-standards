@@ -27,16 +27,20 @@ import uuid
 OS_BASE = "https://os.extella.ai"
 CORE_BASE = "https://api.extella.ai"
 LIVE_LISTING_ID = "880d12e4-f082-486e-b92a-57e4eb09866d"
-NAME = "Разработка на Extella — предрелиз 3.1.0"
+NAME = "Разработка на Extella — предрелиз 3.1.3"
 DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Добавлена кнопка «Подключить Claude» "
     "и исправлен раздел 09. Живой продукт не затронут."
 )
-VERSION = "3.1.0"
+VERSION = "3.1.3"
 SCOPES = ["expert.run", "device.run"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
 TAGS = ["prerelease", "claude", "codex", "bridge"]
+# add-version тоже требует минимум один тег, а у живого листинга они пустые:
+# он создавался, когда это поле ещё не было обязательным. Значит теги придётся
+# завести, и они видны покупателю — поэтому описательные, а не служебные.
+LIVE_TAGS = ["guide", "standards", "codex", "claude"]
 # Абсолютный путь к рабочей ветке моста: относительный отсчёт от этого файла
 # уводил в соседний каталог и срывал запуск уже после начала записи.
 CLAUDE_PLUGIN = (
@@ -48,6 +52,8 @@ EXPERTS = {
 }
 HERE = pathlib.Path(__file__).resolve().parent
 PAGE = HERE.parent / "index.html"
+# Локальная часть: без неё этап bridge не находит рантайм на машине покупателя.
+ARCHIVE = CLAUDE_PLUGIN / "dist" / "extella-claude-bridge-archive.zip"
 
 
 class DeployError(Exception):
@@ -179,6 +185,64 @@ def prepare_experts(agent_id):
         print(f"  Expert {name}: записан и сверен посимвольно ({len(code)} символов)")
 
 
+def add_version_to_live(agent_id, items):
+    """Добавить версию в живой листинг.
+
+    H20: `published` принадлежит листингу, а не версии, поэтому версия
+    становится публичной в момент попадания. Отката «снять с витрины» у версии
+    нет — есть только удаление. Поэтому шаг требует явного решения владельца
+    и отдельного флага, а не подразумевается.
+    """
+    live = next(x for x in items if x.get("id") == LIVE_LISTING_ID)
+    if any(v.get("version") == VERSION for v in live.get("versions", [])):
+        raise DeployError(f"версия {VERSION} уже существует; перечитай состояние, не повторяй")
+    fields = {
+        "version": VERSION,
+        "price_credits": "0",
+        "app_scopes": json.dumps(SCOPES),
+        "source_id": agent_id,
+        "source_type": "agent",
+        "attach_agent": "1",
+        "tags": json.dumps(LIVE_TAGS, ensure_ascii=False),
+    }
+    if not ARCHIVE.is_file():
+        raise DeployError(f"нет собранного архива {ARCHIVE.name}: сначала build-archive.mjs")
+    status, raw = request(OS_BASE, f"/api/add-version-stream/{LIVE_LISTING_ID}",
+                          fields=fields, files={"page": PAGE, "archive": ARCHIVE})
+    if status != 200:
+        raise DeployError(f"добавление версии ответило HTTP {status}: {raw[:200]}")
+    return stream_done(raw, "добавление версии")
+
+
+def verify_live():
+    items = listings()
+    live = next(x for x in items if x.get("id") == LIVE_LISTING_ID)
+    version = next((v for v in live.get("versions", []) if v.get("version") == VERSION), None)
+    if version is None:
+        raise DeployError("версия не читается обратно")
+    scopes = version.get("app_scopes") or []
+    if isinstance(scopes, str):
+        scopes = json.loads(scopes)
+    problems = []
+    if set(scopes) != set(SCOPES):
+        problems.append(f"права {scopes} вместо {SCOPES}")
+    if int(version.get("expert_count") or 0) < 1:
+        problems.append("Expert не приложился")
+    if not version.get("archive_ext"):
+        problems.append("к версии не приложился архив — рантайм не доедет до покупателя")
+    status, page = request(OS_BASE, f"/app-page/{LIVE_LISTING_ID}/")
+    if status != 200:
+        problems.append(f"страница отдаётся с кодом {status}")
+    elif "{" + "{app_token" in page:
+        problems.append("плейсхолдер токена не подставлен")
+    elif 'id="claude-connect"' not in page:
+        problems.append("кнопки Claude нет в отданной странице")
+    if problems:
+        raise DeployError("приёмка не прошла: " + "; ".join(problems))
+    print(f"  версия {VERSION} подтверждена чтением: права {sorted(scopes)}, "
+          f"Expert приложен, страница отдаётся с кнопкой Claude")
+
+
 def create_prerelease(agent_id):
     fields = {
         "version": VERSION,
@@ -230,6 +294,9 @@ def verify(listing_id):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--выполнить", action="store_true")
+    parser.add_argument("--в-живой-листинг", dest="в_живой", action="store_true",
+                        help="добавить версию в опубликованный листинг: она станет "
+                             "публичной немедленно (H20)")
     options = parser.parse_args()
 
     items = listings()
@@ -240,6 +307,7 @@ def main():
     print(f"живой листинг    : «{live.get('name')}» published={live.get('published')} — НЕ трогаем")
     print(f"source-agent     : {agent_id[:14]}…")
     print(f"страница         : {PAGE.name}, {PAGE.stat().st_size} байт")
+    print(f"архив            : {ARCHIVE.name}, {ARCHIVE.stat().st_size if ARCHIVE.is_file() else 0} байт")
     print(f"создать листинг  : «{NAME}» версия {VERSION}, права {SCOPES}, цена 0, теги {TAGS}")
     if twin:
         print(f"ВНИМАНИЕ: похожий предрелиз уже есть ({len(twin)} шт.) — "
@@ -249,8 +317,27 @@ def main():
     print("покупка себе     : НЕ выполняется (делает листинг неудаляемым)")
     print("публикация       : НЕ выполняется")
 
+    if options.в_живой:
+        print(f"\nРЕЖИМ: версия {VERSION} уйдёт в ОПУБЛИКОВАННЫЙ листинг "
+              f"«{live.get('name')}» и станет видна всем немедленно.")
+        print("Откат — только удаление версии.")
+        print(f"Теги листинга: {live.get('tags')} -> {LIVE_TAGS} "
+              "(поле стало обязательным, пустым его оставить нельзя)")
+
     if not options.выполнить:
         print("\nэто план. Повтори с --выполнить")
+        return
+
+    if options.в_живой:
+        print("\nзаписываю Expert'ы в source-agent…")
+        prepare_experts(agent_id)
+        print("добавляю версию в живой листинг…")
+        done = add_version_to_live(agent_id, items)
+        print(f"  версия добавлена · снимок: {done.get('stats')}")
+        verify_live()
+        print(json.dumps({"status": "version_added", "listing_id": LIVE_LISTING_ID,
+                          "version": VERSION, "version_id": done.get("version_id"),
+                          "public_immediately": True}, ensure_ascii=False, indent=2))
         return
 
     if twin:

@@ -513,7 +513,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   function подключить(маршрут){
     var кнопка = document.getElementById(маршрут.кнопка);
     var было = кнопка.textContent;
-    var шаги = ['preflight', 'install', 'credentials', 'bridge', 'verify'];
+    var шаги = ['preflight', 'install', 'credentials', 'agents', 'bridge', 'verify'];
     кнопка.disabled = true;
     кнопка.textContent = 'Подключаю…';
     состояние(маршрут.строка, маршрут.начало);
