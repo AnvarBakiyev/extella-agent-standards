@@ -34,7 +34,7 @@ test("one click runs every reviewed no-model setup step in order", () => {
   assert.match(template, /fetch\('\/api\/app-agent\/run'/);
   assert.match(
     template,
-    /\['preflight', 'install', 'credentials', 'bridge', 'verify'\]/,
+    /\['preflight', 'install', 'credentials', 'agents', 'bridge', 'verify'\]/,
   );
   assert.match(template, /params: \{action: action\}/);
 });
