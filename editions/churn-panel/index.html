@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Панель по оттоку</title><style>
+:root{--бум:#FAF9F5;--чер:#1A1A1A;--сер:#6B7280;--рам:#E2E0DA;--зол:#C57E33;--пан:#fff}
+@media (prefers-color-scheme:dark){:root{--бум:#141414;--чер:#EDEDED;--сер:#9AA0A6;--рам:#2E2E2E;--пан:#1C1C1C}}
+*{box-sizing:border-box}body{margin:0;background:var(--бум);color:var(--чер);
+ font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.лист{max-width:980px;margin:0 auto;padding:28px 22px 60px}
+h1{font:600 26px/1.25 Georgia,serif;margin:0 0 6px}
+.под{color:var(--сер);font-size:13.5px;margin-bottom:24px}
+section{margin:0 0 26px;padding:18px 20px;border:1px solid var(--рам);
+ border-radius:12px;background:var(--пан)}
+h2{font-size:16px;margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;color:var(--сер);font-weight:500;padding:6px 10px 10px;
+ border-bottom:1px solid var(--рам)}
+td{padding:9px 10px;border-bottom:1px solid var(--рам)}
+tr:last-child td{border-bottom:0}
+.плитки{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.плитка{padding:14px 16px;border:1px solid var(--рам);border-radius:10px}
+.плитка b{display:block;color:var(--сер);font-weight:500;font-size:12.5px;margin-bottom:6px}
+.плитка span{font-size:22px;font-weight:600}
+.тревога{color:#e03131;font-weight:600}.внимание{color:#f08c00;font-weight:600}
+.норма{color:#2f9e44}
+footer{color:var(--сер);font-size:12px;margin-top:8px;line-height:1.7}
+</style></head>
+<body><div class="лист">
+<h1>Панель по оттоку</h1>
+<div class="под">4 раздела собрано по схеме, которую вы нарисовали</div>
+<section><h2>Главное</h2><div class="плитки"><div class="плитка"><b>Абонентов</b><span>100 000</span></div><div class="плитка"><b>Ушло за период</b><span>19 334</span></div><div class="плитка"><b>Доля оттока</b><span>19.3%</span></div><div class="плитка"><b>Потеряно денег</b><span>2.7 млрд ₸</span></div></div></section><section><h2>Отток по городам</h2><table><thead><tr><th>Город</th><th>Отток</th><th>Ушло</th><th>NPS</th></tr></thead><tbody><tr><td>Алматы</td><td><span class="внимание">18.6%</span></td><td>3 157</td><td>58</td></tr><tr><td>Астана</td><td><span class="внимание">18.8%</span></td><td>2 637</td><td>58</td></tr><tr><td>Шымкент</td><td><span class="внимание">18.8%</span></td><td>1 711</td><td>58</td></tr><tr><td>Қарағанды</td><td><span class="внимание">18.4%</span></td><td>1 332</td><td>58</td></tr><tr><td>Ақтөбе</td><td><span class="внимание">19.4%</span></td><td>1 112</td><td>56</td></tr><tr><td>Тараз</td><td><span class="тревога">20.5%</span></td><td>955</td><td>56</td></tr><tr><td>Павлодар</td><td><span class="внимание">19.6%</span></td><td>881</td><td>56</td></tr><tr><td>Өскемен</td><td><span class="внимание">18.2%</span></td><td>798</td><td>56</td></tr><tr><td>Қостанай</td><td><span class="внимание">19.3%</span></td><td>728</td><td>56</td></tr><tr><td>Семей</td><td><span class="внимание">18.3%</span></td><td>655</td><td>57</td></tr><tr><td>Атырау</td><td><span class="внимание">19.4%</span></td><td>703</td><td>56</td></tr><tr><td>Қызылорда</td><td><span class="тревога">21.6%</span></td><td>711</td><td>56</td></tr></tbody></table></section><section><h2>Где теряем деньги</h2><table><thead><tr><th>Город</th><th>Потеряно</th><th>Отток</th></tr></thead><tbody><tr><td>Алматы</td><td>481 млн ₸</td><td><span class="внимание">18.6%</span></td></tr><tr><td>Астана</td><td>399 млн ₸</td><td><span class="внимание">18.8%</span></td></tr><tr><td>Шымкент</td><td>263 млн ₸</td><td><span class="внимание">18.8%</span></td></tr><tr><td>Қарағанды</td><td>195 млн ₸</td><td><span class="внимание">18.4%</span></td></tr><tr><td>Ақтөбе</td><td>156 млн ₸</td><td><span class="внимание">19.4%</span></td></tr><tr><td>Тараз</td><td>124 млн ₸</td><td><span class="тревога">20.5%</span></td></tr><tr><td>Павлодар</td><td>116 млн ₸</td><td><span class="внимание">19.6%</span></td></tr><tr><td>Өскемен</td><td>105 млн ₸</td><td><span class="внимание">18.2%</span></td></tr><tr><td>Қостанай</td><td>98 млн ₸</td><td><span class="внимание">19.3%</span></td></tr><tr><td>Семей</td><td>94 млн ₸</td><td><span class="внимание">18.3%</span></td></tr><tr><td>Атырау</td><td>89 млн ₸</td><td><span class="внимание">19.4%</span></td></tr><tr><td>Қызылорда</td><td>84 млн ₸</td><td><span class="тревога">21.6%</span></td></tr></tbody></table></section><section><h2>Жалобы: на что и как быстро закрываем</h2><table><thead><tr><th>Тип</th><th>Сколько</th><th>Срок</th><th>Закрыто</th></tr></thead><tbody><tr><td>BILL</td><td>2 462</td><td>7.3 дн.</td><td>80.4%</td></tr><tr><td>SPEED</td><td>2 259</td><td>5.2 дн.</td><td>74.7%</td></tr><tr><td>OUTAGE</td><td>1 901</td><td>2.4 дн.</td><td>78.9%</td></tr><tr><td>EQUIP</td><td>1 078</td><td>12.6 дн.</td><td>79.6%</td></tr><tr><td>TV</td><td>694</td><td>5.0 дн.</td><td>74.4%</td></tr><tr><td>OTHER</td><td>606</td><td>10.4 дн.</td><td>78.4%</td></tr></tbody></table></section>
+<footer>собрано агентом из схемы на Доске схем · данные из витрин Астра Телеком (синтетика) · всё лежит внутри страницы, интернет не нужен</footer>
+</div></body></html>
