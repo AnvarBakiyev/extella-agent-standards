@@ -10,7 +10,7 @@
 
 Гейт читает код страницы и приложенных Expert, выводит нужный набор и сверяет с объявленным.
 
-    python3 tools/check_app_scopes.py editions/founder
+    python3 tools/check_app_scopes.py products/пример
     python3 tools/check_app_scopes.py --selftest
 """
 

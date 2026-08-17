@@ -16,9 +16,9 @@
 
 Publish здесь НЕТ намеренно: публичность включает владелец.
 
-    python3 tools/deploy_page_product.py editions/board
-    python3 tools/deploy_page_product.py editions/board --сухой
-    python3 tools/deploy_page_product.py editions/board --разрешить-публичную-версию
+    python3 tools/deploy_page_product.py products/пример
+    python3 tools/deploy_page_product.py products/пример --сухой
+    python3 tools/deploy_page_product.py products/пример --разрешить-публичную-версию
     python3 tools/deploy_page_product.py --selftest
 
 Коды выхода: 0 — выложено (или план показан), 1 — отказ с причиной.
@@ -34,7 +34,7 @@ import sys
 sys.path.insert(0, str(СЮДА))
 # Канон запроса и токена живёт в deploy_edition — берём ЕГО, а не копию.
 # Копия рано или поздно отстанет от платформы, и отставание будет тихим.
-from deploy_edition import ОС, Отказ, запрос, как_json, из_потока  # noqa: E402
+from platform_client import ОС, Отказ, запрос, как_json, из_потока  # noqa: E402
 
 
 def гейт_витрины(папка: pathlib.Path) -> None:

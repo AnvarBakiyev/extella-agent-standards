@@ -17,7 +17,7 @@ description и tags платформа молча проглатывает, а �
 name и url (замер 14.08.2026). Поэтому мета живёт на уровне ЛИСТИНГА, и требовать
 её надо там — иначе требование невыполнимо и гейт врёт.
 
-    python3 tools/check_listing_meta.py editions/builder
+    python3 tools/check_listing_meta.py products/пример
     python3 tools/check_listing_meta.py --selftest
 
 Коды выхода: 0 — карточка готова к витрине, 1 — нет.
