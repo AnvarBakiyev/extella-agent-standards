@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пульт агента</title>
+<style>
+:root{--бум:#FAF9F5;--чер:#1A1A1A;--сер:#6B7280;--рам:#E2E0DA;--зол:#C57E33;
+      --пан:#fff;--зел:#2f9e44;--крас:#e03131}
+@media (prefers-color-scheme:dark){
+  :root{--бум:#141414;--чер:#EDEDED;--сер:#9AA0A6;--рам:#2E2E2E;--пан:#1C1C1C}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--бум);color:var(--чер);
+     font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.лист{max-width:940px;margin:0 auto;padding:26px 22px 60px}
+h1{font:600 24px/1.25 Georgia,serif;margin:0 0 5px}
+.под{color:var(--сер);font-size:13.5px;margin-bottom:22px}
+.шаг{margin:0 0 16px;padding:16px 18px;border:1px solid var(--рам);
+     border-radius:12px;background:var(--пан)}
+.шаг h2{font-size:15px;margin:0 0 4px}
+.шаг p{margin:0 0 12px;color:var(--сер);font-size:13.5px}
+button{font:inherit;font-size:14px;padding:9px 16px;border-radius:8px;cursor:pointer;
+       border:1px solid var(--зол);background:var(--зол);color:#fff;margin:0 8px 0 0}
+button.тихая{background:transparent;color:var(--чер);border-color:var(--рам)}
+button:disabled{opacity:.45;cursor:default}
+input{font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--рам);
+      border-radius:8px;background:var(--бум);color:var(--чер);margin:0 8px 8px 0;min-width:210px}
+.строка{display:flex;flex-wrap:wrap;align-items:center}
+#журнал{margin-top:18px;padding:14px 16px;border:1px solid var(--рам);border-radius:12px;
+        background:var(--пан);font:12.5px/1.6 ui-monospace,Menlo,monospace;
+        white-space:pre-wrap;max-height:420px;overflow:auto;display:none}
+#журнал.есть{display:block}
+.ок{color:var(--зел);font-weight:600}.нет{color:var(--крас);font-weight:600}
+.ждём{color:var(--сер);font-style:italic}
+.порядок{counter-reset:ш}
+.порядок .шаг h2::before{counter-increment:ш;content:counter(ш) ". ";color:var(--зол)}
+footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="лист">
+  <h1>Пульт агента</h1>
+  <div class="под">Всё, что раньше делалось командами, — здесь кнопками.
+    Агент работает на этом компьютере: доска, данные Астры, магазин.</div>
+
+  <div class="порядок">
+    <div class="шаг">
+      <h2>Нарисовать схему приложения на доске</h2>
+      <p>Агент положит на доску блоки-заготовки. Дальше вы правите их руками:
+         уберите лишний, допишите свой своими словами.</p>
+      <div class="строка">
+        <input id="название" value="Панель по оттоку" placeholder="как назвать приложение">
+        <button data-действие="схема">Нарисовать схему</button>
+      </div>
+    </div>
+
+    <div class="шаг">
+      <h2>Собрать приложение из схемы</h2>
+      <p>Агент прочитает вашу схему и соберёт страницу с живыми данными Астры.
+         Слова, которые он знает: сводка · отток/города · деньги/потери · жалобы · ARPU/выручка.</p>
+      <div class="строка">
+        <input id="slug" value="churn-panel" placeholder="имя латиницей">
+        <button data-действие="приложение">Собрать приложение</button>
+        <button class="тихая" data-действие="витрина">Проверить карточку</button>
+      </div>
+    </div>
+
+    <div class="шаг">
+      <h2>Выложить в магазин</h2>
+      <p>Ляжет предрелизом — виден только вам. Кнопку «Опубликовать» жмёте
+         в магазине сами: этого действия у пульта нет намеренно.</p>
+      <button data-действие="выложить">Выложить предрелизом</button>
+    </div>
+  </div>
+
+  <div class="шаг" style="margin-top:26px">
+    <h2>Астра рисует на доске</h2>
+    <p>Картина оттока по городам: деньги, светофор, топ потерь. Повтор заменяет
+       прошлый рисунок, вашу работу не трогает.</p>
+    <button data-действие="отток">Нарисовать картину оттока</button>
+  </div>
+
+  <div class="шаг">
+    <h2>Правила с доски</h2>
+    <p>Нарисуйте «условие → стрелка → действие». Агент прочитает, применит к данным
+       и ответит на доске. Действие он не исполняет — только показывает, к кому применить.</p>
+    <div class="строка">
+      <button class="тихая" data-действие="пример_правила">Нарисовать образец правила</button>
+      <button data-действие="правила">Прочитать и применить</button>
+      <button class="тихая" data-действие="правила_в_платформу">Сохранить в правила платформы</button>
+    </div>
+  </div>
+
+  <div id="журнал"></div>
+
+  <footer>
+    Пульт разговаривает только с этим компьютером — адрес
+    <code id="адрес"></code>. Чужим страницам действия запрещены поимённым списком:
+    иначе любая открытая вкладка получила бы право хозяйничать здесь.
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Адрес доски на этом компьютере. Пульт открыт в окне ОС — это страница из
+  // интернета, поэтому она стучится сюда явно, а сервер её пускает по списку.
+  var ДОСКА = "http://127.0.0.1:34786";
+  document.getElementById('адрес').textContent = ДОСКА;
+
+  var журнал = document.getElementById('журнал');
+  function пишем(текст, класс) {
+    журнал.classList.add('есть');
+    var с = document.createElement('div');
+    if (класс) с.className = класс;
+    с.textContent = текст;
+    журнал.appendChild(с);
+    журнал.scrollTop = журнал.scrollHeight;
+  }
+
+  function кнопки(включить) {
+    [].forEach.call(document.querySelectorAll('button'), function (к) {
+      к.disabled = !включить;
+    });
+  }
+
+  [].forEach.call(document.querySelectorAll('button[data-действие]'), function (к) {
+    к.onclick = function () {
+      var действие = к.getAttribute('data-действие');
+      кнопки(false);
+      пишем('▶ ' + к.textContent.trim() + '…', 'ждём');
+      fetch(ДОСКА + '/_extella_action', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          действие: действие,
+          название: (document.getElementById('название') || {}).value || '',
+          slug: (document.getElementById('slug') || {}).value || ''
+        })
+      })
+      .then(function (о) { return о.json(); })
+      .then(function (д) {
+        if (д.ошибка) { пишем('✕ ' + д.ошибка, 'нет'); return; }
+        пишем(д.вывод || '(без вывода)');
+        пишем(д.код === 0 ? '✓ готово' : '✕ не получилось (код ' + д.код + ')',
+              д.код === 0 ? 'ок' : 'нет');
+      })
+      .catch(function (о) {
+        пишем('✕ не достучался до этого компьютера: ' + о +
+              '\nПроверьте, что доска запущена: launchctl list | grep ai.extella', 'нет');
+      })
+      .then(function () { кнопки(true); });
+    };
+  });
+})();
+</script>
+</body>
+</html>
