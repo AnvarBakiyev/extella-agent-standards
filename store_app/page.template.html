@@ -136,6 +136,17 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
     <div class="codex-state" id="codex-state">Готов к проверке. Реальные запросы в Codex могут расходовать план или API.</div>
   </div>
 
+  <div class="codex" id="claude-card">
+    <div class="codex-row">
+      <div>
+        <h3>Claude Code &#8596; Extella</h3>
+        <p>Отдельная служба на этом Mac: свой порт и свой секрет, Codex не затрагивается.</p>
+      </div>
+      <button class="btn main" id="claude-connect">Подключить Claude</button>
+    </div>
+    <div class="codex-state" id="claude-state">Готов к проверке. Реальные запросы в Claude могут расходовать план или API.</div>
+  </div>
+
   <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
   <div class="count" id="count"></div>
   <div class="empty" id="empty" style="display:none">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
@@ -157,7 +168,7 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
 var СНИМОК = /*СОДЕРЖИМОЕ*/null/*КОНЕЦ*/;
 var APP_TOKEN = /*APP_TOKEN*/"";
 var ИСТОЧНИК = "https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/store_app/content.json";
-var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняется сама страница, а не текст
+var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняется сама страница, а не текст
 
 (function(){
   var текущее = СНИМОК;
@@ -209,26 +220,60 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняе�
   }
   // END_H17_PARSER
 
-  function appTokenГотов(){
-    return APP_TOKEN && APP_TOKEN.indexOf('{' + '{') < 0 && APP_TOKEN.length > 40;
+  // Право на запуск эксперта приходит вместе с подставленным токеном
+  // приложения. Отказ обязан назвать причину: «обнови приложение» там, где
+  // страница просто открыта вне магазина, отправляет человека чинить не то.
+  function вМагазине(){
+    try {
+      return /(^|\.)extella\.ai$/.test(location.hostname);
+    } catch (e) { return false; }
   }
 
-  function состояниеCodex(текст, класс){
-    var узел = document.getElementById('codex-state');
+  function причинаБезТокена(){
+    if (!APP_TOKEN) {
+      return 'Эта страница открыта вне приложения. Кнопка работает только в ' +
+             'установленном приложении из магазина Extella.';
+    }
+    if (APP_TOKEN.indexOf('{' + '{') >= 0) {
+      // Плейсхолдер остаётся неподставленным в двух совсем разных случаях:
+      // страницу открыли вне магазина, или магазин её не подставил. По токену
+      // они неразличимы, по источнику — да. Иначе предпросмотр советует
+      // обновить приложение, которое обновлять не нужно.
+      return вМагазине()
+        ? 'Обнови приложение в магазине: эта версия ещё не умеет ставить мосты.'
+        : 'Эта страница открыта вне приложения — установщик отсюда не запускается. ' +
+          'Открой приложение из магазина Extella.';
+    }
+    if (APP_TOKEN.length <= 40) {
+      return 'Приложению не выдано право запускать установщик. Открой карточку ' +
+             'приложения в магазине и разреши запуск на устройстве.';
+    }
+    return '';
+  }
+
+  function appTokenГотов(){
+    return причинаБезТокена() === '';
+  }
+
+  function состояние(идентификатор, текст, класс){
+    var узел = document.getElementById(идентификатор);
     узел.textContent = текст;
     узел.className = 'codex-state' + (класс ? (' ' + класс) : '');
   }
 
-  function вызватьCodexSetup(action){
-    if (!appTokenГотов()) {
-      return Promise.reject(new Error('Обнови приложение в магазине: эта версия ещё не умеет устанавливать Codex.'));
+  // Один вызов на оба маршрута: различается только имя эксперта. Страница не
+  // выбирает ни команду, ни источник, ни устройство — всё закреплено в эксперте.
+  function вызватьSetup(expertName, action){
+    var причина = причинаБезТокена();
+    if (причина) {
+      return Promise.reject(new Error(причина));
     }
     return fetch('/api/app-agent/run', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
         app_token: APP_TOKEN,
-        expert_name: 'extella_codex_product_setup',
+        expert_name: expertName,
         params: {action: action}
       })
     }).then(function(r){
@@ -462,18 +507,22 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняе�
 
   document.getElementById('обновить').onclick = function(){ подтянуть(true); };
 
-  document.getElementById('codex-connect').onclick = function(){
-    var кнопка = this, было = 'Подключить Codex';
-    var шаги = ['preflight', 'install', 'credentials', 'bridge', 'verify'];
+  // Пять безмодельных этапов. Каждый обязан подтвердить, что не потратил план:
+  // ответ с model_called/agent_called/paid, отличным от false, — это отказ,
+  // даже если он назвался успехом.
+  function подключить(маршрут){
+    var кнопка = document.getElementById(маршрут.кнопка);
+    var было = кнопка.textContent;
+    var шаги = ['preflight', 'install', 'credentials', 'agents', 'bridge', 'verify'];
     кнопка.disabled = true;
     кнопка.textContent = 'Подключаю…';
-    состояниеCodex('Проверяю Codex, ставлю подписанный мост и связываю аккаунт. Это может занять несколько минут.');
+    состояние(маршрут.строка, маршрут.начало);
     var цепочка = Promise.resolve(null);
     шаги.forEach(function(шаг){
       цепочка = цепочка.then(function(){
-        return вызватьCodexSetup(шаг).then(function(result){
+        return вызватьSetup(маршрут.эксперт, шаг).then(function(result){
           if (result.status !== 'success' || result.model_called !== false ||
-              result.agent_called !== false) {
+              result.agent_called !== false || result.paid !== false) {
             throw new Error(result.message || ('Этап ' + шаг + ' завершился ошибкой.'));
           }
           return result;
@@ -483,16 +532,43 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 3;   // растёт, когда меняе�
     цепочка.then(function(result){
       if (result.status !== 'success' || result.code !== 'ready' ||
           result.model_called !== false || result.agent_called !== false) {
-        throw new Error(result.message || 'Установщик не подтвердил готовность Codex.');
+        throw new Error(result.message || 'Установщик не подтвердил готовность.');
       }
-      кнопка.textContent = 'Codex подключён';
+      кнопка.textContent = маршрут.готово;
       кнопка.dataset.done = '1';
-      состояниеCodex('Готово: мост ' + String(result.plugin_version || '') +
-        ' проверен без запуска модели. Теперь Codex вызывается только по явной просьбе.', 'ok');
+      состояние(маршрут.строка, маршрут.успех(result), 'ok');
     }).catch(function(error){
       кнопка.disabled = false;
       кнопка.textContent = было;
-      состояниеCodex((error && error.message) || 'Не удалось подключить Codex.', 'bad');
+      // Отказ виден словами: пустой экран здесь — дефект, а не осторожность.
+      состояние(маршрут.строка, (error && error.message) || 'Не удалось подключить.', 'bad');
+    });
+  }
+
+  document.getElementById('codex-connect').onclick = function(){
+    подключить({
+      кнопка: 'codex-connect', строка: 'codex-state',
+      эксперт: 'extella_codex_product_setup', готово: 'Codex подключён',
+      начало: 'Проверяю Codex, ставлю подписанный мост и связываю аккаунт. Это может занять несколько минут.',
+      успех: function(r){
+        return 'Готово: мост ' + String(r.plugin_version || '') +
+          ' проверен без запуска модели. Теперь Codex вызывается только по явной просьбе.';
+      }
+    });
+  };
+
+  document.getElementById('claude-connect').onclick = function(){
+    подключить({
+      кнопка: 'claude-connect', строка: 'claude-state',
+      эксперт: 'extella_claude_product_setup', готово: 'Claude подключён',
+      начало: 'Проверяю Claude Code, ставлю отдельную подписанную службу и связываю аккаунт. Это может занять несколько минут.',
+      успех: function(r){
+        // Привязку доказывает проверка токена, соединение — реальный вызов
+        // инструмента. «Подключено» в списке серверов не доказывает ничего.
+        return 'Готово: порт ' + String(r.bridge_port || '') +
+          ', привязка и авторизация подтверждены без запуска модели. ' +
+          'Теперь Claude вызывается только по явной просьбе.';
+      }
     });
   };
 
