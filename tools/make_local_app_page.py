@@ -7,8 +7,8 @@
 запасной путь, на двух других он остаётся сломанным. Поэтому каркас один
 (templates/local_app_page.html), а различия задаются описанием.
 
-    python3 tools/make_local_app_page.py editions/diagrams
-    python3 tools/make_local_app_page.py --все editions
+    python3 tools/make_local_app_page.py products/пример
+    python3 tools/make_local_app_page.py --все products
     python3 tools/make_local_app_page.py --selftest
 
 Описание берётся из app.json рядом:

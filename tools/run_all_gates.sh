@@ -98,9 +98,8 @@ run check_agent_repo
 run check_manifest_copies
 run check_surface_classes
 run check_app_scopes
-run check_edition
-run check_compose
 run check_listing_meta
+run platform_client
 # Инструменты чата Доски схем: самопроверки у них есть, а в общем прогоне их не было —
 # то есть на чистой машине их никто не охранял. Гейт защищает только то, что включено.
 run check_local_app
@@ -110,8 +109,6 @@ run deploy_page_product
 run set_published
 run inject_probe
 run make_icon
-run_command install_edition python3 "$ROOT/templates/edition/install_edition.py" --selftest
-run deploy_edition
 run build_agent_cabinet
 run build_automation_cabinet
 run build_capability_registry
