@@ -33,6 +33,10 @@ input{font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--рам
 #журнал.есть{display:block}
 .ок{color:var(--зел);font-weight:600}.нет{color:var(--крас);font-weight:600}
 .ждём{color:var(--сер);font-style:italic}
+.замок{margin:10px 0 0;padding:11px 13px;border:1px solid var(--зол);border-radius:9px;
+       background:rgba(197,126,51,.07);display:none}
+.замок.видно{display:block}
+.замок p{margin:0 0 9px;color:var(--чер);font-size:13px}
 .порядок{counter-reset:ш}
 .порядок .шаг h2::before{counter-increment:ш;content:counter(ш) ". ";color:var(--зол)}
 footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
@@ -70,7 +74,7 @@ footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
       <h2>Выложить в магазин</h2>
       <p>Ляжет предрелизом — виден только вам. Кнопку «Опубликовать» жмёте
          в магазине сами: этого действия у пульта нет намеренно.</p>
-      <button data-действие="выложить">Выложить предрелизом</button>
+      <button data-действие="выложить" data-опасное="1">Выложить предрелизом</button>
     </div>
   </div>
 
@@ -88,16 +92,19 @@ footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
     <div class="строка">
       <button class="тихая" data-действие="пример_правила">Нарисовать образец правила</button>
       <button data-действие="правила">Прочитать и применить</button>
-      <button class="тихая" data-действие="правила_в_платформу">Сохранить в правила платформы</button>
+      <button class="тихая" data-действие="правила_в_платформу" data-опасное="1">Сохранить в правила платформы</button>
     </div>
   </div>
 
   <div id="журнал"></div>
 
   <footer>
-    Пульт разговаривает только с этим компьютером — адрес
-    <code id="адрес"></code>. Чужим страницам действия запрещены поимённым списком:
-    иначе любая открытая вкладка получила бы право хозяйничать здесь.
+    Пульт разговаривает только с этим компьютером — адрес <code id="адрес"></code>.
+    Окно ОС намеренно лишено адреса (песочница), поэтому отличить его от чужой
+    страницы по адресу невозможно — и предохранитель стоит не на адресе, а на вас:
+    два действия, которые выходят за пределы компьютера (магазин и правила агента),
+    просят набрать слово. Рисование на доске слова не просит: испортить им нечего,
+    а подтверждение на каждый чих люди перестают читать.
   </footer>
 </div>
 
@@ -124,9 +131,60 @@ footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
     });
   }
 
+  // Слово-предохранитель. Держим его в одном месте: разойдётся со сервером —
+  // человек будет набирать правильное слово и получать отказ.
+  var СЛОВО = 'подтверждаю';
+
+  function замок(к, дальше) {
+    // Уже открытый замок второй раз не рисуем.
+    var прежний = к.parentNode.parentNode.querySelector('.замок');
+    if (прежний && прежний.__кнопка === к) { прежний.classList.add('видно'); return; }
+    if (прежний) прежний.parentNode.removeChild(прежний);
+
+    var я = document.createElement('div');
+    я.className = 'замок видно';
+    я.__кнопка = к;
+    var текст = document.createElement('p');
+    текст.textContent = 'Это действие выходит за пределы компьютера. Наберите слово «'
+                      + СЛОВО + '», чтобы разрешить.';
+    var поле = document.createElement('input');
+    поле.placeholder = СЛОВО;
+    поле.style.minWidth = '170px';
+    var да = document.createElement('button');
+    да.textContent = 'Разрешить';
+    var нет = document.createElement('button');
+    нет.className = 'тихая';
+    нет.textContent = 'Отмена';
+
+    нет.onclick = function () { я.parentNode.removeChild(я); };
+    да.onclick = function () {
+      if (поле.value.trim().toLowerCase() !== СЛОВО) {
+        текст.textContent = 'Слово не совпало. Нужно ровно: ' + СЛОВО;
+        поле.focus();
+        return;
+      }
+      я.parentNode.removeChild(я);
+      дальше(поле.value.trim());
+    };
+    поле.onkeydown = function (с) { if (с.key === 'Enter') да.onclick(); };
+
+    я.appendChild(текст);
+    я.appendChild(поле);
+    я.appendChild(да);
+    я.appendChild(нет);
+    к.parentNode.parentNode.appendChild(я);
+    поле.focus();
+  }
+
   [].forEach.call(document.querySelectorAll('button[data-действие]'), function (к) {
     к.onclick = function () {
       var действие = к.getAttribute('data-действие');
+      if (к.getAttribute('data-опасное') && !к.__разрешено) {
+        замок(к, function (слово) { к.__разрешено = слово; к.onclick(); });
+        return;
+      }
+      var слово = к.__разрешено || '';
+      к.__разрешено = null;      // разрешение одноразовое, на этот один запуск
       кнопки(false);
       пишем('▶ ' + к.textContent.trim() + '…', 'ждём');
       fetch(ДОСКА + '/_extella_action', {
@@ -135,7 +193,8 @@ footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
         body: JSON.stringify({
           действие: действие,
           название: (document.getElementById('название') || {}).value || '',
-          slug: (document.getElementById('slug') || {}).value || ''
+          slug: (document.getElementById('slug') || {}).value || '',
+          подтверждение: слово
         })
       })
       .then(function (о) { return о.json(); })
