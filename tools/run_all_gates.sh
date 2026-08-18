@@ -90,6 +90,7 @@ run check_masking_policy
 run check_code_canon
 run check_single_source
 run check_brand_copy
+run check_writing_style
 run check_design_rule
 run check_findings_log
 run check_agent_drift
