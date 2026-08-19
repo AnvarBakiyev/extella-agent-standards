@@ -97,6 +97,14 @@ footer a{color:var(--a)}
 .codex h3{margin:0 0 3px;font-size:17px}
 .codex p{margin:0;font-size:13px}
 .codex-state{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:9px;min-height:18px}
+.lvl{margin:26px 0 4px}
+.lvl:first-of-type{margin-top:14px}
+.lvl .label{margin:0 0 4px}
+.lvl h2{margin:0 0 4px}
+.lvl p{margin:0 0 6px;font-size:14px}
+.tasktypes{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}
+.tasktypes span{font-family:var(--mono);font-size:11px;color:var(--tx2);
+  background:var(--s3);border:1px solid var(--bd);border-radius:4px;padding:2px 8px}
 .codex-state.ok{color:var(--petrol)}
 .codex-state.bad{color:var(--a)}
 
@@ -125,6 +133,13 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   <div class="stale" id="устарело"></div>
   <div class="news" id="новости"></div>
 
+  <div class="lvl">
+    <p class="label">УРОВЕНЬ 1 · РАЗРАБОТКА</p>
+    <h2>Разработка агентов</h2>
+    <p>Писать экспертов, страницы и правила — сильными облачными моделями по
+    кнопке. С этого начинают: пока агента нет, запускать нечего.</p>
+  </div>
+
   <div class="codex" id="codex-card">
     <div class="codex-row">
       <div>
@@ -148,17 +163,52 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
     <div class="codex-state" id="claude-state">Готов к проверке. Реальные запросы в Claude могут расходовать план или API.</div>
   </div>
 
-  <div class="hero">
-    <div>
-      <h2>Локальная модель ↔ Extella</h2>
-      <p>Qwen3.5 в LM Studio на этом Mac: ноль за токен, данные не покидают
-      компьютер. Для локальных автоматизаций листенера; облачные агенты
-      продолжают работать на платформенных моделях.</p>
-      <button class="btn main" id="local-llm-connect">Подключить локальную модель</button>
+  <div class="lvl">
+    <p class="label">УРОВЕНЬ 2 · СЛОЖНЫЕ ЗАДАЧИ</p>
+    <h2>Сложные задачи — локально</h2>
+    <p>Агент готов, а задача трудная и приватная: анализ, рассуждение, разбор
+    документа. Сильная модель на этом Mac — бесплатно, данные не покидают
+    компьютер. Медленно и вдумчиво.</p>
+  </div>
+
+  <div class="codex" id="local-quality-card">
+    <div class="codex-row">
+      <div>
+        <h3>Qwen 27B на этом Mac</h3>
+        <p>Рассуждающая модель ~16 ГБ. Ставится и запускается одной кнопкой,
+        как мосты. Установка модель не вызывает.</p>
+      </div>
+      <button class="btn main" id="local-llm-quality">Подключить</button>
     </div>
-    <div class="codex-state" id="local-llm-state">Скачивание модели — до 22 ГБ:
-    первый запуск занимает время, прогресс будет виден здесь. Модель не
-    вызывается ни на одном этапе установки.</div>
+    <div class="codex-state" id="local-llm-state-quality">Готово к установке. Скачивание ~16 ГБ — прогресс будет виден здесь.</div>
+  </div>
+
+  <div class="lvl">
+    <p class="label">УРОВЕНЬ 3 · ЕЖЕДНЕВНЫЕ ЗАДАЧИ</p>
+    <h2>Ежедневные задачи — локально</h2>
+    <p>Поток: тысячи дешёвых вызовов каждый день. Быстрая модель на этом Mac —
+    ноль за токен, ответ за 1–2 секунды (замер на 32 ГБ Mac), данные не
+    покидают компьютер.</p>
+    <div class="tasktypes">
+      <span>классификация</span>
+      <span>извлечение полей</span>
+      <span>теги и рубрики</span>
+      <span>маршрутизация обращений</span>
+      <span>короткие ответы</span>
+      <span>дедупликация</span>
+    </div>
+  </div>
+
+  <div class="codex" id="local-fast-card">
+    <div class="codex-row">
+      <div>
+        <h3>Быстрая 9B на этом Mac</h3>
+        <p>Нерассуждающая модель ~6 ГБ. Ответ за секунды. Ставится одной
+        кнопкой; установка модель не вызывает.</p>
+      </div>
+      <button class="btn main" id="local-llm-fast">Подключить</button>
+    </div>
+    <div class="codex-state" id="local-llm-state-fast">Готово к установке. Скачивание ~6 ГБ — прогресс будет виден здесь.</div>
   </div>
 
   <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
@@ -343,6 +393,11 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
           if (ещё) {
             p.offset = Math.max(0, parseInt(ещё.offset, 10) || 0);
             p.limit = Math.max(1, Math.min(64, parseInt(ещё.limit, 10) || 8));
+            // profile — тоже белый список: ровно два допустимых значения,
+            // подстановка мимо них уходит в quality, а не в произвольную строку.
+            if (ещё.profile === 'quality' || ещё.profile === 'fast') {
+              p.profile = ещё.profile;
+            }
           }
           return p;
         })()
@@ -683,8 +738,8 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   // Долгий этап опрашивается, а не ждётся: шаг возвращается мгновенно с
   // прогрессом, пока фоновая загрузка идёт. Иначе любой этап длиннее ~51 с
   // уходит в отложенную задачу, дождаться которую страница не может.
-  function опроситьДолгий(эксперт, шаг, показать){
-    return вызватьSetup(эксперт, шаг).then(function(r){
+  function опроситьДолгий(эксперт, шаг, ещё, показать){
+    return вызватьSetup(эксперт, шаг, ещё).then(function(r){
       if (r.status !== 'success' || r.model_called !== false ||
           r.agent_called !== false || r.paid !== false) {
         throw new Error(r.message || ('Этап ' + шаг + ' завершился ошибкой.'));
@@ -692,7 +747,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       if (r.finished === true || r.finished === undefined) return r;
       if (показать) показать(r.message || 'выполняется…');
       return подождать(20000).then(function(){
-        return опроситьДолгий(эксперт, шаг, показать);
+        return опроситьДолгий(эксперт, шаг, ещё, показать);
       });
     });
   }
@@ -709,6 +764,9 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     // Внутри рамки приложения установку ведёт его приёмная: этапы те же, но
     // тайм-ауты у host длиннее, а страница только рисует прогресс. Ответ null
     // означает «приёмной нет» — тогда прямой путь, как и вне приложения.
+    // Профиль (quality/fast) проходит в каждый шаг установщика: он определяет,
+    // какую модель ставить и вписывать в листенер.
+    var доп = маршрут.профиль ? {profile: маршрут.профиль} : null;
     var черезКанал = маршрут.канал ? установитьЧерезКанал(маршрут) : null;
     var цепочка = (черезКанал || Promise.resolve(null)).then(function(итогКанала){
       if (итогКанала) return итогКанала;
@@ -718,7 +776,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
           состояние(маршрут.строка, 'Этап ' + (номер + 1) + ' из ' + шаги.length +
             ': ' + (ИМЕНА_ЭТАПОВ[шаг] || шаг) + '…');
           if (шаг === 'ОПРОС:model') {
-            return опроситьДолгий(маршрут.эксперт, 'model', function(текст){
+            return опроситьДолгий(маршрут.эксперт, 'model', доп, function(текст){
               состояние(маршрут.строка, 'Этап ' + (номер + 1) + ' из ' + шаги.length +
                 ': ' + текст);
             });
@@ -735,7 +793,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
                       model_called:false, agent_called:false, paid:false};
             });
           }
-          return шагСПовтором(маршрут.эксперт, шаг, null, function(текст){
+          return шагСПовтором(маршрут.эксперт, шаг, доп, function(текст){
             состояние(маршрут.строка, 'Этап ' + (номер + 1) + ' из ' + шаги.length +
               ': ' + (ИМЕНА_ЭТАПОВ[шаг] || шаг) + ' — ' + текст);
           }).then(function(result){
@@ -792,19 +850,30 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     });
   };
 
-  document.getElementById('local-llm-connect').onclick = function(){
+  // Обе кнопки — один установщик, разные профили. Изоляция параллельных
+  // загрузок сделана в установщике (свои pid/лог/счётчик на профиль), поэтому
+  // страница вторую кнопку не блокирует и не усложняет обработку ошибок.
+  function подключитьЛокальную(профиль, кнопкаId){
     подключить({
-      кнопка: 'local-llm-connect', строка: 'local-llm-state',
-      эксперт: 'extella_local_llm_product_setup', готово: 'Локальная модель подключена',
+      кнопка: кнопкаId, строка: 'local-llm-state-' + профиль, профиль: профиль,
+      эксперт: 'extella_local_llm_product_setup', готово: 'Модель подключена',
       // Свой список этапов: раздачи и моста здесь нет, скачивание — опросом.
       шаги: ['preflight', 'install', 'ОПРОС:model', 'server', 'configure', 'verify'],
-      начало: 'Проверяю компьютер, ставлю LM Studio и скачиваю модель. ' +
-        'Скачивание до 22 ГБ — можно оставить страницу открытой и вернуться позже.',
+      начало: (профиль === 'fast'
+        ? 'Ставлю быструю модель для потока (~6 ГБ). '
+        : 'Ставлю сильную модель для качества (~16 ГБ). ') +
+        'Можно оставить страницу открытой и вернуться позже.',
       успех: function(r){
         return 'Готово: ' + String(r.model || 'модель') +
           ' работает локально. Токены бесплатны, данные не покидают компьютер.';
       }
     });
+  }
+  document.getElementById('local-llm-quality').onclick = function(){
+    подключитьЛокальную('quality', 'local-llm-quality');
+  };
+  document.getElementById('local-llm-fast').onclick = function(){
+    подключитьЛокальную('fast', 'local-llm-fast');
   };
 
   document.getElementById('codex-connect').onclick = function(){

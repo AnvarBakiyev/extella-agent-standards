@@ -1,5 +1,6 @@
-def extella_local_llm_product_setup(action: str = "preflight") -> str:
-    """Локальная модель для Extella: LM Studio + Qwen одной кнопкой.
+def extella_local_llm_product_setup(action: str = "preflight",
+                                    profile: str = "quality") -> str:
+    """Локальная модель для Extella: LM Studio + Qwen/Gemma одной кнопкой.
 
     Шесть безмодельных этапов по канону установщика мостов: каждый ответ несёт
     версию, каждый отказ называет следующий шаг, ни один этап не тратит план.
@@ -7,15 +8,21 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
     запускает загрузку в фоне и на повторных вызовах отдаёт прогресс, поэтому
     ни один вызов не упирается в отсечку платформы (~51 с, замер 18.08.2026).
 
-    Разделение, ради которого продукт существует: разработка агентов требует
-    сильной модели (мосты Claude/Codex), а РАБОТА агентов — тысячи дешёвых
-    вызовов — уезжает на локальную модель: ноль за токен, данные не покидают
-    машину. Конфиг листенера уже умеет llm_base_url/llm_model, платформа не
-    меняется вовсе.
+    Два профиля, потому что «локальная модель» — это две разные экономики
+    (замер 19.08.2026 на живых моделях):
+      quality — qwen3.8-27b, рассуждающая: верный ответ, но ~47 с и ~327
+                токенов размышлений на простую классификацию. Сложная приватная
+                задача, время не жалко.
+      fast    — gemma-2-9b, нерассуждающая. Замер 20.08.2026, тот же тест:
+                верный ответ за 1.2 с (7 токенов) против 47 с у quality —
+                ~40x. Извлечение поля 1.6 с, маршрутизация 0.7 с. Поток:
+                тысячи дешёвых вызовов, классификация, извлечение.
+    Оба бесплатны и не выпускают данные с машины. Конфиг листенера уже умеет
+    llm_base_url/llm_model, платформа не меняется вовсе.
     """
     import json, os, platform, shutil, subprocess, urllib.request
 
-    SETUP_VERSION = "3.2.17"
+    SETUP_VERSION = "3.2.18"
     HOME = os.path.expanduser("~")
     APP = "/Applications/LM Studio.app"
     BUNDLED_LMS = APP + "/Contents/Resources/app/.webpack/lms"
@@ -24,19 +31,27 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
     MODELS_DIR = os.path.join(PROFILE, "models")
     WIZARD_CONFIG = os.path.join(HOME, "extella_wizard", "app", "config.json")
     SERVER = "http://127.0.0.1:1234"
-    DOWNLOAD_LOG = os.path.join(PROFILE, ".extella_model_download.log")
-    DOWNLOAD_PID = os.path.join(PROFILE, ".extella_model_download.pid")
+    # Свои файлы состояния на профиль: качество и поток могут качаться
+    # независимо, и прогресс одного нельзя показывать за другой.
+    DOWNLOAD_LOG = os.path.join(PROFILE, ".extella_model_download_" + profile + ".log")
+    DOWNLOAD_PID = os.path.join(PROFILE, ".extella_model_download_" + profile + ".pid")
+    ATTEMPTS_PATH = os.path.join(PROFILE, ".extella_model_attempts_" + profile)
 
-    # Лестница по памяти. Верхняя ступень — флагман качества qwen3.8-27b
-    # (27B, 16 ГБ). Замер 19.08.2026 на живой модели: она рассуждающая и
-    # отключить мышление в этой сборке нельзя — простая классификация стоит
-    # ~327 токенов размышлений и ~47 секунд. Значит это выбор КАЧЕСТВА, а не
-    # скорости: для высокочастотной дешёвой работы младшая 9B быстрее.
-    LADDER = [(24, "qwen/qwen3.8-27b", 16), (12, "qwen/qwen3.5-9b", 7)]
+    # Профиль → лестница по памяти. Верхняя ступень каждого профиля выбирается
+    # первой, при нехватке памяти или диска — следующая. Замер 19.08.2026 на
+    # живых моделях, обе на этой машине проверены запуском.
+    PROFILES = {
+        "quality": [(24, "qwen/qwen3.8-27b", 16), (12, "qwen/qwen3.5-9b", 7)],
+        "fast": [(12, "google/gemma-2-9b", 6), (8, "mistralai/ministral-3-3b", 3)],
+    }
+    if profile not in PROFILES:
+        profile = "quality"
+    LADDER = PROFILES[profile]
 
     def result(status, code, message, **extra):
         payload = {"status": status, "code": code, "message": message,
-                   "step": action, "setup_version": SETUP_VERSION,
+                   "step": action, "profile": profile,
+                   "setup_version": SETUP_VERSION,
                    "model_called": False, "agent_called": False, "paid": False}
         payload.update(extra)
         return json.dumps(payload, ensure_ascii=False)
@@ -176,7 +191,7 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
             return result("error", "not_enough_memory",
                           "Памяти меньше 12 ГБ — модель ставить некуда.")
         if model_on_disk(model):
-            for stale in (DOWNLOAD_PID, os.path.join(PROFILE, ".extella_model_attempts")):
+            for stale in (DOWNLOAD_PID, ATTEMPTS_PATH):
                 try:
                     os.remove(stale)
                 except Exception:
@@ -194,9 +209,8 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
         # означают настоящую причину (диск, сеть), и её надо назвать. Замер
         # 19.08.2026: загрузка умерла на 8-м гигабайте о полный диск, и без
         # счётчика шаг перезапускал бы её до бесконечности.
-        attempts_path = os.path.join(PROFILE, ".extella_model_attempts")
         try:
-            with open(attempts_path, "r", encoding="utf-8") as s_:
+            with open(ATTEMPTS_PATH, "r", encoding="utf-8") as s_:
                 attempts = int(s_.read().strip() or "0")
         except Exception:
             attempts = 0
@@ -209,7 +223,7 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
             except Exception:
                 pass
             try:
-                os.remove(attempts_path)
+                os.remove(ATTEMPTS_PATH)
             except Exception:
                 pass
             return result("error", "model_download_failed",
@@ -229,7 +243,7 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
                           "Командная строка LM Studio недоступна — вероятно, её "
                           "удалила очистка диска. Нажмите кнопку ещё раз: "
                           "установка начнётся с восстановления.")
-        with open(attempts_path, "w", encoding="utf-8") as s_:
+        with open(ATTEMPTS_PATH, "w", encoding="utf-8") as s_:
             s_.write(str(attempts + 1))
         # Запуск в фоне: сам вызов обязан вернуться быстро, иначе платформа
         # отложит его в задачу, дождаться которую страница не может.
