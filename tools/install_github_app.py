@@ -269,6 +269,21 @@ def работа(папка: pathlib.Path, slug: str, имя: str, лиценз�
                   f" теги и границы")
         print("  " + прогнать("make_local_app_page.py", str(издание)).strip())
 
+    if not сухой:
+        # Приложение само знает, где лежит его работа, — человеку выяснять это
+        # незачем. Без этой записи каждое новое приложение пришлось бы
+        # регистрировать руками, а при пятистах приложениях ручная регистрация
+        # ничем не лучше ручной интеграции.
+        реестр = pathlib.Path.home() / "extella-cabinet" / "источники.json"
+        реестр.parent.mkdir(parents=True, exist_ok=True)
+        д = json.loads(реестр.read_text()) if реестр.exists() else {}
+        д[slug] = {"файл": str(pathlib.Path.home() / "extella-cabinet" / "данные"
+                               / f"{slug}.json"), "имя": имя, "порт": порт}
+        реестр.write_text(json.dumps(д, ensure_ascii=False, indent=2))
+        print(f"  ✓ приложение записано в реестр источников как «{slug}» — "
+              f"его уже можно звать словами:")
+        print(f"      python3 tools/скажи.py \"возьми из {slug} и нарисуй на доске\" --учись")
+
     шаг(7, "Проверяю: входная проверка и гейт витрины")
     print(прогнать("check_local_app.py", str(папка), "--порт", str(порт)).strip()[:1200])
     if not сухой and (издание / "listing.json").exists():
