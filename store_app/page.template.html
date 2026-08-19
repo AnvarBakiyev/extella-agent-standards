@@ -413,20 +413,29 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   }
 
   // Одна копировалка на все кнопки: отказ обязан говорить, что делать дальше.
+  // В рамке приложения navigator.clipboard существует, но отклоняет запись —
+  // политика прав iframe. Раньше запасной путь через execCommand пробовался
+  // только когда clipboard отсутствует вовсе, то есть именно в приложении не
+  // пробовался никогда, и кнопка честно сдавалась «выдели и скопируй сам»,
+  // хотя запасной путь там работает. Замер Эллы, 19.08.2026.
   function скопировать(текст, кнопка, было, удача){
     function ok(){ кнопка.textContent = удача || 'Скопировано'; кнопка.dataset.done = '1';
       setTimeout(function(){ кнопка.textContent = было; кнопка.dataset.done = ''; }, 1800); }
     function нет(){ кнопка.textContent = 'Выдели и скопируй сам'; кнопка.dataset.done = '';
       setTimeout(function(){ кнопка.textContent = было; }, 2600); }
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(текст).then(ok, нет);
-    } else {
+    function запасной(){
       try {
         var ta = document.createElement('textarea');
-        ta.value = текст; document.body.appendChild(ta); ta.select();
+        ta.value = текст; document.body.appendChild(ta);
+        ta.focus(); ta.select();
         var done = document.execCommand('copy'); document.body.removeChild(ta);
         done ? ok() : нет();
       } catch (err) { нет(); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(текст).then(ok, запасной);
+    } else {
+      запасной();
     }
   }
 
