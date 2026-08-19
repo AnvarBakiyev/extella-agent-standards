@@ -85,3 +85,14 @@ test('в установщик проходят только action и два ч�
   assert.ok(тело.includes('Math.min(64'), 'порция ограничена сверху');
   assert.equal(/p\.[a-z_]+ = ещё\./.test(тело), false, 'сырые значения не проходят');
 });
+
+test('копирование пробует запасной путь, когда clipboard отклоняет запись', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  const тело = page.slice(page.indexOf('function скопировать'), page.indexOf('document.addEventListener'));
+  // В рамке приложения clipboard существует и отклоняет — отказ без попытки
+  // execCommand означает нерабочую кнопку ровно там, где ей пользуются.
+  assert.ok(тело.includes('.then(ok, запасной)'), 'на отказ clipboard идёт запасной путь');
+  assert.ok(тело.includes('execCommand'));
+  // Сдаёмся словами только после того, как не сработали оба пути.
+  assert.ok(тело.indexOf('запасной()') > 0);
+});
