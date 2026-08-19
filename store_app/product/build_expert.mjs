@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const bridgeRoot = resolve(
   process.env.EXTELLA_BRIDGE_SOURCE ||
-    resolve(HERE, "../../../extella-codex-bridge-guide-source-sync"),
+    resolve(HERE, "../../../extella-codex-bridge"),
 );
 const sourcePath = resolve(
   bridgeRoot,
