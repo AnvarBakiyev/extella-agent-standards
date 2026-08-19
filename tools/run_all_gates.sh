@@ -92,6 +92,7 @@ run check_single_source
 run check_brand_copy
 run check_writing_style
 run check_waiting_state
+run check_self_check
 # Не только селфтест: прогоняем правило языка по СВОИМ текстам. Проверка, которая
 # умеет падать, но ни к чему не применена, ничего не охраняет.
 run_command "язык текстов для покупателя" python3 "$ROOT/tools/check_writing_style.py" \
