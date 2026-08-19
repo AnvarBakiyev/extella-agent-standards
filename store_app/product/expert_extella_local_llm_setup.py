@@ -1,5 +1,5 @@
 def extella_local_llm_product_setup(action: str = "preflight") -> str:
-    """Локальная модель для Extella: LM Studio + Qwen3.5 одной кнопкой.
+    """Локальная модель для Extella: LM Studio + Qwen одной кнопкой.
 
     Шесть безмодельных этапов по канону установщика мостов: каждый ответ несёт
     версию, каждый отказ называет следующий шаг, ни один этап не тратит план.
@@ -15,7 +15,7 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
     """
     import json, os, platform, shutil, subprocess, urllib.request
 
-    SETUP_VERSION = "3.2.16"
+    SETUP_VERSION = "3.2.17"
     HOME = os.path.expanduser("~")
     APP = "/Applications/LM Studio.app"
     BUNDLED_LMS = APP + "/Contents/Resources/app/.webpack/lms"
@@ -27,11 +27,12 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
     DOWNLOAD_LOG = os.path.join(PROFILE, ".extella_model_download.log")
     DOWNLOAD_PID = os.path.join(PROFILE, ".extella_model_download.pid")
 
-    # Лестница по памяти. Замер 19.08.2026 на живом каталоге LM Studio:
-    # интерактивный поиск отдаёт qwen/qwen3.5-9b и qwen/qwen3.5-35b-a3b.
-    # 35B-A3B — MoE с 3B активных: быстрая при ~20 ГБ веса, поэтому нижняя
-    # граница для неё — 24 ГБ. Ниже 12 ГБ честный отказ лучше зависшего Мака.
-    LADDER = [(24, "qwen/qwen3.5-35b-a3b", 22), (12, "qwen/qwen3.5-9b", 7)]
+    # Лестница по памяти. Верхняя ступень — флагман качества qwen3.8-27b
+    # (27B, 16 ГБ). Замер 19.08.2026 на живой модели: она рассуждающая и
+    # отключить мышление в этой сборке нельзя — простая классификация стоит
+    # ~327 токенов размышлений и ~47 секунд. Значит это выбор КАЧЕСТВА, а не
+    # скорости: для высокочастотной дешёвой работы младшая 9B быстрее.
+    LADDER = [(24, "qwen/qwen3.8-27b", 16), (12, "qwen/qwen3.5-9b", 7)]
 
     def result(status, code, message, **extra):
         payload = {"status": status, "code": code, "message": message,
