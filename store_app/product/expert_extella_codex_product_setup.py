@@ -3,6 +3,7 @@ def extella_codex_product_setup(action="preflight") -> str:
     step = action
     BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-codex-bridge.git"
     BUILDER_REF = "v0.3.6"
+    SETUP_VERSION = "3.2.14"
     # Independent agent-building standards contract; do not advance with bridge-only releases.
     STANDARDS_REF = "v0.3.0"
     MARKETPLACE = "extella-codex"
@@ -10,7 +11,7 @@ def extella_codex_product_setup(action="preflight") -> str:
 
     def result(status, code, message, **extra):
         payload = {"status": status, "code": code, "message": message,
-                   "step": step, "model_called": False,
+                   "step": step, "setup_version": SETUP_VERSION, "model_called": False,
                    "agent_called": False, "paid": False}
         payload.update(extra)
         return json.dumps(payload, ensure_ascii=False)

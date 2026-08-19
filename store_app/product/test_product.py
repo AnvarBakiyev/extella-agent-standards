@@ -77,9 +77,12 @@ class ProductTests(unittest.TestCase):
 
     def test_prerelease_3_2_14_provisions_both_bridge_experts(self):
         source = (HERE / "deploy_prerelease_claude.py").read_text()
+        expert = (HERE / "expert_extella_codex_product_setup.py").read_text()
         self.assertIn('VERSION = "3.2.14"', source)
         self.assertIn('"extella_codex_product_setup"', source)
         self.assertIn('"extella_claude_product_setup"', source)
+        self.assertIn('SETUP_VERSION = "3.2.14"', expert)
+        self.assertIn('"setup_version": SETUP_VERSION', expert)
 
     def test_local_fallback_uses_the_same_discovery_and_token_contract(self):
         source = (HERE / "codex_setup.py").read_text()
