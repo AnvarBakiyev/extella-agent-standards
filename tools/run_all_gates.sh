@@ -118,7 +118,8 @@ run_command "копии обвязки платформы" python3 "$ROOT/tools/
 run_command "язык текстов для покупателя" python3 "$ROOT/tools/check_writing_style.py" \
   "$ROOT/README.md" "$ROOT/WRITING_RULES.md" "$ROOT/store_app/content.json"
 run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
-  --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md"
+  --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md" \
+  "$ROOT/INSTALLER_CANON.md"
 run check_design_rule
 run check_findings_log
 run check_agent_drift
