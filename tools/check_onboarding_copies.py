@@ -21,6 +21,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from maintainers import ведут_другие
+
 CANON = Path.home() / "Documents/Extella/extella-recruiting-agent/app/agent_onboarding.py"
 
 COPIES = [
@@ -58,6 +61,7 @@ def main() -> int:
         return 0
     canon_lines = logic(CANON.read_text(encoding="utf-8"))
     problems = []
+    чужие_расхождения = []
 
     print("Экран выбора агента: копии против канона\n")
     for name, path in COPIES:
@@ -70,13 +74,28 @@ def main() -> int:
             continue
         extra = [l for l in lines if l not in canon_lines]
         missing = [l for l in canon_lines if l not in lines]
-        problems.append(name)
-        print(f"  ✗ {name}: логика разошлась с каноном "
+        # Чужой продукт: расхождение показываем, прогон не валим. Править
+        # чужое живое запрещено стоп-правилом, а вечно красный прогон
+        # перестают читать вместе с настоящими поломками.
+        чужой = name in ведут_другие()
+        if чужой:
+            чужие_расхождения.append(name)
+        else:
+            problems.append(name)
+        print(f"  {'~' if чужой else '✗'} {name}: логика разошлась с каноном "
               f"(+{len(extra)} своих строк, −{len(missing)} канонических)")
+        if чужой:
+            print("      ведёт другой человек — здесь не чинится, сообщить владельцу продукта")
         for l in (missing[:3] + extra[:3]):
             print(f"      {l.strip()[:96]}")
 
     print()
+    if чужие_расхождения:
+        # Молчать об этом нельзя: зелёный код выхода означает «нам нечего чинить»,
+        # а не «везде одинаково». Разница между этими двумя утверждениями — то,
+        # из-за чего проверки перестают верить.
+        print(f"У ДРУГИХ ЛЮДЕЙ разошлось: {', '.join(чужие_расхождения)}. "
+              f"Здесь не чинится — сообщить владельцам продуктов.")
     if problems:
         print("КОПИИ ЭКРАНА РАЗОШЛИСЬ — продукты поведут себя по-разному при отказе платформы.")
         print("Чинить в каноне и пересобирать копии, а не править копию на месте.")

@@ -106,6 +106,7 @@ run check_self_check
 # 19.08.2026: content.json обновили до 2026-08-19.1, страница осталась на
 # 2026-08-18.1, и поймал это ЧУЖОЙ бот в заявке, а не наш прогон. Проверка
 # существовала (build.py --check), но её никто не звал.
+run maintainers
 run_command "снимок страницы гида" python3 "$ROOT/store_app/build.py" --check
 run_command "правило по дизайну" python3 "$ROOT/tools/check_design_rule.py"
 run_command "единственный источник" python3 "$ROOT/tools/check_single_source.py"
