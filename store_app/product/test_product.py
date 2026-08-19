@@ -75,14 +75,26 @@ class ProductTests(unittest.TestCase):
         self.assertIn('"../../../extella-codex-bridge"', source)
         self.assertNotIn("extella-codex-bridge-guide-source-sync", source)
 
-    def test_prerelease_3_2_14_provisions_both_bridge_experts(self):
+    def test_prerelease_provisions_all_three_setup_experts_with_matching_labels(self):
+        # Проверяем структуру, а не конкретный номер версии: тест, приколоченный
+        # к литералу «3.2.14», ломался каждый выпуск. Важно другое — выкладка
+        # ставит все три установщика, а метка версии в коде совпадает с версией
+        # листинга (страховка выкладки требует именно этого равенства).
+        import re
         source = (HERE / "deploy_prerelease_claude.py").read_text()
-        expert = (HERE / "expert_extella_codex_product_setup.py").read_text()
-        self.assertIn('VERSION = "3.2.14"', source)
-        self.assertIn('"extella_codex_product_setup"', source)
-        self.assertIn('"extella_claude_product_setup"', source)
-        self.assertIn('SETUP_VERSION = "3.2.14"', expert)
-        self.assertIn('"setup_version": SETUP_VERSION', expert)
+        listing = re.search(r'^VERSION = "([\d.]+)"', source, re.M)
+        self.assertIsNotNone(listing, "версия листинга не найдена в выкладке")
+        version = listing.group(1)
+        for name in ("extella_codex_product_setup",
+                     "extella_claude_product_setup",
+                     "extella_local_llm_product_setup"):
+            self.assertIn(f'"{name}"', source, f"{name} не ставится выкладкой")
+        for filename in ("expert_extella_codex_product_setup.py",
+                         "expert_extella_local_llm_setup.py"):
+            code = (HERE / filename).read_text()
+            self.assertIn(f'SETUP_VERSION = "{version}"', code,
+                          f"метка версии в {filename} отстала от версии листинга {version}")
+            self.assertIn('"setup_version": SETUP_VERSION', code)
 
     def test_local_fallback_uses_the_same_discovery_and_token_contract(self):
         source = (HERE / "codex_setup.py").read_text()
