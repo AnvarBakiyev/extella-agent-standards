@@ -33,7 +33,7 @@ DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Исправлена установка Codex и Claude "
     "на чистых машинах и восстановление после отложенной задачи. Живой продукт не затронут."
 )
-VERSION = "3.2.14"
+VERSION = "3.2.15"
 SCOPES = ["expert.run", "device.run"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
@@ -54,6 +54,7 @@ CLAUDE_PLUGIN = (
 EXPERTS = {
     "extella_codex_product_setup": HERE / "expert_extella_codex_product_setup.py",
     "extella_claude_product_setup": CLAUDE_PLUGIN / "experts/extella_claude_product_setup.py",
+    "extella_local_llm_product_setup": HERE / "expert_extella_local_llm_setup.py",
 }
 PAGE = HERE.parent / "index.html"
 # Локальная часть: без неё этап bridge не находит рантайм на машине покупателя.
