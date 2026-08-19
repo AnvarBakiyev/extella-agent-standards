@@ -49,11 +49,65 @@ def verify_bundle(root: pathlib.Path = HERE) -> None:
             raise SetupError("bundle_integrity_failed", "контрольная сумма пакета не совпала")
 
 
+def shell_path_dirs() -> list[str]:
+    shell = os.environ.get("SHELL") or "/bin/zsh"
+    for flags in ("-ilc", "-lc"):
+        try:
+            completed = subprocess.run(
+                [shell, flags, 'printf %s "$PATH"'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=20,
+                shell=False,
+            )
+        except Exception:
+            continue
+        if completed.returncode == 0:
+            roots = [part for part in (completed.stdout or "").split(":") if part.startswith("/")]
+            if roots:
+                return roots
+    return []
+
+
+def version_manager_dirs() -> list[str]:
+    home = pathlib.Path.home()
+    found = []
+    for base in (
+        home / ".nvm/versions/node",
+        home / ".fnm/node-versions",
+        home / "n/versions/node",
+        home / ".volta/tools/image/node",
+    ):
+        try:
+            entries = sorted(base.iterdir())
+        except Exception:
+            continue
+        for entry in entries:
+            for candidate in (entry / "bin", entry / "installation/bin"):
+                if candidate.is_dir():
+                    found.append(str(candidate))
+    return found
+
+
+def candidate_roots() -> list[str]:
+    home = pathlib.Path.home()
+    roots = [
+        "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin",
+        str(home / ".local/bin"), str(home / ".npm-global/bin"),
+        str(home / ".bun/bin"), str(home / ".volta/bin"),
+        str(home / "Library/pnpm"), str(home / ".yarn/bin"),
+        str(home / ".asdf/shims"),
+    ]
+    return list(dict.fromkeys(roots + version_manager_dirs() + shell_path_dirs()))
+
+
 def command(name: str) -> str:
-    found = shutil.which(name)
+    search_path = ":".join(candidate_roots() + [os.environ.get("PATH", "")])
+    found = shutil.which(name, path=search_path)
     if found:
         return found
-    for root in ("/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"):
+    for root in candidate_roots():
         candidate = pathlib.Path(root) / name
         if candidate.is_file() and os.access(candidate, os.X_OK):
             return str(candidate)
@@ -62,10 +116,7 @@ def command(name: str) -> str:
 
 def safe_env() -> dict:
     env = dict(os.environ)
-    env["PATH"] = ":".join([
-        "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin",
-        env.get("PATH", ""),
-    ])
+    env["PATH"] = ":".join(candidate_roots() + [env.get("PATH", "")])
     env["GIT_TERMINAL_PROMPT"] = "0"
     env["GH_PROMPT_DISABLED"] = "1"
     for key in (
@@ -157,11 +208,41 @@ def status_payload() -> dict:
 
 
 def current_token() -> str:
-    path = pathlib.Path.home() / ".extella" / "api_token.txt"
-    try:
-        token = path.read_text(encoding="utf-8").strip()
-    except Exception:
-        token = ""
+    token = os.environ.get("EXTELLA_API_TOKEN", "").strip()
+    if len(token) < 8:
+        try:
+            token = (pathlib.Path.home() / ".extella/api_token.txt").read_text(
+                encoding="utf-8",
+            ).strip()
+        except Exception:
+            token = ""
+    if len(token) < 8:
+        try:
+            probe = subprocess.run(
+                ["/bin/launchctl", "getenv", "EXTELLA_API_TOKEN"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=20,
+                shell=False,
+            )
+            token = (probe.stdout or "").strip() if probe.returncode == 0 else ""
+        except Exception:
+            token = ""
+    if len(token) < 8:
+        try:
+            wizard = json.loads(
+                (pathlib.Path.home() / "extella_wizard/app/config.json").read_text(
+                    encoding="utf-8",
+                )
+            )
+            for field in ("auth_token", "token", "AUTH_TOKEN", "extella_token"):
+                candidate = str(wizard.get(field) or "").strip()
+                if len(candidate) >= 8:
+                    token = candidate
+                    break
+        except Exception:
+            token = ""
     if len(token) < 8:
         raise SetupError("extella_token_unavailable", "Открой Extella Desktop на этом Mac и повтори.")
     try:
@@ -245,8 +326,13 @@ def install() -> dict:
     if not node:
         raise SetupError("node_not_installed", "Установи Node.js 20+ и повтори.")
     login = run([codex, "login", "status"], timeout=30, allow_failure=True)
-    if not login or login.returncode != 0:
-        raise SetupError("codex_login_required", "Войди в ChatGPT через Codex CLI и повтори.")
+    if not login:
+        raise SetupError("codex_login_check_failed", "Не удалось проверить вход через Codex CLI.")
+    if login.returncode != 0:
+        reported = ((login.stdout or "") + "\n" + (login.stderr or "")).lower()
+        if "not logged in" in reported:
+            raise SetupError("codex_login_required", "Войди в ChatGPT через Codex CLI и повтори.")
+        raise SetupError("codex_login_check_failed", "Codex CLI не смог проверить состояние входа.")
     plugin_path = refresh_local_marketplace(codex)
     configure_credentials()
     configure_bridge(plugin_path, node)

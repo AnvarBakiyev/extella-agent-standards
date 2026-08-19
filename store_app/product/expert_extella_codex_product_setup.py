@@ -2,7 +2,7 @@ def extella_codex_product_setup(action="preflight") -> str:
     import json, os, platform, secrets, shutil, subprocess, urllib.request
     step = action
     BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-codex-bridge.git"
-    BUILDER_REF = "v0.3.5"
+    BUILDER_REF = "v0.3.6"
     # Independent agent-building standards contract; do not advance with bridge-only releases.
     STANDARDS_REF = "v0.3.0"
     MARKETPLACE = "extella-codex"
@@ -15,14 +15,62 @@ def extella_codex_product_setup(action="preflight") -> str:
         payload.update(extra)
         return json.dumps(payload, ensure_ascii=False)
 
+    HOME = os.path.expanduser("~")
+
+    def shell_path_dirs():
+        shell = os.environ.get("SHELL") or "/bin/zsh"
+        for flags in ("-ilc", "-lc"):
+            try:
+                completed = subprocess.run(
+                    [shell, flags, "printf %s \"$PATH\""],
+                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                    text=True, timeout=20, shell=False)
+            except Exception:
+                continue
+            if completed.returncode == 0:
+                roots = [part for part in (completed.stdout or "").split(":")
+                         if part.startswith("/")]
+                if roots:
+                    return roots
+        return []
+
+    def version_manager_dirs():
+        found = []
+        for base in [os.path.join(HOME, ".nvm", "versions", "node"),
+                     os.path.join(HOME, ".fnm", "node-versions"),
+                     os.path.join(HOME, "n", "versions", "node"),
+                     os.path.join(HOME, ".volta", "tools", "image", "node")]:
+            try:
+                entries = sorted(os.listdir(base))
+            except Exception:
+                continue
+            for entry in entries:
+                for tail in ((entry, "bin"), (entry, "installation", "bin")):
+                    candidate = os.path.join(base, *tail)
+                    if os.path.isdir(candidate):
+                        found.append(candidate)
+        return found
+
+    def candidate_roots():
+        roots = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin",
+                 os.path.join(HOME, ".local", "bin"),
+                 os.path.join(HOME, ".npm-global", "bin"),
+                 os.path.join(HOME, ".bun", "bin"),
+                 os.path.join(HOME, ".volta", "bin"),
+                 os.path.join(HOME, "Library", "pnpm"),
+                 os.path.join(HOME, ".yarn", "bin"),
+                 os.path.join(HOME, ".asdf", "shims")]
+        ordered = []
+        for root in roots + version_manager_dirs() + shell_path_dirs():
+            if root not in ordered:
+                ordered.append(root)
+        return ordered
+
     def find_command(name):
         found = shutil.which(name)
         if found:
             return found
-        home = os.path.expanduser("~")
-        for root in ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin",
-                     os.path.join(home, ".local", "bin"),
-                     os.path.join(home, ".npm-global", "bin")]:
+        for root in candidate_roots():
             candidate = os.path.join(root, name)
             if os.path.isfile(candidate) and os.access(candidate, os.X_OK):
                 return candidate
@@ -30,11 +78,7 @@ def extella_codex_product_setup(action="preflight") -> str:
 
     def safe_env():
         env = dict(os.environ)
-        home = os.path.expanduser("~")
-        cli_dirs = ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin",
-                    os.path.join(home, ".local", "bin"),
-                    os.path.join(home, ".npm-global", "bin")]
-        env["PATH"] = ":".join(cli_dirs + [env.get("PATH", "")])
+        env["PATH"] = ":".join(candidate_roots() + [env.get("PATH", "")])
         env["GIT_TERMINAL_PROMPT"] = "0"
         env["GH_PROMPT_DISABLED"] = "1"
         for key in ["EXTELLA_API_TOKEN", "EXTELLA_SECONDARY_API_TOKEN",
@@ -62,18 +106,36 @@ def extella_codex_product_setup(action="preflight") -> str:
         return completed.stdout or ""
 
     def current_token():
+        token = os.environ.get("EXTELLA_API_TOKEN", "").strip()
+        if len(token) >= 8:
+            return token
         try:
-            from extella_expert_bridge import account_config
-            token = str(account_config().get("auth_token", "") or "").strip()
+            token = open(os.path.join(HOME, ".extella", "api_token.txt"),
+                encoding="utf-8").read(4096).strip()
         except Exception:
             token = ""
-        if not token:
-            try:
-                token = open(os.path.join(os.path.expanduser("~"),
-                    ".extella", "api_token.txt"), encoding="utf-8").read().strip()
-            except Exception:
-                token = ""
-        return token
+        if len(token) >= 8:
+            return token
+        try:
+            probe = subprocess.run(["/bin/launchctl", "getenv",
+                "EXTELLA_API_TOKEN"], stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL, text=True, timeout=20, shell=False)
+            token = (probe.stdout or "").strip() if probe.returncode == 0 else ""
+        except Exception:
+            token = ""
+        if len(token) >= 8:
+            return token
+        try:
+            with open(os.path.join(HOME, "extella_wizard", "app", "config.json"),
+                      "r", encoding="utf-8") as stream:
+                wizard = json.loads(stream.read(65536))
+            for field in ("auth_token", "token", "AUTH_TOKEN", "extella_token"):
+                token = str(wizard.get(field) or "").strip()
+                if len(token) >= 8:
+                    return token
+        except Exception:
+            pass
+        return ""
 
     def validate_token(token):
         if len(token) < 8:
@@ -132,36 +194,70 @@ def extella_codex_product_setup(action="preflight") -> str:
         # step, where they are installed into the local bridge environment.
         try:
             version = run([codex, "--version"], timeout=20).strip()[:120]
-            run([codex, "login", "status"], timeout=30)
         except Exception:
-            return result("error", "codex_not_ready",
-                "Codex найден, но вход в аккаунт не подтверждён.")
+            return result("error", "codex_version_check_failed",
+                "Codex найден, но его не удалось запустить.")
+        try:
+            login = subprocess.run([codex, "login", "status"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                timeout=30, env=safe_env(), shell=False)
+        except Exception:
+            return result("error", "codex_login_check_failed",
+                "Не удалось проверить вход в Codex.")
+        if login.returncode != 0:
+            reported = ((login.stdout or "") + "\n" +
+                        (login.stderr or "")).strip().lower()
+            if "not logged in" in reported:
+                return result("error", "codex_auth_required",
+                    "Войдите в Codex на этом компьютере командой `codex login`, затем повторите.")
+            return result("error", "codex_login_check_failed",
+                "Codex не смог проверить состояние входа.")
         return result("success", "preflight_ok", "Проверки пройдены.",
             codex_version=version, builder_ref=BUILDER_REF,
             standards_ref=STANDARDS_REF)
 
     if step == "install":
         try:
-            listing = parse_json(run([codex, "plugin", "marketplace",
-                "list", "--json"], timeout=45)) or {}
-            exists = any(item.get("name") == MARKETPLACE
-                for item in listing.get("marketplaces", []))
-            if exists:
+            listing_raw = run([codex, "plugin", "marketplace",
+                "list", "--json"], timeout=45)
+        except Exception:
+            return result("error", "marketplace_list_failed",
+                "Codex не смог прочитать список источников плагинов.")
+        listing = parse_json(listing_raw)
+        if not isinstance(listing, dict):
+            return result("error", "marketplace_list_invalid",
+                "Codex вернул неразборчивый список источников плагинов.")
+        exists = any(item.get("name") == MARKETPLACE
+            for item in listing.get("marketplaces", []))
+        if exists:
+            try:
                 run([codex, "plugin", "marketplace", "remove", MARKETPLACE,
                     "--json"], timeout=90)
+            except Exception:
+                return result("error", "marketplace_remove_failed",
+                    "Codex не смог обновить прежний источник Extella.")
+        try:
             run([codex, "plugin", "marketplace", "add",
                 "AnvarBakiyev/extella-codex-bridge", "--ref", BUILDER_REF,
                 "--json"], timeout=180)
+        except Exception:
+            return result("error", "marketplace_add_failed",
+                "Codex не смог добавить проверенный источник Extella.")
+        try:
             run([codex, "plugin", "add", PLUGIN, "--json"], timeout=180)
-            installed, plugin_path = installed_plugin()
-            if not installed or not plugin_path:
-                return result("error", "plugin_version_mismatch",
-                    "Codex установил другую версию Extella Codex Bridge.")
         except Exception:
             return result("error", "plugin_install_failed",
-                "Не удалось установить Extella Codex Bridge. Можно безопасно повторить.")
+                "Codex не смог установить Extella Codex Bridge.")
+        try:
+            installed, plugin_path = installed_plugin()
+        except Exception:
+            return result("error", "plugin_verification_failed",
+                "Codex не смог проверить установленный мост.")
+        if not installed or not plugin_path:
+            return result("error", "plugin_version_mismatch",
+                "Codex установил другую версию Extella Codex Bridge.")
         return result("success", "plugin_installed",
-            "Extella Codex Bridge установлен.", plugin_version="0.3.5")
+            "Extella Codex Bridge установлен.", plugin_version="0.3.6")
 
     if step == "credentials":
         token = current_token()
@@ -246,7 +342,7 @@ def extella_codex_product_setup(action="preflight") -> str:
             return result("error", "verification_failed",
                 "Не удалось проверить итоговую конфигурацию Codex.")
         return result("success", "ready", "Codex подключён к Extella.",
-            plugin_version="0.3.5", restart_required=False,
+            plugin_version="0.3.6", restart_required=False,
             live_enabled=True, authorization_scope="account",
             execution_policy_version=health.get("execution_policy_version"),
             default_execution_profile_id=health.get("default_execution_profile_id"),

@@ -24,13 +24,14 @@ import urllib.error
 import urllib.request
 import uuid
 
+HERE = pathlib.Path(__file__).resolve().parent
 OS_BASE = "https://os.extella.ai"
 CORE_BASE = "https://api.extella.ai"
 LIVE_LISTING_ID = "880d12e4-f082-486e-b92a-57e4eb09866d"
-NAME = "Разработка на Extella — предрелиз 3.1.3"
+NAME = "Разработка на Extella — предрелиз 3.2.14"
 DESCRIPTION = (
-    "Предрелиз для приёмки владельцем. Добавлена кнопка «Подключить Claude» "
-    "и исправлен раздел 09. Живой продукт не затронут."
+    "Предрелиз для приёмки владельцем. Исправлена установка Codex и Claude "
+    "на чистых машинах и восстановление после отложенной задачи. Живой продукт не затронут."
 )
 VERSION = "3.2.14"
 SCOPES = ["expert.run", "device.run"]
@@ -51,9 +52,9 @@ CLAUDE_PLUGIN = (
     / "Documents/Codex/extella-codex-bridge/plugins/extella-claude-bridge"
 )
 EXPERTS = {
+    "extella_codex_product_setup": HERE / "expert_extella_codex_product_setup.py",
     "extella_claude_product_setup": CLAUDE_PLUGIN / "experts/extella_claude_product_setup.py",
 }
-HERE = pathlib.Path(__file__).resolve().parent
 PAGE = HERE.parent / "index.html"
 # Локальная часть: без неё этап bridge не находит рантайм на машине покупателя.
 ARCHIVE = CLAUDE_PLUGIN / "dist" / "extella-claude-bridge-archive.zip"

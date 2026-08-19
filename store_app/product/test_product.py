@@ -59,6 +59,43 @@ class ProductTests(unittest.TestCase):
         self.assertIn(value["code"], ("unsupported_step", "unsupported_os"))
         self.assertFalse(value["model_called"])
 
+    def test_expert_handles_nvm_login_and_listener_token_sources(self):
+        source = (HERE / "expert_extella_codex_product_setup.py").read_text()
+        self.assertIn('for flags in ("-ilc", "-lc")', source)
+        self.assertIn('".nvm", "versions", "node"', source)
+        self.assertIn('env["PATH"] = ":".join(candidate_roots()', source)
+        self.assertIn('"not logged in" in reported', source)
+        self.assertIn('"codex_auth_required"', source)
+        self.assertIn('"extella_wizard", "app", "config.json"', source)
+        wizard_block = source[source.index('"extella_wizard"'):source.index("def validate_token")]
+        self.assertNotIn("agent_id", wizard_block)
+
+    def test_expert_generator_reads_the_canonical_bridge_checkout(self):
+        source = (HERE / "build_expert.mjs").read_text()
+        self.assertIn('"../../../extella-codex-bridge"', source)
+        self.assertNotIn("extella-codex-bridge-guide-source-sync", source)
+
+    def test_prerelease_3_2_14_provisions_both_bridge_experts(self):
+        source = (HERE / "deploy_prerelease_claude.py").read_text()
+        self.assertIn('VERSION = "3.2.14"', source)
+        self.assertIn('"extella_codex_product_setup"', source)
+        self.assertIn('"extella_claude_product_setup"', source)
+
+    def test_local_fallback_uses_the_same_discovery_and_token_contract(self):
+        source = (HERE / "codex_setup.py").read_text()
+        self.assertIn('for flags in ("-ilc", "-lc")', source)
+        self.assertIn('home / ".nvm/versions/node"', source)
+        self.assertIn('env["PATH"] = ":".join(candidate_roots()', source)
+        environment = source.index('os.environ.get("EXTELLA_API_TOKEN"')
+        token_file = source.index('".extella/api_token.txt"')
+        launchctl = source.index('["/bin/launchctl", "getenv", "EXTELLA_API_TOKEN"]')
+        wizard = source.index('"extella_wizard/app/config.json"')
+        self.assertLess(environment, token_file)
+        self.assertLess(token_file, launchctl)
+        self.assertLess(launchctl, wizard)
+        wizard_block = source[wizard:source.index("def refresh_local_marketplace")]
+        self.assertNotIn("agent_id", wizard_block)
+
     def test_deploy_requires_public_version_guard_and_cannot_publish_listing(self):
         source = (HERE / "deploy_product.py").read_text()
         self.assertIn("/api/add-version-stream/", source)
