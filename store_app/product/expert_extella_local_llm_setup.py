@@ -220,20 +220,32 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
                           "Для " + model + " нужно " + str(size + 6) +
                           " ГБ свободного места, сейчас " + str(free_disk_gb()) +
                           ". Освободите диск и нажмите кнопку снова.", model=model)
+        # CLI мог исчезнуть между шагами: замер 19.08.2026 — чистка диска
+        # унесла ~/.lmstudio целиком, и Popen падал голым исключением, которое
+        # страница показала бы как H17. Отказ отправляет назад на install.
+        if not os.path.isfile(LMS):
+            return result("error", "lms_missing",
+                          "Командная строка LM Studio недоступна — вероятно, её "
+                          "удалила очистка диска. Нажмите кнопку ещё раз: "
+                          "установка начнётся с восстановления.")
         with open(attempts_path, "w", encoding="utf-8") as s_:
             s_.write(str(attempts + 1))
         # Запуск в фоне: сам вызов обязан вернуться быстро, иначе платформа
         # отложит его в задачу, дождаться которую страница не может.
-        os.makedirs(MODELS_DIR, exist_ok=True)
-        log = open(DOWNLOAD_LOG, "ab")
-        child = subprocess.Popen(
-            [LMS, "get", model, "--yes"],
-            stdout=log, stderr=subprocess.STDOUT,
-            env=dict(os.environ, PATH=os.path.join(HOME, ".lmstudio", "bin") +
-                     ":/usr/bin:/bin"),
-            start_new_session=True)
-        with open(DOWNLOAD_PID, "w", encoding="utf-8") as s:
-            s.write(str(child.pid))
+        try:
+            os.makedirs(MODELS_DIR, exist_ok=True)
+            log = open(DOWNLOAD_LOG, "ab")
+            child = subprocess.Popen(
+                [LMS, "get", model, "--yes"],
+                stdout=log, stderr=subprocess.STDOUT,
+                env=dict(os.environ, PATH=os.path.join(HOME, ".lmstudio", "bin") +
+                         ":/usr/bin:/bin"),
+                start_new_session=True)
+            with open(DOWNLOAD_PID, "w", encoding="utf-8") as s_:
+                s_.write(str(child.pid))
+        except Exception as failure:
+            return result("error", "model_download_start_failed",
+                          "Не удалось запустить скачивание: " + str(failure)[:160])
         return result("success", "model_download_started",
                       "Скачивание " + model + " (~" + str(size) + " ГБ) запущено.",
                       model=model, finished=False, progress_gb=0.0, total_gb=size)
