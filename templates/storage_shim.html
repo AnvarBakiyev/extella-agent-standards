@@ -245,35 +245,16 @@
     // Помечаем СВОЙ отказ: он ожидаемый, и путать его с падением приложения
     // нельзя. Замер 16.08.2026: непомеченный отказ доезжал до окна как
     // «приложение не смогло запуститься» — при полностью работающей доске.
-    var свой_отказ = function () {
-      var о = new Error("базы браузера закрыты в этом окне");
-      о.__extella_ожидаемо = true;
-      return о;
-    };
-    var вежливый_отказ = function () {
-      var зпр = {
-        readyState: "pending", result: null, source: null, transaction: null,
-        error: свой_отказ(),
-        onsuccess: null, onerror: null, onupgradeneeded: null, onblocked: null,
-        addEventListener: function (и, ф) { if (и === "error") this.onerror = ф; },
-        removeEventListener: function () {}
-      };
-      setTimeout(function () {
-        зпр.readyState = "done";
-        try { if (typeof зпр.onerror === "function") зпр.onerror({ target: зпр, type: "error" }); } catch (x) {}
-      }, 0);
-      return зпр;
-    };
+    // Заглушка-«вежливый отказ» (событием onerror) прожила два дня и умерла об
+    // localforage внутри Luckysheet: тот ждёт от запроса большего, чем мы
+    // изображали, и его обещание готовности не разрешается НИКОГДА — приложение
+    // висит на Loading при уже построенной сетке. Замер 19.08.2026, Таблица в
+    // окне ОС; изображать базы точнее — погоня без конца.
+    // Честнее, чтобы баз НЕ БЫЛО ВОВСЕ: undefined — состояние из инкогнито
+    // и старых браузеров, его обрабатывает каждая библиотека с первой строки
+    // (typeof indexedDB === "undefined" → сразу запасной путь, без обещаний).
     try {
-      Object.defineProperty(window, "indexedDB", {
-        configurable: true,
-        value: {
-          open: вежливый_отказ,
-          deleteDatabase: вежливый_отказ,
-          databases: function () { return Promise.resolve([]); },
-          cmp: function () { return 0; }
-        }
-      });
+      Object.defineProperty(window, "indexedDB", { configurable: true, value: undefined });
     } catch (x) {}
   }
 
