@@ -97,17 +97,37 @@ test('копирование пробует запасной путь, когд�
   assert.ok(тело.indexOf('запасной()') > 0);
 });
 
-test('страница передаёт тайм-аут этапа и различает отложенную задачу и порчу', async () => {
+test('страница живёт по замеренному контракту app-agent/run', async () => {
   const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
-  // Без поля timeout платформа ждёт 60 секунд; первый настоящий install/bridge
-  // в минуту не укладывается, и вместо результата приходит task_id — воспроизведено
-  // 18.08.2026 на чистой машине тестера, у владельца шаги давно мгновенны.
-  assert.ok(page.includes("timeout: ({install: 1, bridge: 1}[action] ? 360 : 120)"),
-    'тайм-аут обязан совпадать с десктопным установщиком: 360 длинным, 120 остальным');
+  // Замер 18.08.2026 probe-экспертом со сном: поле timeout НЕ соблюдается
+  // (20, 150, без поля — идентично, отсечка ~51 с), а пути ожидания task_id
+  // для app_token не существует. Поле в запросе было бы ложным обещанием.
+  assert.equal(/timeout:/.test(page.slice(page.indexOf("fetch('/api/app-agent/run'"),
+    page.indexOf('}).then(function(r){'))), false, 'поле timeout — плацебо, его быть не должно');
   const parser = page.slice(page.indexOf('BEGIN_H17_PARSER'), page.indexOf('END_H17_PARSER'));
   assert.ok(parser.includes("indexOf('deferred') === 0"), 'отложенная задача распознаётся');
-  assert.ok(parser.includes('продолжится с места'), 'следующий шаг назван словами');
-  // Порядок важен: отложенность проверяется ДО разворачивания result, иначе
-  // строка про task_id доходит до JSON.parse и снова становится «H17».
+  assert.ok(parser.includes('отложено.отложено = true'), 'отложенность помечается для повтора');
   assert.ok(parser.indexOf("indexOf('deferred')") < parser.indexOf('value = value.result'));
+  // Рабочая стратегия — повтор идемпотентного шага, ограниченный сверху.
+  const retry = page.slice(page.indexOf('function шагСПовтором'), page.indexOf('function установитьЧерезКанал'));
+  assert.ok(retry.includes('осталось = 3'), 'повторы ограничены');
+  assert.ok(retry.includes('error.отложено !== true'), 'повторяется только отложенность');
+});
+
+test('канал приложения кормит этапы, а тишина лечится чтением статуса', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  const канал = page.slice(page.indexOf('function установитьЧерезКанал'), page.indexOf('function подключить'));
+  // Чужие сообщения не принимаются: только свой reqId.
+  assert.ok(канал.includes('m.reqId !== reqId) return'), 'сообщения фильтруются по reqId');
+  assert.ok(канал.includes('etb_claude_install_progress'));
+  assert.ok(канал.includes('etb_claude_install_result'));
+  // installer_unavailable — не ошибка, а сигнал идти прямым путём.
+  assert.ok(канал.includes("m.code === 'installer_unavailable'"));
+  // Переинъекция рамки съедает события без повтора: итог перечитывается
+  // этапом status, а не ожиданием сообщения.
+  assert.ok(канал.includes("'status'"), 'дозор перечитывает статус');
+  assert.ok(канал.includes('ready_to_verify === true'), 'восстановление требует измеренной готовности');
+  // Прямой путь показывает этапы по именам.
+  assert.ok(page.includes('ИМЕНА_ЭТАПОВ'), 'этапы названы словами');
+  assert.ok(page.includes("'Этап ' + (номер + 1)"), 'виден номер этапа');
 });
