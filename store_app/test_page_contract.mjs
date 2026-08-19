@@ -96,3 +96,18 @@ test('копирование пробует запасной путь, когд�
   // Сдаёмся словами только после того, как не сработали оба пути.
   assert.ok(тело.indexOf('запасной()') > 0);
 });
+
+test('страница передаёт тайм-аут этапа и различает отложенную задачу и порчу', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  // Без поля timeout платформа ждёт 60 секунд; первый настоящий install/bridge
+  // в минуту не укладывается, и вместо результата приходит task_id — воспроизведено
+  // 18.08.2026 на чистой машине тестера, у владельца шаги давно мгновенны.
+  assert.ok(page.includes("timeout: ({install: 1, bridge: 1}[action] ? 360 : 120)"),
+    'тайм-аут обязан совпадать с десктопным установщиком: 360 длинным, 120 остальным');
+  const parser = page.slice(page.indexOf('BEGIN_H17_PARSER'), page.indexOf('END_H17_PARSER'));
+  assert.ok(parser.includes("indexOf('deferred') === 0"), 'отложенная задача распознаётся');
+  assert.ok(parser.includes('продолжится с места'), 'следующий шаг назван словами');
+  // Порядок важен: отложенность проверяется ДО разворачивания result, иначе
+  // строка про task_id доходит до JSON.parse и снова становится «H17».
+  assert.ok(parser.indexOf("indexOf('deferred')") < parser.indexOf('value = value.result'));
+});
