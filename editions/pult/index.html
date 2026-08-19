@@ -27,6 +27,12 @@ button:disabled{opacity:.45;cursor:default}
 input{font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--рам);
       border-radius:8px;background:var(--бум);color:var(--чер);margin:0 8px 8px 0;min-width:210px}
 .строка{display:flex;flex-wrap:wrap;align-items:center}
+.как{margin:0 0 18px;padding:12px 16px;border:1px solid var(--зол);border-radius:12px;
+     background:var(--пан)}
+.как summary{cursor:pointer;font-weight:600;font-size:14.5px;color:var(--зол)}
+.как ol{margin:10px 0 8px 20px;font-size:13.5px;line-height:1.65}
+.как li{margin-bottom:6px}
+.как p{margin:8px 0 2px;font-size:13px;color:var(--сер)}
 #журнал{margin-top:18px;padding:14px 16px;border:1px solid var(--рам);border-radius:12px;
         background:var(--пан);font:12.5px/1.6 ui-monospace,Menlo,monospace;
         white-space:pre-wrap;max-height:420px;overflow:auto;display:none}
@@ -45,8 +51,30 @@ footer{margin-top:22px;color:var(--сер);font-size:12.5px;line-height:1.7}
 <body>
 <div class="лист">
   <h1>Пульт агента</h1>
-  <div class="под">Всё, что раньше делалось командами, — здесь кнопками.
-    Агент работает на этом компьютере: доска, данные Астры, магазин.</div>
+  <div class="под">Соединитель приложений Extella. Скажите словами, из какого
+    приложения взять и куда положить, — агент сделает. Коннекторы не пишутся:
+    девять связок из коробки, ноль строк кода под пары.</div>
+
+  <details class="как">
+    <summary>Как это работает</summary>
+    <ol>
+      <li>Каждое приложение хранит работу <b>файлом на вашем компьютере</b> —
+          Пульт умеет её читать. Наружу ничего не уходит.</li>
+      <li>Вы говорите фразу: «возьми из таблицы и нарисуй на доске»,
+          «возьми из астры первые 8 и положи в таблицу».</li>
+      <li>Незнакомый формат агент разбирает <b>один раз</b> (около минуты) и
+          показывает вам на подтверждение — дальше мгновенно, без модели.</li>
+      <li>Данные приводятся к одной из пяти форм: список · число · шаги ·
+          связи · документ. Приложения друг про друга не знают ничего —
+          поэтому пятисотое подключится так же, как третье.</li>
+      <li>Получатель показывает: доска рисует, отчёт складывает страницу,
+          таблица добавляет лист «От агента».</li>
+    </ol>
+    <p>Агент пишет только своё и своё же заменяет; сделанное вами
+       неприкосновенно. Действия наружу (магазин, правила платформы) просят
+       слово «подтверждаю». Если агент не понял, из какого приложения брать, —
+       он честно спросит, а не угадает.</p>
+  </details>
 
   <div class="шаг" style="border-color:var(--зол);background:var(--пан);margin-bottom:26px">
     <h2 style="font-size:17px">Скажите словами</h2>
