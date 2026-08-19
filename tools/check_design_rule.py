@@ -28,6 +28,10 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GUIDE = os.path.join(ROOT, "AGENT_BUILD_GUIDE.md")
+# Скилл несёт ТУ ЖЕ цитату: его читают чаты, которые строят интерфейсы, и копия
+# в нём обязана совпадать с гидом слово в слово. Две копии одного правила — наш
+# самый частый класс аварий, и здесь он закрывается по построению.
+SKILL = os.path.join(ROOT, "skills", "extella-ui", "SKILL.md")
 # ИСТОЧНИК СНЯТ. `extella-toolbar-src` заархивирован меткой toolbar-final-2026-08
 # и с машины удалён; DESIGN_CODE.md жил в нём же. Значит канонической копией стал
 # сам абзац в гиде — и сверять его больше не с чем. Оставить путь к удалённому
@@ -67,6 +71,55 @@ def _quote(text):
     """Абзац-цитата: строки, начинающиеся с '>'. В обоих файлах он оформлен одинаково."""
     lines = [l.strip()[1:].strip() for l in text.splitlines() if l.strip().startswith(">")]
     return re.sub(r"\s+", " ", " ".join(lines)).strip()
+
+
+МЕТКА_АБЗАЦА = "Интерфейс — часть Extella"
+
+
+def _design_quote(text):
+    """Только абзац дизайн-кода, а не все цитаты файла подряд.
+
+    Первая редакция склеивала ВСЕ строки, начинающиеся с «>», и сравнивала их
+    целиком. В гиде есть другие цитаты — например про эксперта, — поэтому
+    сравнение падало на чужом тексте и показывало расхождение там, где его нет.
+    Проверка, которая краснеет не на том, обесценивает себя так же, как та,
+    которая молчит.
+    """
+    блок = []
+    собираем = False
+    for строка in text.splitlines():
+        это_цитата = строка.strip().startswith(">")
+        if это_цитата:
+            содержимое = строка.strip()[1:].strip()
+            if МЕТКА_АБЗАЦА in содержимое:
+                собираем, блок = True, [содержимое]
+                continue
+            if собираем:
+                блок.append(содержимое)
+        elif собираем and not строка.strip():
+            continue
+        elif собираем:
+            break
+    return re.sub(r"\s+", " ", " ".join(блок)).strip()
+
+
+def check_skill(guide_text, skill_text):
+    """Цитата в скилле совпадает с цитатой в гиде. Иначе скилл учит отменённому."""
+    в_гиде, в_скилле = _design_quote(guide_text), _design_quote(skill_text)
+    if not в_скилле:
+        return ["в скилле extella-ui нет абзаца дизайн-кода: чат, строящий интерфейс, "
+                "останется без правила"]
+    if в_гиде != в_скилле:
+        # Показываем ПЕРВОЕ расхождение: список различий целиком никто не читает.
+        for i, (а, б) in enumerate(zip(в_гиде, в_скилле)):
+            if а != б:
+                срез = slice(max(0, i - 60), i + 60)
+                return [f"копия дизайн-кода в скилле разошлась с гидом:\n"
+                        f"      гид:    …{в_гиде[срез]}…\n"
+                        f"      скилл:  …{в_скилле[срез]}…"]
+        короче = "скилле" if len(в_скилле) < len(в_гиде) else "гиде"
+        return [f"копия дизайн-кода в скилле разошлась с гидом: в {короче} текст обрывается"]
+    return []
 
 
 def check(guide_text, source_text=None):
@@ -119,9 +172,33 @@ def selftest():
     return 0 if ok else 1
 
 
+def _selftest_skill():
+    """Расхождение копии в скилле обязано ловиться, совпадение — проходить."""
+    гид = "> Интерфейс — часть Extella.\n> Шрифт Nunito.\n"
+    свои = [
+        ("совпадает", гид, False),
+        ("разошлось", "> Интерфейс — часть Extella.\n> Шрифт Source Sans 3.\n", True),
+        ("оборвано", "> Интерфейс — часть Extella.\n", True),
+        ("нет цитаты", "просто текст без цитаты", True),
+        # Чужая цитата рядом не должна считаться частью абзаца дизайна.
+        ("чужая цитата рядом",
+         "> Эксперт — это не кнопка.\n\n> Интерфейс — часть Extella.\n> Шрифт Nunito.\n",
+         False),
+    ]
+    for имя, текст, ждём_проблему in свои:
+        есть = bool(check_skill(гид, текст))
+        if есть != ждём_проблему:
+            print("FAIL: копия в скилле «%s» оценена как %s" % (имя, есть))
+            return False
+    return True
+
+
 def main(argv):
     if "--selftest" in argv:
-        return selftest()
+        код = selftest()
+        if not _selftest_skill():
+            return 1
+        return код
     if not os.path.exists(GUIDE):
         print("ОШИБКА: не найден %s" % GUIDE)
         return 1
@@ -132,12 +209,19 @@ def main(argv):
         with open(SOURCE, encoding="utf-8") as fh:
             source = fh.read()
     problems, compared = check(guide, source)
+    if os.path.exists(SKILL):
+        with open(SKILL, encoding="utf-8") as fh:
+            problems += check_skill(guide, fh.read())
+        со_скиллом = True
+    else:
+        со_скиллом = False
     for p in problems:
         print("ОШИБКА: " + p)
     if problems:
         return 1
-    print("правило по дизайну: абзац полон, " +
-          ("совпадает с источником" if compared else "источника рядом нет — не сверял"))
+    print("правило по дизайну: абзац полон, "
+          + ("совпадает с источником" if compared else "источника рядом нет — не сверял")
+          + (", копия в скилле совпадает" if со_скиллом else ", скилла рядом нет"))
     return 0
 
 
