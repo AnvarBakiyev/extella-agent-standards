@@ -95,6 +95,19 @@ run check_waiting_state
 run check_self_check
 # Не только селфтест: прогоняем правило языка по СВОИМ текстам. Проверка, которая
 # умеет падать, но ни к чему не применена, ничего не охраняет.
+# ── ПРОВЕРКИ САМОГО КАНОНА ────────────────────────────────────────────────────
+# Всё, что выше, спрашивает у гейта «исправна ли ты» (--selftest). Это не то же
+# самое, что «канон в порядке». Замер 19.08.2026: при 35 зелёных селфтестах три
+# гейта, запущенные ПО-НАСТОЯЩЕМУ, отвечали провалом — расхождение правила по
+# дизайну и разъехавшиеся копии обвязки у двух живых продуктов. Полгода зелёного
+# статуса ничего про канон не говорили.
+run_command "правило по дизайну" python3 "$ROOT/tools/check_design_rule.py"
+run_command "единственный источник" python3 "$ROOT/tools/check_single_source.py"
+run_command "журнал находок" python3 "$ROOT/tools/check_findings_log.py"
+run_command "копии манифестов" python3 "$ROOT/tools/check_manifest_copies.py"
+run_command "копии экрана выбора агента" python3 "$ROOT/tools/check_onboarding_copies.py"
+run_command "копии обвязки платформы" python3 "$ROOT/tools/check_platform_client_copies.py"
+
 run_command "язык текстов для покупателя" python3 "$ROOT/tools/check_writing_style.py" \
   "$ROOT/README.md" "$ROOT/WRITING_RULES.md" "$ROOT/store_app/content.json"
 run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
