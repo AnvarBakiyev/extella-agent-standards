@@ -208,9 +208,11 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
         // нажатие: установка продолжится с места, где остановилась.
         if (value.task_id && typeof value.result === 'string' &&
             value.result.indexOf('deferred') === 0) {
-          throw new Error('Этап выполняется дольше обычного и продолжается в фоне. ' +
+          var отложено = new Error('Этап выполняется дольше обычного и продолжается в фоне. ' +
             'Подождите около минуты и нажмите кнопку ещё раз — установка ' +
             'продолжится с места, где остановилась.');
+          отложено.отложено = true;
+          throw отложено;
         }
         value = value.result;
         continue;
@@ -313,11 +315,13 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       body: JSON.stringify({
         app_token: APP_TOKEN,
         expert_name: expertName,
-        // Те же тайм-ауты, что у десктопного установщика. Без поля платформа
-        // ждёт 60 секунд, а первый настоящий install/bridge в минуту не
-        // укладывается — вызов уходит в отложенную задачу, и вместо результата
-        // приходит строка про task_id, которую раньше показывали как H17.
-        timeout: ({install: 1, bridge: 1}[action] ? 360 : 120),
+        // Поля timeout здесь нет намеренно. Замер 18.08.2026 probe-экспертом
+        // со сном: /api/app-agent/run откладывает вызов на ~51-й секунде
+        // независимо от значения timeout (20, 150, без поля — идентично).
+        // Путей ожидания task_id для app_token не существует (check-task — 404,
+        // op-варианты — unknown). Рабочая стратегия — повтор идемпотентного
+        // шага после паузы: фоновая задача доводит работу до конца, и повтор
+        // становится быстрым.
         // Белый список, а не копирование ключей: страницу отдаёт сервер, и
         // всё, что она умеет передать установщику, — это поверхность атаки.
         // Проходят два числовых поля порции и больше ничего.
@@ -573,6 +577,92 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   // Пять безмодельных этапов. Каждый обязан подтвердить, что не потратил план:
   // ответ с model_called/agent_called/paid, отличным от false, — это отказ,
   // даже если он назвался успехом.
+  // Имена этапов для строки состояния: пользователь видит, что происходит,
+  // а не застывшее «Подключаю…». Это страничная версия окон установки.
+  var ИМЕНА_ЭТАПОВ = {
+    preflight: 'проверяю программу и вход',
+    install: 'готовлю пакет',
+    credentials: 'подключаю аккаунт',
+    'РАЗДАЧА': 'раздаю мост агентам',
+    agents: 'раздаю мост агентам',
+    bridge: 'ставлю локальную службу',
+    verify: 'проверяю связку целиком'
+  };
+
+  function подождать(мс){
+    return new Promise(function(готово){ setTimeout(готово, мс); });
+  }
+
+  // Отложенный шаг повторяется сам: фоновая задача доводит работу до конца
+  // (замерено: отложенная раздача завершилась с полным отчётом), поэтому
+  // повтор идемпотентного шага после паузы становится быстрым. Ограничение
+  // сверху — чтобы вечный дефер не крутил страницу бесконечно.
+  function шагСПовтором(эксперт, шаг, ещё, показать, осталось){
+    if (осталось === undefined) осталось = 3;
+    return вызватьSetup(эксперт, шаг, ещё).catch(function(error){
+      if (!error || error.отложено !== true || осталось <= 0) throw error;
+      if (показать) показать('этап продолжается в фоне, жду и повторяю…');
+      return подождать(45000).then(function(){
+        return шагСПовтором(эксперт, шаг, ещё, показать, осталось - 1);
+      });
+    });
+  }
+
+  // Установка через приёмную приложения, когда страница живёт в его рамке.
+  // Этапы рисует страница, host кормит её событиями onProgress. У событий нет
+  // повтора после переинъекции рамки, поэтому тишина не считается провалом:
+  // после паузы итог перечитывается этапом status, а не ожиданием сообщения.
+  function установитьЧерезКанал(маршрут){
+    if (window.parent === window) return null;
+    return new Promise(function(готово, отказ){
+      var reqId = 'pg_' + Math.random().toString(36).slice(2);
+      var завершено = false;
+      var былПрогресс = false;
+      function убрать(){ window.removeEventListener('message', приём); }
+      function приём(e){
+        var m = e && e.data;
+        if (!m || m.reqId !== reqId) return;
+        if (m.type === 'etb_claude_install_progress') {
+          былПрогресс = true;
+          состояние(маршрут.строка, 'Этап: ' +
+            (ИМЕНА_ЭТАПОВ[m.stage] || m.stage || 'выполняется') + '…');
+          return;
+        }
+        if (m.type === 'etb_claude_install_result') {
+          завершено = true; убрать();
+          if (m.ok) { готово(m.result); return; }
+          if (m.code === 'installer_unavailable') { готово(null); return; }
+          отказ(new Error(m.error || 'Не удалось подключить Claude.'));
+        }
+      }
+      window.addEventListener('message', приём);
+      try { window.parent.postMessage({ type: 'etb_claude_install', reqId: reqId }, '*'); }
+      catch (_) { убрать(); готово(null); return; }
+      // Ни одного события за 8 секунд — приёмной в родителе нет: идём прямым
+      // путём. Настоящая приёмная отвечает мгновенно даже отказом.
+      подождать(8000).then(function(){
+        if (!завершено && !былПрогресс) { убрать(); готово(null); }
+      });
+      // Страховка от переинъекции рамки: событий давно нет — перечитываем
+      // статус, а не ждём сообщение, которое уже некому доставить.
+      function дозор(){
+        if (завершено) return;
+        подождать(90000).then(function(){
+          if (завершено) return;
+          вызватьSetup(маршрут.эксперт, 'status').then(function(s){
+            if (завершено) return;
+            if (s && s.ready_to_verify === true) {
+              завершено = true; убрать();
+              готово({status: 'success', code: 'ready', model_called: false,
+                      agent_called: false, paid: false, восстановлено: true});
+            } else { дозор(); }
+          }).catch(function(){ дозор(); });
+        });
+      }
+      дозор();
+    });
+  }
+
   function подключить(маршрут){
     var кнопка = document.getElementById(маршрут.кнопка);
     var было = кнопка.textContent;
@@ -581,29 +671,42 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     кнопка.disabled = true;
     кнопка.textContent = 'Подключаю…';
     состояние(маршрут.строка, маршрут.начало);
-    var цепочка = Promise.resolve(null);
-    шаги.forEach(function(шаг){
-      цепочка = цепочка.then(function(){
-        if (шаг === 'РАЗДАЧА') {
-          return раздать(маршрут.эксперт, function(текст){
-            состояние(маршрут.строка, текст);
-          }).then(function(итог){
-            if (итог.not_runnable > 0) {
-              throw new Error('Мост не запустился у ' + итог.not_runnable + ' агентов.');
-            }
-            // Форма, которую ждёт общая проверка ниже.
-            return {status:'success', code:'agents_provisioned',
-                    model_called:false, agent_called:false, paid:false};
-          });
-        }
-        return вызватьSetup(маршрут.эксперт, шаг).then(function(result){
-          if (result.status !== 'success' || result.model_called !== false ||
-              result.agent_called !== false || result.paid !== false) {
-            throw new Error(result.message || ('Этап ' + шаг + ' завершился ошибкой.'));
+    // Внутри рамки приложения установку ведёт его приёмная: этапы те же, но
+    // тайм-ауты у host длиннее, а страница только рисует прогресс. Ответ null
+    // означает «приёмной нет» — тогда прямой путь, как и вне приложения.
+    var черезКанал = маршрут.канал ? установитьЧерезКанал(маршрут) : null;
+    var цепочка = (черезКанал || Promise.resolve(null)).then(function(итогКанала){
+      if (итогКанала) return итогКанала;
+      var прямая = Promise.resolve(null);
+      шаги.forEach(function(шаг, номер){
+        прямая = прямая.then(function(){
+          состояние(маршрут.строка, 'Этап ' + (номер + 1) + ' из ' + шаги.length +
+            ': ' + (ИМЕНА_ЭТАПОВ[шаг] || шаг) + '…');
+          if (шаг === 'РАЗДАЧА') {
+            return раздать(маршрут.эксперт, function(текст){
+              состояние(маршрут.строка, текст);
+            }).then(function(итог){
+              if (итог.not_runnable > 0) {
+                throw new Error('Мост не запустился у ' + итог.not_runnable + ' агентов.');
+              }
+              // Форма, которую ждёт общая проверка ниже.
+              return {status:'success', code:'agents_provisioned',
+                      model_called:false, agent_called:false, paid:false};
+            });
           }
-          return result;
+          return шагСПовтором(маршрут.эксперт, шаг, null, function(текст){
+            состояние(маршрут.строка, 'Этап ' + (номер + 1) + ' из ' + шаги.length +
+              ': ' + (ИМЕНА_ЭТАПОВ[шаг] || шаг) + ' — ' + текст);
+          }).then(function(result){
+            if (result.status !== 'success' || result.model_called !== false ||
+                result.agent_called !== false || result.paid !== false) {
+              throw new Error(result.message || ('Этап ' + шаг + ' завершился ошибкой.'));
+            }
+            return result;
+          });
         });
       });
+      return прямая;
     });
     цепочка.then(function(result){
       if (result.status !== 'success' || result.code !== 'ready' ||
@@ -662,7 +765,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
 
   document.getElementById('claude-connect').onclick = function(){
     подключить({
-      кнопка: 'claude-connect', строка: 'claude-state',
+      кнопка: 'claude-connect', строка: 'claude-state', канал: true,
       эксперт: 'extella_claude_product_setup', готово: 'Claude подключён',
       начало: 'Проверяю Claude Code, ставлю отдельную подписанную службу и связываю аккаунт. Это может занять несколько минут.',
       успех: function(r){
