@@ -61,9 +61,11 @@ test('раздача идёт порциями и складывает числ�
 test('кнопка пересверки раздачи гоняет только этап agents и не скрывает числа', async () => {
   const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
   assert.ok(page.includes('id="claude-reprovision"'), 'кнопка пересверки отсутствует');
+  // Срез до следующего обработчика, а не до codex-connect: между ними теперь
+  // живёт карточка локальной модели со своими этапами.
   const handler = page.slice(
     page.indexOf("getElementById('claude-reprovision')"),
-    page.indexOf("getElementById('codex-connect')"),
+    page.indexOf("getElementById('local-llm-connect')"),
   );
   // Полная переустановка ради нового агента — лишние минуты и лишний риск.
   for (const шаг of ['preflight', 'install', 'credentials', 'bridge', 'verify']) {
@@ -130,4 +132,24 @@ test('канал приложения кормит этапы, а тишина �
   // Прямой путь показывает этапы по именам.
   assert.ok(page.includes('ИМЕНА_ЭТАПОВ'), 'этапы названы словами');
   assert.ok(page.includes("'Этап ' + (номер + 1)"), 'виден номер этапа');
+});
+
+test('локальная модель: свой список этапов, скачивание опросом, контракт расхода всюду', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  assert.ok(page.includes('id="local-llm-connect"'), 'кнопка локальной модели есть');
+  const маршрут = page.slice(page.indexOf("getElementById('local-llm-connect')"),
+                             page.indexOf("getElementById('codex-connect')"));
+  // Мостовые этапы сюда не относятся: у продукта свой список.
+  for (const чужой of ['credentials', 'РАЗДАЧА', 'bridge']) {
+    assert.equal(маршрут.includes(`'${чужой}'`), false, `этап ${чужой} чужой для локальной модели`);
+  }
+  assert.ok(маршрут.includes("'ОПРОС:model'"), 'скачивание идёт опросом');
+  // Опрос долгого этапа: мгновенные ответы с finished/прогрессом, пауза между
+  // опросами, и тот же контракт расхода, что у всех — иначе долгий этап
+  // уходит в отложенную задачу (~51 с), дождаться которую страница не может.
+  const опрос = page.slice(page.indexOf('function опроситьДолгий'), page.indexOf('function подключить'));
+  assert.ok(опрос.includes('r.finished === true'));
+  assert.ok(опрос.includes('подождать(20000)'));
+  assert.ok(опрос.includes('model_called !== false'));
+  assert.ok(опрос.includes('paid !== false'));
 });
