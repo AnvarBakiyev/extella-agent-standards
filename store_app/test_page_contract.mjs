@@ -192,3 +192,20 @@ test('локальная модель: два профиля, свой спис�
   assert.ok(опрос.includes('model_called !== false'));
   assert.ok(опрос.includes('paid !== false'));
 });
+
+test('раскрывающееся сравнение моделей показывает живые замеры и правило выбора', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  const cmp = page.slice(page.indexOf('<details class="compare"'), page.indexOf('</details>'));
+  assert.ok(cmp.length > 0, 'блок сравнения есть');
+  // Обе модели названы и обе цифры замера на месте — иначе «быстрота» это слово,
+  // а не факт.
+  assert.ok(cmp.includes('Qwen 27B') && cmp.includes('быстрая 9B'), 'обе модели названы');
+  assert.ok(cmp.includes('47 секунд') && cmp.includes('1.2 секунды'), 'оба замера тональности видны');
+  // Все три типа задач из уровня 3 показаны на примере.
+  for (const t of ['ТОНАЛЬНОСТЬ', 'ИЗВЛЕЧЕНИЕ', 'МАРШРУТИЗАЦИЯ']) {
+    assert.ok(cmp.includes(t), `пример задачи ${t} есть`);
+  }
+  // Правило выбора названо словами: вдумчивость против быстроты.
+  assert.ok(cmp.includes('вдумчивость') || cmp.includes('Вдумчивость'));
+  assert.ok(cmp.includes('поток') || cmp.includes('Поток'));
+});

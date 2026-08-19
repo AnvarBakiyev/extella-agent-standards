@@ -105,6 +105,25 @@ footer a{color:var(--a)}
 .tasktypes{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}
 .tasktypes span{font-family:var(--mono);font-size:11px;color:var(--tx2);
   background:var(--s3);border:1px solid var(--bd);border-radius:4px;padding:2px 8px}
+.compare{background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin:6px 0 16px}
+.compare>summary{cursor:pointer;list-style:none;padding:12px 16px;font:600 14px var(--sans);
+  color:var(--tx);display:flex;align-items:center;gap:8px}
+.compare>summary::-webkit-details-marker{display:none}
+.compare>summary::before{content:"";width:8px;height:8px;border-right:1px solid var(--tx3);
+  border-bottom:1px solid var(--tx3);transform:rotate(-45deg);transition:transform .15s;flex:none}
+.compare[open]>summary::before{transform:rotate(45deg)}
+.compare>summary:hover{background:var(--s2)}
+.compare .cbody{padding:0 16px 14px}
+.compare .task{border-top:1px solid var(--bd);padding:12px 0 4px}
+.compare .ask{font-size:13px;color:var(--tx);margin:0 0 8px}
+.compare .ask b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);font-weight:400}
+.compare .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.compare .pair{grid-template-columns:1fr}}
+.compare .side{background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:9px 11px}
+.compare .side .who{font-family:var(--mono);font-size:11px;color:var(--tx3);margin:0 0 4px}
+.compare .side .out{font-size:13px;color:var(--tx);margin:0 0 3px}
+.compare .side .t{font-family:var(--mono);font-size:11px;color:var(--petrol)}
+.compare .lead2{font-size:13px;color:var(--tx2);margin:12px 0 2px}
 .codex-state.ok{color:var(--petrol)}
 .codex-state.bad{color:var(--a)}
 
@@ -210,6 +229,75 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
     </div>
     <div class="codex-state" id="local-llm-state-fast">Готово к установке. Скачивание ~6 ГБ — прогресс будет виден здесь.</div>
   </div>
+
+  <details class="compare">
+    <summary>Когда вдумчивость, а когда быстрота — на живых замерах</summary>
+    <div class="cbody">
+      <p class="lead2"><b>Вдумчивость</b> — модель рассуждает шаг за шагом перед
+      ответом: дольше, но глубже. <b>Быстрота</b> — отвечает сразу, за секунды.
+      Ниже один и тот же вопрос обеим моделям, замер на этом типе Mac
+      (32 ГБ памяти).</p>
+
+      <div class="task">
+        <p class="ask"><b>ТОНАЛЬНОСТЬ</b> · «Доставка опоздала на три дня, но
+        деньги вернули» — позитив, негатив или нейтрально?</p>
+        <div class="pair">
+          <div class="side">
+            <p class="who">Качество · Qwen 27B</p>
+            <p class="out">«нейтрально» — сначала разобрала, что задержка это
+            минус, а возврат плюс</p>
+            <p class="t">≈ 47 секунд, 333 токена</p>
+          </div>
+          <div class="side">
+            <p class="who">Поток · быстрая 9B</p>
+            <p class="out">«Нейтрально»</p>
+            <p class="t">≈ 1.2 секунды, 7 токенов</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="task">
+        <p class="ask"><b>ИЗВЛЕЧЕНИЕ</b> · вытащить телефон из «звоните на
+        +7 708 605 4107 после обеда»</p>
+        <div class="pair">
+          <div class="side">
+            <p class="who">Качество · Qwen 27B</p>
+            <p class="out">Справится, но здесь его глубина не нужна и только
+            замедляет</p>
+            <p class="t">десятки секунд</p>
+          </div>
+          <div class="side">
+            <p class="who">Поток · быстрая 9B</p>
+            <p class="out">«+7 708 605 4107»</p>
+            <p class="t">≈ 1.6 секунды</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="task">
+        <p class="ask"><b>МАРШРУТИЗАЦИЯ</b> · в какой отдел «не приходит акт
+        сверки за июль»?</p>
+        <div class="pair">
+          <div class="side">
+            <p class="who">Качество · Qwen 27B</p>
+            <p class="out">Разберёт спорные случаи глубже — полезно, когда
+            граница между отделами тонкая</p>
+            <p class="t">десятки секунд</p>
+          </div>
+          <div class="side">
+            <p class="who">Поток · быстрая 9B</p>
+            <p class="out">«Поддержка»</p>
+            <p class="t">≈ 0.7 секунды</p>
+          </div>
+        </div>
+      </div>
+
+      <p class="lead2">Правило простое: <b>поток</b> — тысячи одинаковых
+      несложных вызовов в день, где важна скорость и цена (ноль за токен).
+      <b>Вдумчивость</b> — редкая трудная задача, где важнее качество разбора,
+      чем секунды: анализ длинного документа, спорное решение, рассуждение.</p>
+    </div>
+  </details>
 
   <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
   <div class="count" id="count"></div>
