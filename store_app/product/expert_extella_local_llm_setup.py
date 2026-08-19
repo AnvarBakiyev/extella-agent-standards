@@ -15,7 +15,7 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
     """
     import json, os, platform, shutil, subprocess, urllib.request
 
-    SETUP_VERSION = "3.2.15"
+    SETUP_VERSION = "3.2.16"
     HOME = os.path.expanduser("~")
     APP = "/Applications/LM Studio.app"
     BUNDLED_LMS = APP + "/Contents/Resources/app/.webpack/lms"
@@ -60,10 +60,20 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
         except Exception:
             return 0
 
+    def free_disk_gb():
+        try:
+            return shutil.disk_usage(HOME).free // (1024 ** 3)
+        except Exception:
+            return 0
+
     def pick_model():
+        """Ступень выбирается по памяти И по свободному диску: замер 19.08.2026 —
+        загрузка 35B умерла на живой машине с 1 ГБ свободного места, потому что
+        preflight смотрел только память. Запас 6 ГБ — чтобы не добить диск в ноль."""
         gb = memory_gb()
+        disk = free_disk_gb()
         for minimum, name, size_gb in LADDER:
-            if gb >= minimum:
+            if gb >= minimum and disk >= size_gb + 6:
                 return gb, name, size_gb
         return gb, "", 0
 
@@ -107,6 +117,13 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
                           "Пока поддерживается только macOS.")
         gb, model, size = pick_model()
         if not model:
+            disk = free_disk_gb()
+            if gb >= LADDER[-1][0] and disk < LADDER[-1][2] + 6:
+                return result("error", "not_enough_disk",
+                              "Памяти достаточно (" + str(gb) + " ГБ), но на диске "
+                              "свободно " + str(disk) + " ГБ, а младшей модели нужно " +
+                              str(LADDER[-1][2] + 6) + ". Освободите место и нажмите "
+                              "кнопку снова.", memory_gb=gb, free_disk_gb=disk)
             return result("error", "not_enough_memory",
                           "На этом компьютере " + str(gb) + " ГБ памяти — локальной "
                           "модели нужно от 12 ГБ. Используйте мосты Claude или Codex: "
@@ -158,10 +175,11 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
             return result("error", "not_enough_memory",
                           "Памяти меньше 12 ГБ — модель ставить некуда.")
         if model_on_disk(model):
-            try:
-                os.remove(DOWNLOAD_PID)
-            except Exception:
-                pass
+            for stale in (DOWNLOAD_PID, os.path.join(PROFILE, ".extella_model_attempts")):
+                try:
+                    os.remove(stale)
+                except Exception:
+                    pass
             return result("success", "model_ready",
                           "Модель " + model + " скачана.",
                           model=model, finished=True)
@@ -171,6 +189,39 @@ def extella_local_llm_product_setup(action: str = "preflight") -> str:
                           "Скачивается: " + ("%.1f" % done) + " из ~" + str(size) + " ГБ.",
                           model=model, finished=False,
                           progress_gb=round(done, 1), total_gb=size)
+        # Умершая загрузка — не повод крутить вечный цикл: две неудачи подряд
+        # означают настоящую причину (диск, сеть), и её надо назвать. Замер
+        # 19.08.2026: загрузка умерла на 8-м гигабайте о полный диск, и без
+        # счётчика шаг перезапускал бы её до бесконечности.
+        attempts_path = os.path.join(PROFILE, ".extella_model_attempts")
+        try:
+            with open(attempts_path, "r", encoding="utf-8") as s_:
+                attempts = int(s_.read().strip() or "0")
+        except Exception:
+            attempts = 0
+        if attempts >= 2:
+            tail = ""
+            try:
+                with open(DOWNLOAD_LOG, "rb") as s_:
+                    s_.seek(max(0, os.path.getsize(DOWNLOAD_LOG) - 400))
+                    tail = s_.read().decode("utf-8", "replace")[-200:]
+            except Exception:
+                pass
+            try:
+                os.remove(attempts_path)
+            except Exception:
+                pass
+            return result("error", "model_download_failed",
+                          "Скачивание дважды оборвалось. Свободно на диске: " +
+                          str(free_disk_gb()) + " ГБ. Хвост журнала: " +
+                          (tail.strip() or "пуст"), model=model)
+        if free_disk_gb() < size + 6:
+            return result("error", "not_enough_disk",
+                          "Для " + model + " нужно " + str(size + 6) +
+                          " ГБ свободного места, сейчас " + str(free_disk_gb()) +
+                          ". Освободите диск и нажмите кнопку снова.", model=model)
+        with open(attempts_path, "w", encoding="utf-8") as s_:
+            s_.write(str(attempts + 1))
         # Запуск в фоне: сам вызов обязан вернуться быстро, иначе платформа
         # отложит его в задачу, дождаться которую страница не может.
         os.makedirs(MODELS_DIR, exist_ok=True)
