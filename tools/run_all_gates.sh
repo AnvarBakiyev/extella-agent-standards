@@ -90,6 +90,15 @@ run check_masking_policy
 run check_code_canon
 run check_single_source
 run check_brand_copy
+run check_writing_style
+run check_waiting_state
+run check_self_check
+# Не только селфтест: прогоняем правило языка по СВОИМ текстам. Проверка, которая
+# умеет падать, но ни к чему не применена, ничего не охраняет.
+run_command "язык текстов для покупателя" python3 "$ROOT/tools/check_writing_style.py" \
+  "$ROOT/README.md" "$ROOT/WRITING_RULES.md" "$ROOT/store_app/content.json"
+run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
+  --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md"
 run check_design_rule
 run check_findings_log
 run check_agent_drift
