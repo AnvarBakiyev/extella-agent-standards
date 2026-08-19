@@ -32,7 +32,7 @@ DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Добавлена кнопка «Подключить Claude» "
     "и исправлен раздел 09. Живой продукт не затронут."
 )
-VERSION = "3.2.13"
+VERSION = "3.2.14"
 SCOPES = ["expert.run", "device.run"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
@@ -162,6 +162,12 @@ def expert_code(payload):
     return ""
 
 
+def _setup_label(path):
+    import re as _re
+    found = _re.search(r'SETUP_VERSION = "([\d.]+)"', path.read_text(encoding="utf-8"))
+    return found.group(1) if found else ""
+
+
 def prepare_experts(agent_id):
     """Записать установочные Expert'ы в source-agent и сверить посимвольно.
 
@@ -173,6 +179,14 @@ def prepare_experts(agent_id):
         if not path.is_file():
             raise DeployError(f"нет файла Expert: {path}")
         code = path.read_text(encoding="utf-8").rstrip()
+        # Метка внутри эксперта обязана совпадать с версией листинга: она
+        # трижды молча отставала, и по ответам установщика день читалась не
+        # та версия, что была на самом деле.
+        label = _setup_label(path)
+        if label and label != VERSION:
+            raise DeployError(
+                f"{name}: SETUP_VERSION в коде = {label}, а публикуется {VERSION}; "
+                "сначала выровняй метку")
         status, raw = request(CORE_BASE, "/api/expert/save", body={
             "name": name,
             "description": "Установить и проверить локальный мост Extella без запуска модели.",
