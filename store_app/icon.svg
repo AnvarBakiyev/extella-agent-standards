@@ -1,19 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <!-- Палитра светлой темы правила по дизайну: бумага #FAF9F5, акцент #C57E33, чернила #0A0A0A.
-       Линейный знак, без градиентов и теней: раскрытое руководство и строки текста. -->
-  <rect width="512" height="512" rx="96" fill="#FAF9F5"/>
-  <rect x="1" y="1" width="510" height="510" rx="95" fill="none" stroke="#D7E0DC" stroke-width="2"/>
-  <g fill="none" stroke="#0A0A0A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 150 C 214 124, 168 118, 128 122 L128 372 C 168 368, 214 374, 256 400"/>
-    <path d="M256 150 C 298 124, 344 118, 384 122 L384 372 C 344 368, 298 374, 256 400"/>
+  <!-- Bronze Engraved: бронзовая плитка + один глиф Lucide (book-open).
+       Радиус 0.27×512=138, глиф 0.51×512=261, штрих #B5722A, гравировка белым. -->
+  <defs>
+    <linearGradient id="fon" gradientUnits="userSpaceOnUse" x1="175" y1="-47" x2="337" y2="559">
+      <stop offset="0" stop-color="#FFFDF9"/>
+      <stop offset="0.55" stop-color="#F0EBE0"/>
+      <stop offset="1" stop-color="#E4DDD0"/>
+    </linearGradient>
+    <linearGradient id="blik" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="niz" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0.72" stop-color="#8C6E3C" stop-opacity="0"/>
+      <stop offset="1" stop-color="#8C6E3C" stop-opacity="0.14"/>
+    </linearGradient>
+    <clipPath id="плитка"><rect width="512" height="512" rx="138"/></clipPath>
+    <!-- Гравировка в 512-пространстве: тонкая белая кромка под штрихом. -->
+    <filter id="гравировка" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="0.4" flood-color="#ffffff" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#плитка)">
+    <rect width="512" height="512" fill="url(#fon)"/>
+    <rect width="512" height="512" fill="url(#niz)"/>
+    <rect x="0" y="0" width="512" height="7" fill="#ffffff" opacity="0.6"/>
+    <g filter="url(#гравировка)">
+      <g transform="translate(125.5,125.5) scale(10.875)" fill="none" stroke="#B5722A"
+         stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 7v14"/>
+        <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>
+      </g>
+    </g>
+    <rect width="512" height="512" fill="url(#blik)"/>
   </g>
-  <g fill="none" stroke="#C57E33" stroke-width="12" stroke-linecap="round">
-    <path d="M168 186 L222 192"/>
-    <path d="M168 232 L222 238"/>
-    <path d="M168 278 L206 282"/>
-    <path d="M290 192 L344 186"/>
-    <path d="M290 238 L344 232"/>
-    <path d="M290 282 L328 278"/>
-  </g>
-  <path d="M256 150 L256 400" fill="none" stroke="#0A0A0A" stroke-width="14" stroke-linecap="round"/>
+  <rect x="0.5" y="0.5" width="511" height="511" rx="137.5" fill="none"
+        stroke="#C57E33" stroke-opacity="0.35" stroke-width="1"/>
 </svg>

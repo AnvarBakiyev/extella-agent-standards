@@ -3,7 +3,7 @@ def extella_codex_product_setup(action="preflight") -> str:
     step = action
     BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-codex-bridge.git"
     BUILDER_REF = "v0.3.6"
-    SETUP_VERSION = "3.2.19"
+    SETUP_VERSION = "3.2.20"
     # Independent agent-building standards contract; do not advance with bridge-only releases.
     STANDARDS_REF = "v0.3.0"
     MARKETPLACE = "extella-codex"

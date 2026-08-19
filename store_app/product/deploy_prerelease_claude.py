@@ -33,7 +33,7 @@ DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Исправлена установка Codex и Claude "
     "на чистых машинах и восстановление после отложенной задачи. Живой продукт не затронут."
 )
-VERSION = "3.2.19"
+VERSION = "3.2.20"
 SCOPES = ["expert.run", "device.run"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
@@ -57,6 +57,7 @@ EXPERTS = {
     "extella_local_llm_product_setup": HERE / "expert_extella_local_llm_setup.py",
 }
 PAGE = HERE.parent / "index.html"
+ICON = HERE.parent / "icon.png"
 # Локальная часть: без неё этап bridge не находит рантайм на машине покупателя.
 ARCHIVE = CLAUDE_PLUGIN / "dist" / "extella-claude-bridge-archive.zip"
 
@@ -226,8 +227,10 @@ def add_version_to_live(agent_id, items):
     }
     if not ARCHIVE.is_file():
         raise DeployError(f"нет собранного архива {ARCHIVE.name}: сначала build-archive.mjs")
+    if not ICON.is_file():
+        raise DeployError(f"нет иконки {ICON.name}")
     status, raw = request(OS_BASE, f"/api/add-version-stream/{LIVE_LISTING_ID}",
-                          fields=fields, files={"page": PAGE, "archive": ARCHIVE})
+                          fields=fields, files={"page": PAGE, "archive": ARCHIVE, "icon": ICON})
     if status != 200:
         raise DeployError(f"добавление версии ответило HTTP {status}: {raw[:200]}")
     return stream_done(raw, "добавление версии")
@@ -249,6 +252,8 @@ def verify_live():
         problems.append("Expert не приложился")
     if not version.get("archive_ext"):
         problems.append("к версии не приложился архив — рантайм не доедет до покупателя")
+    if live.get("has_icon") != 1:
+        problems.append("иконка листинга не установилась")
     status, page = request(OS_BASE, f"/app-page/{LIVE_LISTING_ID}/")
     if status != 200:
         problems.append(f"страница отдаётся с кодом {status}")
