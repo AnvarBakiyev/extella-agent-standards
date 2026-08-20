@@ -33,15 +33,20 @@ from platform_client import ОС, Отказ, запрос, как_json  # noqa:
 
 def добавить_ярлык(состояние: dict, лид: str, имя: str,
                    x: int | None, y: int | None) -> tuple[dict, str | None]:
-    """Чистая сборка: вернуть (новое состояние, sid) или (прежнее, None) если уже есть."""
-    ярлыки = состояние.setdefault("appShortcuts", {})
-    for з in ярлыки.values():
-        if (з or {}).get("lid") == лид:
+    """Чистая сборка: вернуть (новое состояние, sid) или (прежнее, None) если уже есть.
+
+    Тип плитки — ПРЯМАЯ ССЫЛКА (state.shortcuts, url на /app-page/{lид}/):
+    открывает приложение окном сразу. НЕ appShortcuts: тот тип без агента
+    открывает карточку магазина — замер 20.08.2026, «странно открываются»."""
+    адрес = f"https://os.extella.ai/app-page/{лид}/"
+    ссылки = состояние.setdefault("shortcuts", {})
+    for з in ссылки.values():
+        if (з or {}).get("url") == адрес:
             return состояние, None                     # идемпотентность
-    sid = f"apps_{лид[:8]}"
-    while sid in ярлыки:                               # коллизия ключа — удлиняем
+    sid = f"link_{лид[:8]}"
+    while sid in ссылки:                               # коллизия ключа — удлиняем
         sid += "x"
-    ярлыки[sid] = {"lid": лид, "name": имя}
+    ссылки[sid] = {"name": имя, "url": адрес}
     if x is not None and y is not None:
         состояние.setdefault("pos", {})[sid] = {"x": x, "y": y}
     return состояние, sid
@@ -81,8 +86,9 @@ def selftest() -> int:
     ошибки = []
     с = {"pos": {"старое": {"x": 1, "y": 2}}, "folders": {"f1": {}}, "trash": ["т"]}
     с2, sid = добавить_ярлык(dict(с), "лид-123456789", "Имя", 10, 20)
-    if not sid or с2["appShortcuts"][sid] != {"lid": "лид-123456789", "name": "Имя"}:
-        ошибки.append("ярлык не добавился")
+    if not sid or с2["shortcuts"][sid] != {"name": "Имя",
+            "url": "https://os.extella.ai/app-page/лид-123456789/"}:
+        ошибки.append("ярлык не добавился или не прямой ссылкой")
     elif с2["pos"]["старое"] != {"x": 1, "y": 2} or с2["folders"] != {"f1": {}} or с2["trash"] != ["т"]:
         ошибки.append("чужие слои состояния тронуты — это снесённый стол")
     else:
