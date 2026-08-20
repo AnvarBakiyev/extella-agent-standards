@@ -57,14 +57,28 @@ TOKEN_FILE="$HOME/extella-bench/bench_token.txt"
 [ -f "$TOKEN_FILE" ] || fail "нет $TOKEN_FILE — положи токен стендового аккаунта (0600)"
 lxc file push "$TOKEN_FILE" "$BOX/root/.extella_token" 2>/dev/null || fail "токен не проброшен"
 
+# Ключ устройства. Первый запуск листенера спрашивает PIN С КЛАВИАТУРЫ — в фоне
+# клавиатуры нет, и он умирал EOFError (замер 20.08.2026, прогон 2). Но CLI
+# принимает --crypto-key, а это ровно SHA-1 от PIN (строки 454-455 listener.py).
+# Хеш уже живёт на этой машине в юните прод-листенера — берём оттуда, секрет
+# не покидает VPS и не печатается.
+CRYPTO_KEY="$(systemctl cat extella-listener.service 2>/dev/null | grep -oE -- '--crypto-key [0-9a-f]+' | awk '{print $2}')"
+[ -z "$CRYPTO_KEY" ] && fail "crypto-key не найден в юните прод-листенера"
+printf '%s' "$CRYPTO_KEY" | lxc exec "$BOX" -- sh -c 'cat > /root/.crypto_key && chmod 600 /root/.crypto_key' \
+  || fail "crypto-key не проброшен"
+
 # Способ установки листенера снимается с прод-машины при развёртывании стенда
 # (pip show extella-listener → откуда). До этого шаг честно не работает.
 LISTENER_INDEX_FILE="$HOME/extella-bench/listener_index_url.txt"
 [ -f "$LISTENER_INDEX_FILE" ] || fail "нет $LISTENER_INDEX_FILE — сними индекс с прод-машины: pip3 config list или pip3 show -f extella-listener"
 LISTENER_INDEX="$(cat "$LISTENER_INDEX_FILE")"
-lxc exec "$BOX" -- sh -c "pip3 install --break-system-packages -q --index-url '$LISTENER_INDEX' extella-listener" \
+# СВОЁ ОКРУЖЕНИЕ, не системный pip. Первый прогон 20.08.2026 упал ровно здесь:
+# pip с --break-system-packages попытался снести дебиановский blinker и не смог
+# («RECORD file not found»). Тот же класс, что съел установку Рекрутёра у
+# покупателя (PEP 668): системный питон принадлежит системе, продукту — venv.
+lxc exec "$BOX" -- sh -c "python3 -m venv /root/lv && /root/lv/bin/pip install -q --index-url '$LISTENER_INDEX' extella-listener" \
   || fail "листенер не поставился из $LISTENER_INDEX"
-say "  3. листенер установлен"
+say "  3. листенер установлен в /root/lv"
 
 # ── 4–7. Регистрация таргета, покупка, установка, самопроверка ──────────────
 # Исполняются скриптом внутри коробки: там питон, тут только оркестровка.
