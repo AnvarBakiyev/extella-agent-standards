@@ -97,6 +97,9 @@ footer a{color:var(--a)}
 .codex h3{margin:0 0 3px;font-size:17px}
 .codex p{margin:0;font-size:13px}
 .codex-state{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:9px;min-height:18px}
+.тема{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--tx3);margin:22px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
+.тема:first-of-type{margin-top:6px}
 .lvl{margin:26px 0 4px}
 .lvl:first-of-type{margin-top:14px}
 .lvl .label{margin:0 0 4px}
@@ -535,8 +538,12 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       '<p class="lead">' + текстом(ш["лид"]) + '</p>' +
       '<p>' + текстом(ш["вступление"]) + '</p>';
 
+    // Заголовок темы стоит у первого раздела группы. Четырнадцать пунктов
+    // простынёй читаются как «прочитай меня целиком» и человека отпугивают;
+    // шесть тем показывают, что читать нужно не всё, а нужное место.
     var куски = (содержимое["разделы"] || []).map(function(р, i){
-      return '<section' + (i === 0 ? ' class="open"' : '') + '>' +
+      var тема = р["тема"] ? '<p class="тема">' + текстом(р["тема"]) + '</p>' : '';
+      return тема + '<section' + (i === 0 ? ' class="open"' : '') + '>' +
         '<div class="head"><span class="num">' + текстом(р["номер"]) + '</span>' +
         '<h2>' + текстом(р["заголовок"]) + '</h2><span class="chev"></span></div>' +
         '<div class="body">' + обезвредить(р["тело"]) + '</div></section>';
@@ -685,6 +692,16 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       s.style.display = есть ? '' : 'none';
       s.classList.toggle('open', есть);
       if (есть) { найдено++; подсветить(s, слово); }
+    });
+    // Заголовок темы прячется вместе со своей группой: иначе поиск оставляет
+    // висеть название темы, под которым ничего нет.
+    [].slice.call(document.querySelectorAll('.тема')).forEach(function(т){
+      var виден = false;
+      for (var el = т.nextElementSibling; el; el = el.nextElementSibling) {
+        if (el.classList.contains('тема')) break;
+        if (el.tagName === 'SECTION' && el.style.display !== 'none') { виден = true; break; }
+      }
+      т.style.display = виден ? '' : 'none';
     });
     document.getElementById('count').textContent = найдено ? ('разделов: ' + найдено) : '';
     document.getElementById('empty').style.display = найдено ? 'none' : '';
