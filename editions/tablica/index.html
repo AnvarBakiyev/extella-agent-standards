@@ -5,47 +5,79 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Таблица</title>
 <style>
-:root{--a:#D4944A;--petrol:#5FA8A0;--bg:#0A0A0A;--tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C}
-:root[data-lm="1"]{--a:#C57E33;--petrol:#2F6B66;--bg:#FAF9F5;--tx:#0A0A0A;--tx2:#2A2A2A;--tx3:#8C8C8C}
+:root{--a:#D4944A;--petrol:#5FA8A0;--bg:#0A0A0A;--tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C;
+  --гр:rgba(243,238,229,.09)}
+:root[data-lm="1"]{--a:#C57E33;--petrol:#2F6B66;--bg:#FAF9F5;--tx:#0A0A0A;--tx2:#2A2A2A;
+  --tx3:#8C8C8C;--гр:#D7E0DC}
 *{box-sizing:border-box}html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--tx);font:14px/1.55 system-ui,-apple-system,sans-serif}
-#окно{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:#fff}
-.запасной{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
+body{background:var(--bg);color:var(--tx);
+  font:400 13px/1.5 Nunito,system-ui,-apple-system,sans-serif;
+  display:flex;flex-direction:column}
+button,input,select,textarea{font-family:inherit}
+/* Строка агента — общая шапка каждого окна. Команда живёт там, где взгляд:
+   «возьми из астры первые 8» кладёт данные СЮДА, в это приложение, — окно и есть
+   контекст. Отдельный пульт-посредник снят решением Анвара 20.08.2026. */
+.строка{display:flex;gap:8px;align-items:center;padding:8px 12px;
+  background:var(--bg);border-bottom:1px solid var(--гр)}
+.строка input{flex:1;min-width:0;font-size:13px;color:var(--tx);
+  background:transparent;border:1px solid var(--гр);border-radius:8px;
+  padding:8px 12px}
+.строка input::placeholder{color:var(--tx3)}
+.строка input:focus{outline:none;border-color:var(--a)}
+.сказать{font-size:13px;font-weight:600;color:#fff;background:var(--a);
+  border:0;border-radius:999px;padding:8px 16px;cursor:pointer}
+.сказать[disabled]{opacity:.6;cursor:default}
+.ответ{display:none;gap:12px;align-items:flex-start;padding:8px 12px;
+  background:var(--bg);border-bottom:1px solid var(--гр);
+  color:var(--tx2);font-size:13px}
+.ответ span{flex:1;white-space:pre-wrap;word-break:break-word}
+.ответ button{background:none;border:0;color:inherit;opacity:.5;cursor:pointer;
+  font-size:15px;line-height:1;padding:0 2px}
+#окно{flex:1;width:100%;border:0;display:none;background:#fff}
+.запасной{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:24px;background:var(--bg)}
 .карточка{max-width:540px}
-h1{font:600 26px/1.2 Georgia,serif;margin:0 0 10px}
+h1{font:600 26px/1.2 'Source Serif 4',Georgia,serif;margin:0 0 10px}
 p{color:var(--tx2);margin:0 0 16px}
-.btn{display:inline-block;font:600 15px system-ui;color:#0A0A0A;background:var(--a);
-  border:0;border-radius:6px;padding:13px 22px;cursor:pointer;text-decoration:none}
-.тихо{font:11px ui-monospace,Menlo,monospace;color:var(--tx3);margin-top:18px;line-height:1.7}
+.btn{display:inline-block;font-size:15px;font-weight:600;color:#fff;background:var(--a);
+  border:0;border-radius:999px;padding:12px 24px;cursor:pointer;text-decoration:none}
+.тихо{font:11px 'JetBrains Mono',ui-monospace,Menlo,monospace;color:var(--tx3);
+  margin-top:16px;line-height:1.7}
 /* Узкая полоска снизу: выход на случай «окно пустое», который НЕ закрывает
    само приложение. Раньше на её месте была карточка во весь экран, и она
    прятала работающую доску. */
 .полоска{position:absolute;left:0;right:0;bottom:0;display:none;gap:12px;
-  align-items:center;justify-content:center;padding:9px 14px;
-  background:rgba(10,10,10,.86);color:#F5F3EE;font:12px system-ui}
+  align-items:center;justify-content:center;padding:8px 12px;
+  background:rgba(10,10,10,.86);color:#F5F3EE;font-size:13px}
 :root[data-lm="1"] .полоска{background:rgba(250,249,245,.94);color:#0A0A0A;
   box-shadow:0 -1px 0 rgba(0,0,0,.09)}
-.полоска a{color:var(--a);font-weight:600;text-decoration:none;white-space:nowrap}
 .полоска button{background:none;border:0;color:inherit;opacity:.5;cursor:pointer;
-  font:16px system-ui;line-height:1;padding:0 2px}
+  font-size:15px;line-height:1;padding:0 2px}
 </style>
 </head>
 <body>
+<div class="строка" id="строка">
+  <input id="фраза" type="text" autocomplete="off" spellcheck="false"
+         placeholder="Скажите агенту: возьми из астры первые 8 — положит сюда">
+  <button type="button" class="сказать" id="сказать">Сказать</button>
+</div>
+<div class="ответ" id="ответ">
+  <span id="ответ_текст"></span>
+  <button type="button" id="ответ_закрыть" title="Скрыть">×</button>
+</div>
+
 <iframe id="окно" allow="clipboard-read; clipboard-write"></iframe>
 
 <div class="запасной" id="запасной">
   <div class="карточка">
     <h1>Таблица</h1>
     <p id="сообщение">Открываю…</p>
-    <a class="btn" id="кнопка" href="http://localhost:34787/" target="_blank" rel="noopener"
-       style="display:none">Открыть в отдельном окне</a>
     <div class="тихо" id="тихо"></div>
   </div>
 </div>
 
 <div class="полоска" id="полоска">
   <span id="полоска_текст"></span>
-  <a href="http://localhost:34787/" target="_blank" rel="noopener">Открыть отдельным окном</a>
   <button type="button" id="полоска_закрыть" title="Скрыть">×</button>
 </div>
 
@@ -69,8 +101,9 @@ p{color:var(--tx2);margin:0 0 16px}
 //
 // Замер 15.08.2026: без хранилища drawio показывает английское «Error loading page»,
 // а excalidraw открывается и молча теряет рисунки при закрытии окна. Поэтому в таком
-// окне мы приложение НЕ вставляем: лучше честная карточка и отдельное окно, где всё
-// работает, чем красивая рамка, которая съедает работу.
+// окне мы приложение НЕ вставляем: лучше честная карточка со словами «скажите чату»,
+// чем красивая рамка, которая съедает работу. Отдельное окно — НЕ выход: оно
+// наследует ту же песочницу (замер 20.08.2026, Сторож), чинится только основное.
 function тема(t){
   if (t === 'light') document.documentElement.setAttribute('data-lm','1');
   else document.documentElement.removeAttribute('data-lm');
@@ -140,7 +173,6 @@ function карточкой(текст, подпись){
   окно_.style.display = 'none';
   запасной.style.display = 'flex';
   document.getElementById('сообщение').textContent = текст;
-  document.getElementById('кнопка').style.display = '';
   document.getElementById('тихо').textContent = подпись;
 }
 
@@ -151,8 +183,10 @@ function карточкой(текст, подпись){
 window.addEventListener('message', function(e){
   var d = e.data || {};
   if (d.type !== 'extella_сбой') return;
+  // «Откройте отдельным окном» здесь не советуем: отдельное окно Электрона
+  // наследует ту же песочницу, совет был легендой. Замер 20.08.2026, Сторож.
   полоской('Приложение не смогло запуститься: ' + (d.причина || 'ошибка') +
-           '. Отдельным окном оно обычно работает.');
+           '. Обновите окно; если не поможет — скажите чату.');
 });
 
 window.addEventListener('message', function(e){
@@ -169,8 +203,8 @@ window.addEventListener('message', function(e){
   // Формулировка безличная намеренно: имя подставляется в заголовок, а в текст —
   // нет, иначе шаблон выдаёт «Доска не открылось»: род не угадать.
   карточкой('Здесь приложению негде хранить работу: браузер закрывает хранилище ' +
-            'всему, что открыто внутри чужой страницы. Отдельным окном всё ' +
-            'работает, включая сохранение.',
+            'всему, что открыто внутри чужой страницы. Это чинится на нашей ' +
+            'стороне — скажите чату.',
             'адрес: localhost:34787 · работа хранится файлом на вашем компьютере · причина: ' + (d.причина || 'хранилище закрыто'));
 });
 
@@ -186,20 +220,72 @@ setTimeout(function(){
         // Приложение отвечает, а внутрь его не пустили. Так бывает, когда окно
         // защищённое, а адрес приложения — обычный: браузер их не смешивает.
         полоской('Браузер не пустил приложение внутрь этого окна. ' +
-                 'Отдельным окном оно работает полностью.');
+                 'Это чинится на нашей стороне — скажите чату.');
       } else {
-        полоской('Приложение внутри не отвечает. Обновите окно ещё раз ' +
-                 'или откройте отдельно.');
+        полоской('Приложение внутри не отвечает. Обновите окно ещё раз; ' +
+                 'если снова пусто — скажите чату.');
       }
     })
     .catch(function(){
       // Не отвечает вовсе: в рамке будет страница ошибки браузера, и честнее
       // сказать прямо, чем оставить человека смотреть в белое.
-      карточкой('Приложение на этом компьютере сейчас не запущено. Откройте его ' +
-                'отдельным окном: если и там пусто, служба остановлена.',
+      карточкой('Приложение на этом компьютере сейчас не запущено: его служба ' +
+                'остановлена. Перезапустите Extella или скажите чату.',
                 'адрес: localhost:34787 · работа хранится файлом на вашем компьютере · не отвечает');
     });
 }, 6000);
+
+// ── СТРОКА АГЕНТА ─────────────────────────────────────────────────────────
+// Одна и та же строка в шапке КАЖДОГО окна — команда живёт там, где взгляд.
+// Фраза уезжает местному серверу этого же приложения (действие «скажи»), и
+// вместе с ней едет имя окна: «возьми из астры первые 8» без названного
+// получателя кладёт данные СЮДА. Пульт-посредник этим и заменён (20.08.2026).
+var ОКНО_ИМЯ = 'Таблица';
+var ДЕЙСТВИЕ = new URL('/_extella_action', АДРЕС).href;
+var фраза_ = document.getElementById('фраза');
+var сказать_ = document.getElementById('сказать');
+var ответ_ = document.getElementById('ответ');
+var ответ_текст_ = document.getElementById('ответ_текст');
+
+function ответом(текст){
+  ответ_текст_.textContent = текст;
+  ответ_.style.display = 'flex';
+}
+document.getElementById('ответ_закрыть').onclick = function(){
+  ответ_.style.display = 'none';
+};
+
+// Ожидание видно с первого кадра, повтор заблокирован, кнопка возвращается
+// в finally — иначе первая же ошибка оставила бы её выключенной навсегда.
+function сказать(){
+  var т = (фраза_.value || '').trim();
+  if (!т) { фраза_.focus(); return; }
+  сказать_.disabled = true;
+  var было = сказать_.textContent;
+  сказать_.textContent = 'Делаю…';
+  ответом('Агент делает. Первая встреча с новым форматом занимает до минуты.');
+  fetch(ДЕЙСТВИЕ, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({действие: 'скажи', фраза: т, окно: ОКНО_ИМЯ})
+  }).then(function(о){ return о.json(); })
+    .then(function(д){
+      ответом(д.вывод || д.ошибка || 'пустой ответ — скажите чату');
+      if (д.код === 0) фраза_.value = '';
+    })
+    .catch(function(){
+      ответом('Не достучался до агента на этом компьютере. Обновите окно; ' +
+              'если не поможет — скажите чату.');
+    })
+    .finally(function(){
+      сказать_.disabled = false;
+      сказать_.textContent = было;
+    });
+}
+сказать_.onclick = сказать;
+фраза_.addEventListener('keydown', function(e){
+  if (e.key === 'Enter') сказать();
+});
 </script>
 </body>
 </html>
