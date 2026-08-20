@@ -141,6 +141,7 @@ run collect_licenses
 run deploy_page_product
 run set_published
 run inject_probe
+run local_model_mcp
 run make_icon
 run build_agent_cabinet
 run build_automation_cabinet
