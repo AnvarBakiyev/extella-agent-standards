@@ -323,7 +323,15 @@
         x.onload = function () {
           try {
             var в = JSON.parse(x.responseText || "{}").версия;
-            if (typeof в === "number" && в > МОЯ_ВЕРСИЯ) location.reload();
+            if (typeof в === "number" && в > МОЯ_ВЕРСИЯ) {
+              // Перезагрузить себя из песочницы нельзя надёжно (location.reload
+              // — запертая дверь того же класса, что History API). Просим
+              // ОБЁРТКУ: ей перенавигация своей рамки разрешена. Замер
+              // 20.08.2026: «новая доска» чистила хранилище, а открытое окно
+              // молча оставалось со старой сценой и воскрешало её автосейвом.
+              try { window.parent.postMessage({type: "extella_перечитать"}, "*"); } catch (е2) {}
+              try { location.reload(); } catch (е3) {}
+            }
           } catch (e) {}
         };
         x.send(null);
