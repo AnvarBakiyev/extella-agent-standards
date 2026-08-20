@@ -133,14 +133,24 @@ def сломать(копия: pathlib.Path) -> str | None:
     return None
 
 
-def проверить(корень: pathlib.Path) -> list[str]:
+def проверить(корень: pathlib.Path, факты: dict | None = None) -> list[str]:
     беды: list[str] = []
+    факты = факты if факты is not None else {}
     команда, откуда = найти_точку_входа(корень)
+    # Путь машины автора наружу не уходит: в магазине его увидит покупатель, а
+    # домашний каталог — это имя человека. Оставляем команду относительной.
+    факты["команда"] = " ".join(
+        а.replace(str(корень.resolve()) + "/", "").replace(str(корень) + "/", "")
+         .replace(sys.executable, "python3")
+        for а in команда) if команда else ""
+    факты["откуда"] = откуда
     if not команда:
         return ["самопроверки нет вовсе: объяви её в MANIFEST.yaml или положи "
                 "app/main.py --selftest. Без неё продукт проверяет только человек"]
 
     код, вывод = прогнать(команда, корень)
+    факты["код"] = код
+    факты["отчёт"] = " ".join(вывод.split())[:400]
     if код != 0:
         беды.append(f"самопроверка ({откуда}) на целом продукте отвечает провалом: "
                     f"код {код} · {' '.join(вывод.split())[:200]}")
@@ -157,6 +167,7 @@ def проверить(корень: pathlib.Path) -> list[str]:
                         ignore=shutil.ignore_patterns("__pycache__", ".git", ".venv",
                                                       "node_modules", "*.pyc"))
         что = сломать(копия)
+        факты["мутация"] = что
         if что is None:
             беды.append("нечего испортить: в продукте не нашлось ни одного метода — "
                         "проверить честность самопроверки нечем")
@@ -168,6 +179,8 @@ def проверить(корень: pathlib.Path) -> list[str]:
             # вывод «самопроверка честна» — ровно та ложь, которую он ищет.
             команда_копии, _ = найти_точку_входа(копия)
             код2, вывод2 = прогнать(команда_копии, копия)
+            факты["покраснела"] = код2 != 0
+            факты["негативный_контроль"] = True
             if код2 == 0:
                 беды.append(
                     f"самопроверка НЕ УМЕЕТ ПАДАТЬ: убран метод {что}, а она всё равно "
@@ -260,6 +273,69 @@ if __name__ == "__main__":
     return 1 if ошибки else 0
 
 
+СХЕМА_ПРОТОКОЛА = "extella.selfcheck/v1"
+
+
+def отпечаток(путь: pathlib.Path) -> str:
+    """sha256 ровно того файла, который уходит в магазин.
+
+    Считается ПЕРЕД загрузкой и по тому же файлу: иначе привязка бессмысленна.
+    Для страничного продукта артефакт — сам файл страницы, для устройственного —
+    архив. Обе формы называются одинаково, различает их поле «kind».
+    """
+    import hashlib
+    ш = hashlib.sha256()
+    with путь.open("rb") as ф:
+        for кусок in iter(lambda: ф.read(1 << 20), b""):
+            ш.update(кусок)
+    return ш.hexdigest()
+
+
+def протокол(корень: pathlib.Path, артефакт: pathlib.Path | None,
+             имя: str = "", версия: str = "") -> dict:
+    """Отчёт о самопроверке в виде, который принимает магазин.
+
+    ЧЕСТНОСТЬ ОТЧЁТА. Это самоотчёт автора, а не проверка магазина, и главное в
+    нём — не слово «готов», а доказательство способности провалиться: какой
+    метод убрали и покраснела ли самопроверка. Зелёная строка без негативного
+    контроля не стоит ничего.
+    """
+    import datetime, platform
+    факты: dict = {}
+    беды = проверить(корень, факты)
+    проверки = [{
+        "name": "self_check_runs",
+        "status": "pass" if факты.get("код") == 0 else "fail",
+        "detail": факты.get("отчёт") or "самопроверка не дала отчёта",
+    }]
+    for б in беды:
+        проверки.append({"name": "gate_finding", "status": "fail", "detail": б})
+
+    негативный = {
+        "ran": bool(факты.get("негативный_контроль")),
+        "mutation": факты.get("мутация") or "",
+        "self_check_went_red": bool(факты.get("покраснела")),
+    }
+    готов = факты.get("код") == 0 and негативный["ran"] and негативный["self_check_went_red"]
+    отчёт = {
+        "schema": СХЕМА_ПРОТОКОЛА,
+        "product": {"name": имя or корень.name, "version": версия},
+        "artifact": ({"kind": "archive" if артефакт.suffix in (".zip", ".tgz", ".gz")
+                              else "page",
+                      "name": артефакт.name,
+                      "sha256": отпечаток(артефакт)} if артефакт else None),
+        "ran_at": datetime.datetime.now(datetime.timezone.utc)
+                          .isoformat(timespec="seconds").replace("+00:00", "Z"),
+        "runner": {"where": "author-device",
+                   "runtime": f"python{platform.python_version()}"},
+        "command": факты.get("команда", ""),
+        "result": "ready" if готов else "not_ready",
+        "checks": проверки,
+        "negative_control": негативный,
+    }
+    return отчёт
+
+
 def main(аргументы: list) -> int:
     if "--selftest" in аргументы:
         return selftest()
@@ -267,6 +343,21 @@ def main(аргументы: list) -> int:
     if not пути:
         print("укажи корень продукта")
         return 2
+
+    if "--протокол" in аргументы:
+        import json
+        артефакт = None
+        for а in аргументы:
+            if а.startswith("--артефакт="):
+                артефакт = pathlib.Path(а.split("=", 1)[1])
+                if not артефакт.exists():
+                    print(f"нет артефакта {артефакт}: отпечаток считать не с чего")
+                    return 2
+        версия = next((а.split("=", 1)[1] for а in аргументы
+                       if а.startswith("--версия=")), "")
+        отчёт = протокол(пути[0], артефакт, версия=версия)
+        print(json.dumps(отчёт, ensure_ascii=False, indent=2))
+        return 0 if отчёт["result"] == "ready" else 1
     всего = 0
     for корень in пути:
         if not корень.is_dir():
