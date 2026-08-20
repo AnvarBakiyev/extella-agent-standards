@@ -123,6 +123,23 @@
     });
   } catch (e) {}
 
+  // ЧЕТВЁРТАЯ ДВЕРЬ — История браузера. Песочница запрещает pushState и
+  // replaceState, а роутер одностраничного приложения зовёт их при первом же
+  // вздохе — и умирает в цикле SecurityError. Замер 20.08.2026: Сторож
+  // (Uptime Kuma, vue-router) был белым именно об это, хранилище тут ни при
+  // чём. Подменяем на безопасные: пробуем родной, отказ глотаем — адрес в
+  // строке просто не меняется, приложению этого достаточно.
+  try {
+    var род_push = history.pushState.bind(history);
+    var род_замена = history.replaceState.bind(history);
+    history.pushState = function () {
+      try { return род_push.apply(null, arguments); } catch (е) {}
+    };
+    history.replaceState = function () {
+      try { return род_замена.apply(null, arguments); } catch (е) {}
+    };
+  } catch (е) {}
+
   // sessionStorage браузер закрывает тем же махом. Он не переживает перезапуск и
   // на диск не пишется — достаточно памяти, лишь бы приложение не падало.
   try {
