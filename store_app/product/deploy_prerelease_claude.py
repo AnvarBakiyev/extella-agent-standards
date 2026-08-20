@@ -205,6 +205,38 @@ def prepare_experts(agent_id):
         print(f"  Expert {name}: записан и сверен посимвольно ({len(code)} символов)")
 
 
+def reinstall_own_copy(version_id):
+    """Перевести СВОЮ установленную копию на новую версию.
+
+    Замер 20.08.2026: app-agent/run разрешает эксперта из скоупа app-agent, а
+    не из версии. Добавить версию мало — существующий app-agent держит старый
+    состав экспертов, и кнопки новых установщиков отвечают 502 «Expert not
+    found». POST /api/purchase-stream/{version_id} с пустым телом перепровизионит
+    свою копию: до вызова local_llm давал 502, после — 200 (проверено). Чужие
+    покупки не затрагиваются; тестеру ту же переустановку делает removal+add.
+    """
+    if not version_id:
+        print("  ! version_id не пришёл — переустановку своей копии пропускаю")
+        return
+    status, raw = request(OS_BASE, f"/api/purchase-stream/{version_id}", body={})
+    done = False
+    for line in (raw if isinstance(raw, str) else raw.decode()).splitlines():
+        line = line.strip()
+        if not line.startswith("data:"):
+            continue
+        try:
+            ev = json.loads(line[5:].strip())
+        except Exception:
+            continue
+        if ev.get("type") == "error":
+            print(f"  ! переустановка своей копии не прошла: {ev.get('message')}")
+            return
+        if ev.get("type") == "done":
+            done = True
+    print("  своя копия переведена на новую версию" if done
+          else "  ! поток переустановки оборвался без done")
+
+
 def update_listing_icon(items):
     """Иконка существующего листинга обновляется через edit-listing, а не
     add-version: замер 20.08.2026 — add-version c файлом icon оставлял на
@@ -383,6 +415,7 @@ def main():
         done = add_version_to_live(agent_id, items)
         print(f"  версия добавлена · снимок: {done.get('stats')}")
         update_listing_icon(items)
+        reinstall_own_copy(done.get("version_id"))
         verify_live()
         print(json.dumps({"status": "version_added", "listing_id": LIVE_LISTING_ID,
                           "version": VERSION, "version_id": done.get("version_id"),
