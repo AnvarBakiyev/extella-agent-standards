@@ -229,6 +229,11 @@ def подключить() -> int:
     было[ИМЯ] = {
         "cmd": [sys.executable, str(pathlib.Path(__file__).resolve())],
         "title": "Локальная модель — быстрый поток",
+        # pkg обязателен: тулбар сопоставляет подключения с витриной ИМЕННО по
+        # нему, точным совпадением. Запись без pkg устройство отдаёт, но опознать
+        # её нечем — в списке она безымянная (замер 20.08.2026, mcp_list вернул
+        # её пятой с пустым pkg).
+        "pkg": "extella-local-model",
         "tools": [и["name"] for и in ИНСТРУМЕНТЫ],
     }
     путь.write_text(json.dumps(было, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
