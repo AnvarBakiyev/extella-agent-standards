@@ -205,6 +205,28 @@ def prepare_experts(agent_id):
         print(f"  Expert {name}: записан и сверен посимвольно ({len(code)} символов)")
 
 
+def update_listing_icon(items):
+    """Иконка существующего листинга обновляется через edit-listing, а не
+    add-version: замер 20.08.2026 — add-version c файлом icon оставлял на
+    карточке прежнюю картинку (has_icon и так был 1, поэтому проверка «есть
+    иконка» проходила впустую). edit-listing принимает icon и меняет её.
+    Имя, описание и теги пересылаются как есть, иначе edit-listing их обнулит.
+    """
+    if not ICON.is_file():
+        raise DeployError(f"нет иконки {ICON.name}")
+    live = next(x for x in items if x.get("id") == LIVE_LISTING_ID)
+    fields = {
+        "name": str(live.get("name") or "").strip(),
+        "description": str(live.get("description") or "").strip(),
+        "tags": json.dumps(live.get("tags") or [], ensure_ascii=False),
+    }
+    status, raw = request(OS_BASE, f"/api/edit-listing/{LIVE_LISTING_ID}",
+                          fields=fields, files={"icon": ICON})
+    if status != 200 or as_json(raw).get("status") == "error":
+        raise DeployError(f"иконка не обновилась: HTTP {status} · {raw[:160]}")
+    print(f"  иконка листинга обновлена через edit-listing ({ICON.stat().st_size} байт)")
+
+
 def add_version_to_live(agent_id, items):
     """Добавить версию в живой листинг.
 
@@ -252,8 +274,6 @@ def verify_live():
         problems.append("Expert не приложился")
     if not version.get("archive_ext"):
         problems.append("к версии не приложился архив — рантайм не доедет до покупателя")
-    if live.get("has_icon") != 1:
-        problems.append("иконка листинга не установилась")
     status, page = request(OS_BASE, f"/app-page/{LIVE_LISTING_ID}/")
     if status != 200:
         problems.append(f"страница отдаётся с кодом {status}")
@@ -358,6 +378,7 @@ def main():
         print("добавляю версию в живой листинг…")
         done = add_version_to_live(agent_id, items)
         print(f"  версия добавлена · снимок: {done.get('stats')}")
+        update_listing_icon(items)
         verify_live()
         print(json.dumps({"status": "version_added", "listing_id": LIVE_LISTING_ID,
                           "version": VERSION, "version_id": done.get("version_id"),
