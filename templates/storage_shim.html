@@ -184,6 +184,12 @@
     // при живом приложении. Замер 20.08.2026: Сторож с тремя зелёными
     // мониторами и красной полоской о собственной смерти.
     if (String((е && е.message) || (о && о.message) || "").indexOf("cross-origin frame") >= 0) return;
+    // Тот же класс шума от двери IndexedDB: подмена говорит «баз нет»
+    // (undefined), а сборки зовут indexedDB.open без проверки — TypeError
+    // «reading 'open'». Приложение живёт дальше на подменённом хранилище.
+    // Замер 20.08.2026: Доска схем работала, а полоска её хоронила.
+    if (/undefined \(reading '(open|databases|deleteDatabase)'\)/.test(
+        String((е && е.message) || (о && о.message) || ""))) return;
     var части = [];
     if (е && е.message) части.push(String(е.message));
     if (о && о.name && String(е.message || "").indexOf(о.name) < 0) части.push(о.name);
@@ -206,6 +212,9 @@
     // Наш собственный вежливый отказ — не падение приложения, а объявленное
     // состояние песочницы. Молчим о нём здесь: о нём уже сказано отдельно.
     if (р && р.__extella_ожидаемо) return;
+    // Дверь IndexedDB, см. фильтр выше: тот же шум приезжает и обещанием.
+    if (/undefined \(reading '(open|databases|deleteDatabase)'\)/.test(
+        String((р && р.message) || ""))) return;
     сбой((р && (р.message || р)) || "оборванное обещание");
   });
 
