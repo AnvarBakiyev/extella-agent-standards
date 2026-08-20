@@ -218,14 +218,25 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                 # Хоп-заголовки и CSP не переносим: длину мы поменяли шимом, а
                 # CSP контейнера зарезал бы наш встроенный скрипт. Контур свой,
                 # 127.0.0.1 — ослабление честное и локальное.
+                # X-Frame-Options контейнера — убийца окна ОС: браузер скачивает
+                # документ, но ОТКАЗЫВАЕТСЯ рисовать его во вложенном окне —
+                # белое полотно без скриптов и без единой ошибки. Замер
+                # 20.08.2026, Сторож: запросы в журнале есть, рендера нет.
+                # Приложение живёт только в нашем окне, снимать безопасно.
                 if к.lower() in ("content-length", "transfer-encoding", "connection",
                                  "content-security-policy", "content-encoding",
+                                 "x-frame-options",
                                  "access-control-allow-origin"):
                     continue
                 self.send_header(к, з)
             self.send_header("Content-Length", str(len(данные)))
             self.end_headers()
             self.wfile.write(данные)
+
+        def do_HEAD(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            super().do_HEAD()
 
         def do_PUT(self):
             if прокси_на and not self._служебный():
