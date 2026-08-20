@@ -41,7 +41,28 @@ from install_github_app import (Отказ, КОРЕНЬ, шаг, свободн
                                 взять_лицензию, прогнать)
 
 ДОМ = pathlib.Path.home()
-ГНЕЗДО = ДОМ / "extella-cabinet" / "docker"
+КАБИНЕТ = ДОМ / "extella-cabinet"
+ГНЕЗДО = КАБИНЕТ / "docker"
+
+
+def plist_прокси(slug: str, порт: int, внутренний: int) -> str:
+    """Автозапуск прокси-раздачи. Окно ОС — песочница: страницы контейнера без
+    шима умирают о запертое хранилище (белый Сторож, 20.08.2026), а «отдельное
+    окно» Электрона наследует ту же песочницу. Поэтому наружу смотрит НАШ
+    сервер: проксирует контейнер и вшивает шим в HTML на лету."""
+    питон = "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
+    арг = "".join(f"<string>{x}</string>" for x in (
+        питон, str(КАБИНЕТ / "cabinet_server.py"),
+        "--папка", str(ГНЕЗДО / slug), "--порт", str(порт),
+        "--имя", slug, "--данные", str(КАБИНЕТ / "данные"),
+        "--прокси-на", str(внутренний), "--шим", str(КАБИНЕТ / "storage_shim.html")))
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC '
+            '"-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+            f'<plist version="1.0"><dict><key>Label</key><string>ai.extella.{slug}</string>'
+            f'<key>ProgramArguments</key><array>{арг}</array>'
+            '<key>RunAtLoad</key><true/><key>KeepAlive</key><true/>'
+            f'<key>StandardErrorPath</key><string>{КАБИНЕТ / (slug + ".log")}</string>'
+            '</dict></plist>')
 
 
 def докер_живой() -> str:
@@ -117,8 +138,9 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
     else:
         print(f"  ✓ демон {докер_живой()}")
 
-    шаг(2, "Пишу compose и поднимаю контейнер")
-    compose = собрать_compose(образ, slug, порт, порт_внутри, том)
+    внутренний = порт + 10000       # контейнер живёт на внутреннем, наружу — прокси
+    шаг(2, "Пишу compose и поднимаю контейнер (на внутреннем порту, за прокси)")
+    compose = собрать_compose(образ, slug, внутренний, порт_внутри, том)
     if сухой:
         print("  " + compose.replace("\n", "\n  "))
     else:
@@ -127,8 +149,26 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
         итог = компоуз(папка, "up", "-d")
         if итог.returncode != 0:
             raise Отказ(f"compose up не прошёл: {(итог.stderr or '').strip()[:300]}")
+        сек = ждать_порт(внутренний)
+        print(f"  ✓ контейнер отвечает на 127.0.0.1:{внутренний} через {сек:.0f} с")
+
+    шаг(2.5, "Ставлю прокси с шимом — окно ОС иначе белое")
+    if сухой:
+        print(f"  поднял бы прокси {порт} → {внутренний} с шимом в HTML")
+    else:
+        import shutil
+        shutil.copy(СЮДА / "cabinet_server.py", КАБИНЕТ / "cabinet_server.py")
+        shutil.copy(СЮДА.parent / "templates" / "storage_shim.html",
+                    КАБИНЕТ / "storage_shim.html")
+        plist = ДОМ / "Library" / "LaunchAgents" / f"ai.extella.{slug}.plist"
+        plist.write_text(plist_прокси(slug, порт, внутренний))
+        subprocess.run(["launchctl", "unload", str(plist)], capture_output=True)
+        итог = subprocess.run(["launchctl", "load", str(plist)],
+                              capture_output=True, text=True)
+        if итог.returncode != 0:
+            raise Отказ(f"прокси не поднялся: {итог.stderr[:200]}")
         сек = ждать_порт(порт)
-        print(f"  ✓ отвечает на 127.0.0.1:{порт} через {сек:.0f} с после старта")
+        print(f"  ✓ прокси {порт} → {внутренний} жив, шим вшивается в HTML")
 
     шаг(3, "Проба перезапуском — установка без неё не считается")
     if сухой:
@@ -137,7 +177,7 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
         итог = компоуз(папка, "restart")
         if итог.returncode != 0:
             raise Отказ(f"перезапуск не прошёл: {(итог.stderr or '').strip()[:200]}")
-        сек = ждать_порт(порт)
+        сек = ждать_порт(внутренний)
         print(f"  ✓ пережил перезапуск, снова отвечает через {сек:.0f} с")
 
     шаг(4, "Собираю лицензию")
@@ -188,6 +228,12 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
 
 def selftest() -> int:
     ошибки = []
+
+    п = plist_прокси("проба", 34799, 44799)
+    if "--прокси-на" not in п or "44799" not in п or "storage_shim" not in п:
+        ошибки.append("plist прокси без шима — окно ОС снова будет белым")
+    else:
+        print("  ✓ наружу смотрит прокси с шимом: окно ОС получает страницы с подменой")
 
     c = собрать_compose("пример/образ:1", "проба", 34799, 3001, "/app/data")
     if '"127.0.0.1:34799:3001"' not in c:

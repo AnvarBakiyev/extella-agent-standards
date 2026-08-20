@@ -116,7 +116,29 @@ def выполнить(имя: str, параметры: dict) -> dict:
             "вывод": ((итог.stdout or "") + (итог.stderr or "")).strip()[-4000:]}
 
 
-def сделать_обработчик(папка: pathlib.Path, файл_данных: pathlib.Path):
+def _вставить_шим(данные: bytes, шим: str) -> bytes:
+    """Вшить подмену хранилища в чужой HTML на лету.
+
+    ЗАЧЕМ. Docker-приложения сами отдают свои страницы — в файлы на диске шим не
+    вставить, а без него страница в песочнице окна ОС умирает о запертое
+    хранилище (белое окно Сторожа, замер 20.08.2026; «отдельное окно» Электрона
+    наследует ту же песочницу и не спасает). Прокси решает это по-взрослому:
+    страница едет через нас и получает шим, как будто всегда с ним жила.
+    """
+    текст = данные.decode("utf-8", errors="replace")
+    for метка in ("<head>", "<HEAD>"):
+        if метка in текст:
+            return текст.replace(метка, метка + шим, 1).encode()
+    н = текст.find("<head")
+    if н >= 0:
+        к = текст.find(">", н)
+        if к > 0:
+            return (текст[:к + 1] + шим + текст[к + 1:]).encode()
+    return (шим + текст).encode()
+
+
+def сделать_обработчик(папка: pathlib.Path, файл_данных: pathlib.Path,
+                       прокси_на: int | None = None, шим: str = ""):
     class Обработчик(http.server.SimpleHTTPRequestHandler):
         def __init__(self, *a, **kw):
             super().__init__(*a, directory=str(папка), **kw)
@@ -166,6 +188,60 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             self.send_header("Access-Control-Allow-Private-Network", "true")
             super().end_headers()
 
+        # ── прокси на контейнер ────────────────────────────────────────────
+        def _служебный(self) -> bool:
+            путь = self.path.split("?")[0]
+            return путь in (ПУТЬ_ХРАНИЛИЩА, ПУТЬ_ВЕРСИИ, ПУТЬ_ДЕЙСТВИЯ)
+
+        def _проксировать(self):
+            import http.client
+            длина = int(self.headers.get("Content-Length") or 0)
+            тело = self.rfile.read(длина) if длина else None
+            заг = {к: з for к, з in self.headers.items()
+                   if к.lower() not in ("host", "accept-encoding", "connection")}
+            # Сжатие просим выключить: вшивать шим в gzip-поток — себе дороже.
+            заг["Accept-Encoding"] = "identity"
+            заг["Host"] = f"127.0.0.1:{прокси_на}"
+            с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
+            try:
+                с.request(self.command, self.path, body=тело, headers=заг)
+                о = с.getresponse()
+                данные = о.read()
+            except OSError as е:
+                return self._ответ(502, json.dumps(
+                    {"ошибка": f"приложение в контейнере молчит: {е}"},
+                    ensure_ascii=False).encode())
+            if шим and "text/html" in (о.getheader("Content-Type") or ""):
+                данные = _вставить_шим(данные, шим)
+            self.send_response(о.status)
+            for к, з in о.getheaders():
+                # Хоп-заголовки и CSP не переносим: длину мы поменяли шимом, а
+                # CSP контейнера зарезал бы наш встроенный скрипт. Контур свой,
+                # 127.0.0.1 — ослабление честное и локальное.
+                if к.lower() in ("content-length", "transfer-encoding", "connection",
+                                 "content-security-policy", "content-encoding",
+                                 "access-control-allow-origin"):
+                    continue
+                self.send_header(к, з)
+            self.send_header("Content-Length", str(len(данные)))
+            self.end_headers()
+            self.wfile.write(данные)
+
+        def do_PUT(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            self._ответ(405, b'{}')
+
+        def do_DELETE(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            self._ответ(405, b'{}')
+
+        def do_PATCH(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            self._ответ(405, b'{}')
+
         def do_OPTIONS(self):
             # Действия — только своим: чужому предполёт не отдаём, и запрос
             # до нас просто не доедет.
@@ -191,6 +267,8 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             return тип
 
         def do_GET(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
             if self.path.split("?")[0] == ПУТЬ_ВЕРСИИ:
                 # Дешёвый вопрос «изменилось ли»: приложение спрашивает его часто,
                 # и гонять всю работу туда-сюда ради этого нельзя.
@@ -203,6 +281,8 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             return super().do_GET()
 
         def do_POST(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
             if self.path.split("?")[0] == ПУТЬ_ДЕЙСТВИЯ:
                 if not _свой(self.headers.get("Origin", "")):
                     return self._ответ(403, '{"ошибка":"чужой адрес"}'.encode())
@@ -251,12 +331,16 @@ def main() -> int:
     р.add_argument("--порт", required=True, type=int)
     р.add_argument("--имя", required=True)
     р.add_argument("--данные", required=True)
+    р.add_argument("--прокси-на", dest="прокси_на", type=int, default=None,
+                   help="проксировать всё (кроме служебных путей) на этот локальный порт")
+    р.add_argument("--шим", default="", help="файл шима для вставки в проксируемый HTML")
     а = р.parse_args()
 
+    шим = pathlib.Path(а.шим).expanduser().read_text() if а.шим else ""
     файл = pathlib.Path(а.данные).expanduser() / f"{а.имя}.json"
     сервер = http.server.ThreadingHTTPServer(
         ("127.0.0.1", а.порт),
-        сделать_обработчик(pathlib.Path(а.папка).expanduser(), файл))
+        сделать_обработчик(pathlib.Path(а.папка).expanduser(), файл, а.прокси_на, шим))
     сервер.serve_forever()
     return 0
 
