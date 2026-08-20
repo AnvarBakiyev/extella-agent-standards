@@ -187,7 +187,7 @@ def живой(порт: int) -> bool:
 
 
 def работа(папка: pathlib.Path, slug: str, имя: str, лицензия: str, проект: str,
-           порт: int | None, сухой: bool) -> int:
+           порт: int | None, сухой: bool, глиф: str = "app-window") -> int:
     if not (папка / "index.html").exists():
         raise Отказ("в папке нет index.html — это не готовая веб-сборка")
     if not re.fullmatch(r"[a-z][a-z0-9-]{1,30}", slug):
@@ -248,7 +248,9 @@ def работа(папка: pathlib.Path, slug: str, имя: str, лиценз�
     else:
         издание.mkdir(parents=True, exist_ok=True)
         if not (издание / "icon.png").exists():
-            print("  " + прогнать("make_icon.py", "доска", str(издание / "icon.png")).strip())
+            # Стиль всех плиток — Bronze Engraved (спека Анвара 20.08.2026),
+            # глиф строго из Lucide; старый геометрический генератор — история.
+            print("  " + прогнать("bronze_icon.py", глиф, str(издание / "icon.png")).strip())
         (издание / "app.json").write_text(json.dumps({
             "имя": имя, "порт": порт, "путь": "/",
             "проба": "/index.html",
@@ -371,6 +373,8 @@ def main() -> int:
     р.add_argument("--лицензия", default="")
     р.add_argument("--проект", default="")
     р.add_argument("--порт", type=int, default=None)
+    р.add_argument("--глиф", default="app-window",
+                   help="Lucide-глиф для плитки Bronze Engraved")
     р.add_argument("--сухой", action="store_true")
     р.add_argument("--selftest", action="store_true")
     а = р.parse_args()
@@ -382,7 +386,7 @@ def main() -> int:
         return 1
     try:
         return работа(pathlib.Path(а.папка).expanduser().resolve(), а.slug, а.имя,
-                      а.лицензия, а.проект, а.порт, а.сухой)
+                      а.лицензия, а.проект, а.порт, а.сухой, а.глиф)
     except Отказ as о:
         print(f"\nНе установил: {о}")
         return 1

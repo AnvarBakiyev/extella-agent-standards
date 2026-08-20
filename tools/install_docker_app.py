@@ -102,7 +102,8 @@ def ждать_порт(порт: int, секунд: int = 90) -> float:
 
 
 def работа(образ: str, slug: str, имя: str, порт_внутри: int, том: str | None,
-           лицензия: str, порт: int | None, сухой: bool) -> int:
+           лицензия: str, порт: int | None, сухой: bool,
+           глиф: str = "app-window") -> int:
     if not re.fullmatch(r"[a-z][a-z0-9-]{1,30}", slug):
         raise Отказ("slug — только строчная латиница, цифры и дефис")
     порт = порт or свободный_порт()
@@ -155,7 +156,7 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
     else:
         издание.mkdir(parents=True, exist_ok=True)
         if not (издание / "icon.png").exists():
-            print("  " + прогнать("make_icon.py", "сторож", str(издание / "icon.png")).strip())
+            print("  " + прогнать("bronze_icon.py", глиф, str(издание / "icon.png")).strip())
         (издание / "app.json").write_text(json.dumps({
             "имя": имя, "порт": порт, "путь": "/", "проба": "/",
             "подпись": f"адрес: localhost:{порт} · серверное приложение в контейнере "
@@ -238,6 +239,8 @@ def main() -> int:
     р.add_argument("--том", default=None)
     р.add_argument("--лицензия", default="")
     р.add_argument("--порт", type=int, default=None)
+    р.add_argument("--глиф", default="app-window",
+                   help="Lucide-глиф для плитки Bronze Engraved")
     р.add_argument("--сухой", action="store_true")
     р.add_argument("--selftest", action="store_true")
     а = р.parse_args()
@@ -248,7 +251,7 @@ def main() -> int:
         return 1
     try:
         return работа(а.образ, а.slug, а.имя, а.порт_внутри, а.том,
-                      а.лицензия, а.порт, а.сухой)
+                      а.лицензия, а.порт, а.сухой, а.глиф)
     except Отказ as о:
         print(f"ОТКАЗ: {о}", file=sys.stderr)
         return 1
