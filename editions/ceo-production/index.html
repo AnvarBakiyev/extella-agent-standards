@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Производство · Пульт CEO · Алтын Дала</title>
+<style>
+  :root{
+    --фон:#0A0A0A;
+    --поверхность:#141414;
+    --вторая:#181818;
+    --текст:#F5F3EE;
+    --приглуш:rgba(245,243,238,.62);
+    --акцент:#D4944A;
+    --петроль:#2F6B66;
+    --риск:#B3474B;
+    --граница:rgba(243,238,229,.09);
+    --на-акценте:#0A0A0A;
+  }
+  :root[data-lm="1"]{
+    --фон:#FAF9F5;
+    --поверхность:#FFFFFF;
+    --вторая:#F5F3EC;
+    --текст:#0A0A0A;
+    --приглуш:rgba(10,10,10,.62);
+    --акцент:#C57E33;
+    --петроль:#2F6B66;
+    --риск:#B3474B;
+    --граница:#D7E0DC;
+    --на-акценте:#FFFFFF;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--фон);
+    color:var(--текст);
+    font:400 15px/1.5 Nunito,system-ui,sans-serif;
+    padding:24px;
+  }
+  button,input,select,textarea{font-family:inherit}
+
+  h1{
+    font:400 26px/1.2 'Source Serif 4',Georgia,serif;
+    margin:4px 0 0;
+  }
+  h2{
+    font:400 20px/1.3 'Source Serif 4',Georgia,serif;
+    margin:0 0 12px;
+  }
+
+  .метка{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.08em;
+    color:var(--петроль);
+  }
+  .метка-разд{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--приглуш);
+    display:block;
+    margin-bottom:4px;
+  }
+  .число{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+  }
+
+  /* ── шапка ── */
+  .шапка{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    max-width:1080px;
+    margin:0 auto 24px;
+  }
+  .навигация{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:4px;
+  }
+  .плитка{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:4px 12px;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+  }
+  .плитка.текущая{
+    background:var(--акцент);
+    border-color:var(--акцент);
+    color:var(--на-акценте);
+    font-weight:600;
+    cursor:default;
+  }
+
+  main{max-width:1080px;margin:0 auto}
+  section{margin-bottom:32px}
+
+  /* ── карточки KPI ── */
+  .kpi-ряд{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:12px;
+  }
+  .карта{
+    background:var(--поверхность);
+    border:1px solid var(--граница);
+    border-radius:12px;
+    padding:16px;
+  }
+  .kpi-верх{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .kpi-значение{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:26px;
+    font-weight:600;
+    line-height:1.2;
+  }
+  .kpi-подпись{
+    font-size:13px;
+    color:var(--приглуш);
+    margin-top:4px;
+  }
+  .точка{
+    width:8px;height:8px;
+    border-radius:50%;
+    flex:none;
+  }
+  .точка.хорошо{background:var(--петроль)}
+  .точка.риск{background:var(--риск)}
+  .kpi-график{
+    margin-top:12px;
+    color:var(--акцент);
+    display:block;
+  }
+
+  /* ── сквозная нить ── */
+  .нить-шапка{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .статус{
+    display:inline-block;
+    font-size:11px;
+    font-weight:600;
+    padding:2px 8px;
+    border:1px solid currentColor;
+    border-radius:8px;
+    white-space:nowrap;
+  }
+  .статус.хорошо{color:var(--петроль)}
+  .статус.риск{color:var(--риск)}
+  .статус.нейтр{color:var(--приглуш)}
+  .полоса{
+    height:6px;
+    background:var(--вторая);
+    border:1px solid var(--граница);
+    border-radius:999px;
+    overflow:hidden;
+    min-width:96px;
+  }
+  .полоса > span{
+    display:block;
+    height:100%;
+    background:var(--акцент);
+    border-radius:999px;
+  }
+  .нить-готовность{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:12px 0;
+  }
+  .нить-текст{
+    font-size:15px;
+    margin:0 0 16px;
+  }
+  .нить-связи{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .связь{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:13px;
+    text-align:left;
+    cursor:pointer;
+  }
+  .связь b{font-weight:600;display:block}
+  .связь span{color:var(--приглуш);font-size:11px}
+
+  /* ── таблицы ── */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:var(--поверхность);
+    border:1px solid var(--граница);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  /* border-radius у table не режет фон строк — оборачиваем */
+  .обёртка-таблицы{
+    border:1px solid var(--граница);
+    border-radius:12px;
+    overflow:hidden;
+    background:var(--поверхность);
+  }
+  .обёртка-таблицы table{border:0;border-radius:0}
+  th{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--приглуш);
+    text-align:left;
+    padding:12px 16px 8px;
+  }
+  td{
+    font-size:13px;
+    padding:12px 16px;
+    border-top:1px solid var(--граница);
+    vertical-align:middle;
+  }
+  tr.раскрываемая{cursor:pointer}
+  tr.раскрываемая:hover td{background:var(--вторая)}
+  .индикатор{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:13px;
+    color:var(--приглуш);
+    width:16px;
+    display:inline-block;
+  }
+  tr.детали td{
+    background:var(--вторая);
+    padding:16px 16px 16px 48px;
+  }
+  .дет-строка{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:8px;
+    padding:4px 0;
+    font-size:13px;
+  }
+  .дет-строка .число{color:var(--приглуш)}
+  .дет-примечание{
+    font-size:13px;
+    color:var(--приглуш);
+    padding-top:8px;
+    margin:0;
+  }
+  .ячейка-готовность{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+
+  /* ── задачи ── */
+  .задача{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:12px;
+    padding:12px 16px;
+    border-top:1px solid var(--граница);
+  }
+  .задача:first-child{border-top:0}
+  .задача-текст{flex:1 1 240px;font-size:15px}
+  .задача.отменена .задача-текст{
+    text-decoration:line-through;
+    color:var(--приглуш);
+  }
+  .задача-срок{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:13px;
+    color:var(--приглуш);
+    white-space:nowrap;
+  }
+  .обычная{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:4px 12px;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .обычная:hover{border-color:var(--приглуш)}
+
+  .форма-задачи{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:16px;
+    border-top:1px solid var(--граница);
+    background:var(--вторая);
+  }
+  .форма-задачи input{
+    background:var(--поверхность);
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:13px;
+  }
+  .форма-задачи input::placeholder{color:var(--приглуш)}
+  .поле-что{flex:1 1 240px}
+  .поле-срок{flex:0 1 128px}
+  .главное{
+    background:var(--акцент);
+    color:var(--на-акценте);
+    border:1px solid var(--акцент);
+    border-radius:999px;
+    padding:8px 24px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  .карта-без-полей{
+    background:var(--поверхность);
+    border:1px solid var(--граница);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  /* ── всплывающая строка ── */
+  .тост{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translateX(-50%) translateY(8px);
+    background:var(--поверхность);
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:8px 16px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s,transform .15s;
+    white-space:nowrap;
+  }
+  .тост.видна{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  footer{
+    max-width:1080px;
+    margin:48px auto 0;
+    padding-top:16px;
+    border-top:1px solid var(--граница);
+    font-size:11px;
+    color:var(--приглуш);
+  }
+</style>
+</head>
+<body>
+
+<header class="шапка">
+  <div>
+    <span class="метка">CEO OS · АЛТЫН ДАЛА · ДЕМО НА СИНТЕТИЧЕСКИХ ДАННЫХ</span>
+    <h1>Производство</h1>
+  </div>
+  <nav class="навигация" aria-label="Панели пульта">
+    <button class="плитка сосед" type="button">Финансы</button>
+    <button class="плитка текущая" type="button" aria-current="page">Производство</button>
+    <button class="плитка сосед" type="button">Покупатели</button>
+    <button class="плитка сосед" type="button">Маркетинг</button>
+    <button class="плитка сосед" type="button">Логистика</button>
+    <button class="плитка сосед" type="button">Штаб задач</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ── 1. KPI ── -->
+  <section aria-label="Ключевые показатели">
+    <div class="kpi-ряд">
+
+      <div class="карта">
+        <div class="kpi-верх">
+          <span class="kpi-значение">96,2%</span>
+          <span class="точка хорошо" title="в норме"></span>
+        </div>
+        <div class="kpi-подпись">выполнение плана · июль 2026</div>
+        <svg class="kpi-график" width="120" height="32" viewBox="0 0 120 32" role="img"
+             aria-label="Выполнение плана по заводам: Алматы 98,4%, Шымкент 91,7%, Караганда 97,9%">
+          <rect x="4"  y="6"  width="28" height="25" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>Алматы · 98,4%</title></rect>
+          <rect x="44" y="19" width="28" height="12" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>Шымкент · 91,7%</title></rect>
+          <rect x="84" y="7"  width="28" height="24" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>Караганда · 97,9%</title></rect>
+        </svg>
+      </div>
+
+      <div class="карта">
+        <div class="kpi-верх">
+          <span class="kpi-значение">0,8%</span>
+          <span class="точка хорошо" title="в норме"></span>
+        </div>
+        <div class="kpi-подпись">брак по трём заводам</div>
+        <svg class="kpi-график" width="120" height="32" viewBox="0 0 120 32" role="img"
+             aria-label="Брак по заводам: Алматы 0,6%, Шымкент 1,2%, Караганда 0,7%">
+          <rect x="4"  y="17" width="28" height="14" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>Алматы · 0,6%</title></rect>
+          <rect x="44" y="3"  width="28" height="28" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>Шымкент · 1,2%</title></rect>
+          <rect x="84" y="15" width="28" height="16" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>Караганда · 0,7%</title></rect>
+        </svg>
+      </div>
+
+      <div class="карта">
+        <div class="kpi-верх">
+          <span class="kpi-значение">14 ч</span>
+          <span class="точка риск" title="риск"></span>
+        </div>
+        <div class="kpi-подпись">простой линии №2 в Шымкенте — замена узла розлива</div>
+      </div>
+
+      <div class="карта">
+        <div class="kpi-верх">
+          <span class="kpi-значение">3</span>
+          <span class="точка хорошо" title="в норме"></span>
+        </div>
+        <div class="kpi-подпись">заказа в работе</div>
+        <svg class="kpi-график" width="120" height="32" viewBox="0 0 120 32" role="img"
+             aria-label="Готовность заказов: P-107 82%, P-108 34%, P-109 12%">
+          <rect x="4"  y="5"  width="28" height="26" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>#P-107 · 82%</title></rect>
+          <rect x="44" y="20" width="28" height="11" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>#P-108 · 34%</title></rect>
+          <rect x="84" y="27" width="28" height="4"  fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1"><title>#P-109 · 12%</title></rect>
+        </svg>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── 2. Сквозная нить ── -->
+  <section aria-label="Сквозная нить">
+    <span class="метка-разд">сквозная нить компании</span>
+    <h2>Заказ #P-107 глазами производства</h2>
+    <div class="карта">
+      <div class="нить-шапка">
+        <div>
+          <span class="число">#P-107</span> · сеть «Дархан» · <span class="число">40 млн ₸</span>
+        </div>
+        <span class="статус риск">риск сдвига</span>
+      </div>
+      <div class="нить-готовность">
+        <div class="полоса" style="flex:1" role="img" aria-label="Готовность 82 процента">
+          <span style="width:82%"></span>
+        </div>
+        <span class="число" style="font-size:13px">82%</span>
+      </div>
+      <p class="нить-текст">
+        Заказ готов на 82%. Линия №2 в Шымкенте простояла 14 часов на замене узла
+        розлива — простой создал риск сдвига отгрузки.
+      </p>
+      <div class="нить-связи">
+        <button class="связь сосед-нить" type="button" data-панель="Логистика">
+          <b>→ в панели Логистика</b>
+          <span>отгрузка планом 23.08, при сдвиге — 25.08</span>
+        </button>
+        <button class="связь сосед-нить" type="button" data-панель="Финансы">
+          <b>→ в панели Финансы</b>
+          <span>аванс 50% получен — 20 млн ₸, остаток после отгрузки</span>
+        </button>
+        <button class="связь сосед-нить" type="button" data-панель="Покупатели">
+          <b>→ в панели Покупатели</b>
+          <span>«Дархан» — 18% выручки, недовольна прошлой задержкой</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. Заводы ── -->
+  <section aria-label="Заводы">
+    <span class="метка-разд">три завода · июль 2026</span>
+    <h2>Заводы</h2>
+    <div class="обёртка-таблицы">
+      <table>
+        <thead>
+          <tr>
+            <th>Завод</th>
+            <th>Линии</th>
+            <th>План</th>
+            <th>Брак</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr class="раскрываемая" data-цель="дет-алматы" aria-expanded="false" tabindex="0">
+            <td><span class="индикатор">+</span>Алматы</td>
+            <td>3 линии</td>
+            <td class="число">98,4%</td>
+            <td class="число">0,6%</td>
+          </tr>
+          <tr class="детали" id="дет-алматы" hidden>
+            <td colspan="4">
+              <div class="дет-строка">Линия №1 · розлив напитков — <span class="число">план 98,8% · брак 0,6%</span></div>
+              <div class="дет-строка">Линия №2 · снеки — <span class="число">план 98,2% · брак 0,5%</span></div>
+              <div class="дет-строка">Линия №3 · упаковка — <span class="число">план 98,2% · брак 0,7%</span></div>
+              <p class="дет-примечание">Смены А и Б идут ровно, узких мест по июлю нет</p>
+            </td>
+          </tr>
+
+          <tr class="раскрываемая" data-цель="дет-шымкент" aria-expanded="false" tabindex="0">
+            <td><span class="индикатор">+</span>Шымкент</td>
+            <td>2 линии</td>
+            <td class="число">91,7%</td>
+            <td class="число">1,2%</td>
+          </tr>
+          <tr class="детали" id="дет-шымкент" hidden>
+            <td colspan="4">
+              <div class="дет-строка">Линия №1 · розлив — <span class="число">план 96,9% · брак 0,8%</span> · смены в графике</div>
+              <div class="дет-строка">Линия №2 · розлив — простой 14 ч, замена узла — <span class="число">план 86,5% · брак 1,6%</span></div>
+              <p class="дет-примечание">Смена Б перезапустила линию №2 после замены узла; линия набирает темп</p>
+            </td>
+          </tr>
+
+          <tr class="раскрываемая" data-цель="дет-караганда" aria-expanded="false" tabindex="0">
+            <td><span class="индикатор">+</span>Караганда</td>
+            <td>2 линии</td>
+            <td class="число">97,9%</td>
+            <td class="число">0,7%</td>
+          </tr>
+          <tr class="детали" id="дет-караганда" hidden>
+            <td colspan="4">
+              <div class="дет-строка">Линия №1 · напитки — <span class="число">план 98,6% · брак 0,6%</span></div>
+              <div class="дет-строка">Линия №2 · снеки — <span class="число">план 97,2% · брак 0,8%</span></div>
+              <p class="дет-примечание">Обе смены в графике; резерв мощности держится под заказ #P-109</p>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Заказы в работе ── -->
+  <section aria-label="Заказы в работе">
+    <span class="метка-разд">производственный портфель</span>
+    <h2>Заказы в работе</h2>
+    <div class="обёртка-таблицы">
+      <table>
+        <thead>
+          <tr>
+            <th>Заказ</th>
+            <th style="width:40%">Готовность</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="число">#P-107</span> Дархан</td>
+            <td>
+              <div class="ячейка-готовность">
+                <div class="полоса" style="flex:1"><span style="width:82%"></span></div>
+                <span class="число">82%</span>
+              </div>
+            </td>
+            <td><span class="статус риск">риск сдвига</span></td>
+          </tr>
+          <tr>
+            <td><span class="число">#P-108</span> Салам Стор</td>
+            <td>
+              <div class="ячейка-готовность">
+                <div class="полоса" style="flex:1"><span style="width:34%"></span></div>
+                <span class="число">34%</span>
+              </div>
+            </td>
+            <td><span class="статус хорошо">в графике</span></td>
+          </tr>
+          <tr>
+            <td><span class="число">#P-109</span> экспорт КР</td>
+            <td>
+              <div class="ячейка-готовность">
+                <div class="полоса" style="flex:1"><span style="width:12%"></span></div>
+                <span class="число">12%</span>
+              </div>
+            </td>
+            <td><span class="статус хорошо">в графике</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── 4. Задачи ── -->
+  <section aria-label="Задачи департамента">
+    <span class="метка-разд">из общего штаба задач</span>
+    <h2>Задачи департамента</h2>
+    <div class="карта-без-полей">
+      <div id="список-задач">
+        <div class="задача">
+          <span class="задача-текст">Отчёт о простое линии №2 и плане компенсации</span>
+          <span class="статус нейтр">в работе</span>
+          <span class="задача-срок">срок 21.08</span>
+          <button class="обычная отмена" type="button">Отменить</button>
+        </div>
+        <div class="задача">
+          <span class="задача-текст">Аудит брака линии №2 Шымкент</span>
+          <span class="статус нейтр">новая</span>
+          <span class="задача-срок">срок 29.08</span>
+          <button class="обычная отмена" type="button">Отменить</button>
+        </div>
+      </div>
+      <form class="форма-задачи" id="форма-задачи">
+        <input class="поле-что" id="поле-что" type="text"
+               placeholder="Что нужно сделать" aria-label="Что нужно сделать">
+        <input class="поле-срок" id="поле-срок" type="text"
+               placeholder="Срок, напр. 26.08" aria-label="Срок">
+        <button class="главное" type="submit">Поставить задачу</button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Мокап Extella · компания и цифры вымышлены · собрано для демонстрации
+</footer>
+
+<div class="тост" id="тост" role="status" aria-live="polite"></div>
+
+<script>
+function тема(t){if(t==='light')document.documentElement.setAttribute('data-lm','1');else document.documentElement.removeAttribute('data-lm')}
+window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='etb_theme'||d.type==='etb_init')тема(d.theme)});
+if(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)тема('light');
+
+/* ── всплывающая строка (2 секунды, без хранилища — только память страницы) ── */
+var тостТаймер = null;
+function показатьТост(текст){
+  var т = document.getElementById('тост');
+  т.textContent = текст;
+  т.classList.add('видна');
+  clearTimeout(тостТаймер);
+  тостТаймер = setTimeout(function(){ т.classList.remove('видна'); }, 2000);
+}
+
+/* ── плитки-соседи в шапке и связи сквозной нити ── */
+document.querySelectorAll('.сосед, .сосед-нить').forEach(function(кнопка){
+  кнопка.addEventListener('click', function(){
+    показатьТост('откроется соседним окном в Extella OS');
+  });
+});
+
+/* ── раскрытие строк таблицы заводов ── */
+document.querySelectorAll('tr.раскрываемая').forEach(function(строка){
+  function переключить(){
+    var детали = document.getElementById(строка.dataset.цель);
+    var открыто = !детали.hidden;
+    детали.hidden = открыто;
+    строка.setAttribute('aria-expanded', String(!открыто));
+    строка.querySelector('.индикатор').textContent = открыто ? '+' : '−';
+  }
+  строка.addEventListener('click', переключить);
+  строка.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); переключить(); }
+  });
+});
+
+/* ── отмена задачи: строка зачёркивается, статус «отменена» ── */
+function повеситьОтмену(кнопка){
+  кнопка.addEventListener('click', function(){
+    var строка = кнопка.closest('.задача');
+    строка.classList.add('отменена');
+    строка.querySelector('.статус').textContent = 'отменена';
+    кнопка.remove();
+  });
+}
+document.querySelectorAll('.отмена').forEach(повеситьОтмену);
+
+/* ── новая задача: добавляется в список с пометкой «черновик демо» ── */
+document.getElementById('форма-задачи').addEventListener('submit', function(e){
+  e.preventDefault();
+  var что = document.getElementById('поле-что');
+  var срок = document.getElementById('поле-срок');
+  if(!что.value.trim()){
+    показатьТост('Опишите задачу, чтобы поставить её в список');
+    что.focus();
+    return;
+  }
+  var строка = document.createElement('div');
+  строка.className = 'задача';
+
+  var текст = document.createElement('span');
+  текст.className = 'задача-текст';
+  текст.textContent = что.value.trim();
+
+  var статус = document.createElement('span');
+  статус.className = 'статус нейтр';
+  статус.textContent = 'черновик демо';
+
+  var срокЭл = document.createElement('span');
+  срокЭл.className = 'задача-срок';
+  срокЭл.textContent = срок.value.trim() ? 'срок ' + срок.value.trim() : 'срок не задан';
+
+  var отмена = document.createElement('button');
+  отмена.className = 'обычная отмена';
+  отмена.type = 'button';
+  отмена.textContent = 'Отменить';
+  повеситьОтмену(отмена);
+
+  строка.appendChild(текст);
+  строка.appendChild(статус);
+  строка.appendChild(срокЭл);
+  строка.appendChild(отмена);
+  document.getElementById('список-задач').appendChild(строка);
+
+  что.value = '';
+  срок.value = '';
+  показатьТост('Задача добавлена как черновик демо');
+});
+</script>
+
+</body>
+</html>

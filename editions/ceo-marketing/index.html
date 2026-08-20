@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Маркетинг · Пульт CEO — Алтын Дала</title>
+<style>
+  :root{
+    --фон:#0A0A0A;
+    --поверхность:#141414;
+    --вторая:#181818;
+    --текст:#F5F3EE;
+    --приглушено:rgba(245,243,238,.6);
+    --акцент:#D4944A;
+    --акцент8:rgba(212,148,74,.08);
+    --на-акценте:#0A0A0A;
+    --граница:rgba(243,238,229,.09);
+    --петроль:#2F6B66;
+    --риск:#B3474B;
+  }
+  :root[data-lm="1"]{
+    --фон:#FAF9F5;
+    --поверхность:#FFFFFF;
+    --вторая:#F5F3EC;
+    --текст:#0A0A0A;
+    --приглушено:rgba(10,10,10,.6);
+    --акцент:#C57E33;
+    --акцент8:rgba(197,126,51,.08);
+    --на-акценте:#FFFFFF;
+    --граница:#D7E0DC;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--фон);
+    color:var(--текст);
+    font:400 15px/1.5 Nunito,system-ui,sans-serif;
+  }
+  button,input,select,textarea{font-family:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:1px solid var(--петроль);outline-offset:2px}
+
+  h1{
+    font:500 26px/1.2 'Source Serif 4',Georgia,serif;
+    margin:4px 0 0;
+  }
+  h2{
+    font:500 20px/1.3 'Source Serif 4',Georgia,serif;
+    margin:0 0 12px;
+  }
+  .метка{
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    font-weight:400;
+    letter-spacing:.08em;
+    color:var(--петроль);
+    margin:0;
+  }
+  .моно{font-family:'JetBrains Mono',ui-monospace,monospace}
+
+  .обёртка{max-width:1120px;margin:0 auto;padding:24px}
+
+  /* ── Шапка ─────────────────────────────────────────── */
+  .шапка{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:24px;
+    border-bottom:1px solid var(--граница);
+  }
+  .соседи{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .сосед{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:999px;
+    padding:4px 12px;
+    font-size:13px;
+    font-weight:400;
+  }
+  .сосед[aria-current="page"]{
+    background:var(--акцент);
+    color:var(--на-акценте);
+    border-color:transparent;
+    font-weight:600;
+    cursor:default;
+  }
+
+  /* ── Карточки KPI ──────────────────────────────────── */
+  .кпи-ряд{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(184px,1fr));
+    gap:12px;
+    margin-top:24px;
+  }
+  .карта{
+    background:var(--поверхность);
+    border:1px solid var(--граница);
+    border-radius:12px;
+    padding:16px;
+  }
+  .кпи-имя{
+    margin:0;
+    font-size:13px;
+    color:var(--приглушено);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .кпи-число{
+    margin:8px 0 4px;
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:26px;
+    font-weight:500;
+    line-height:1.2;
+  }
+  .кпи-под{
+    margin:0;
+    font-size:11px;
+    color:var(--приглушено);
+  }
+  .кпи-график{margin-top:8px;display:block}
+  .точка{
+    width:8px;height:8px;
+    border-radius:50%;
+    display:inline-block;
+    flex:none;
+  }
+  .т-ок{background:var(--петроль)}
+  .т-риск{background:var(--риск)}
+
+  /* ── Графика SVG ───────────────────────────────────── */
+  .св-фон{fill:var(--граница)}
+  .св-линия{fill:var(--акцент)}
+  .св-точка{fill:var(--акцент)}
+  .св-столб{fill:var(--акцент8);stroke:var(--акцент);stroke-width:1}
+  .св-столб-посл{fill:var(--акцент);stroke:var(--акцент);stroke-width:1}
+
+  /* ── Секции ────────────────────────────────────────── */
+  section{margin-top:32px}
+
+  /* ── Сквозная нить ─────────────────────────────────── */
+  .нить-заказ{
+    margin:0 0 8px;
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:13px;
+  }
+  .нить-текст{margin:0;max-width:720px}
+  .нить-чипы{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+  }
+  .нить-чип{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:999px;
+    padding:4px 12px;
+    font-size:13px;
+  }
+  .нить-чип span{color:var(--петроль)}
+
+  /* ── Таблица каналов ───────────────────────────────── */
+  .прокрутка{overflow-x:auto}
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:640px;
+  }
+  th{
+    text-align:left;
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    font-weight:400;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--приглушено);
+    padding:8px 12px;
+  }
+  td{
+    padding:12px;
+    font-size:13px;
+    border-top:1px solid var(--граница);
+  }
+  tr.строка{cursor:pointer}
+  tr.строка:hover td{background:var(--вторая)}
+  .стрелка{
+    display:inline-block;
+    color:var(--приглушено);
+    transition:transform .15s ease;
+  }
+  tr.открыт .стрелка{transform:rotate(90deg)}
+  .дет td{
+    background:var(--вторая);
+    padding:12px 16px;
+    font-size:13px;
+    color:var(--текст);
+  }
+  .дет p{margin:0;max-width:720px}
+  .статус{display:flex;align-items:center;gap:8px;white-space:nowrap}
+  .подсказка-табл{
+    margin:8px 0 0;
+    font-size:11px;
+    color:var(--приглушено);
+  }
+
+  /* ── Задачи ────────────────────────────────────────── */
+  .форма-задачи{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .поле{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:8px 12px;
+    font-size:13px;
+  }
+  .поле::placeholder{color:var(--приглушено)}
+  .поле-что{flex:1;min-width:220px}
+  .поле-срок{width:160px}
+  .главное{
+    background:var(--акцент);
+    color:var(--на-акценте);
+    border:0;
+    border-radius:999px;
+    padding:8px 24px;
+    font-size:15px;
+    font-weight:600;
+  }
+  .форма-под{
+    margin:0 0 16px;
+    font-size:11px;
+    color:var(--приглушено);
+  }
+  .список-задач{
+    list-style:none;
+    margin:0;
+    padding:0;
+  }
+  .задача{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px 0;
+    border-top:1px solid var(--граница);
+  }
+  .з-имя{font-size:15px;margin:0}
+  .з-мета{
+    margin:4px 0 0;
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    color:var(--приглушено);
+  }
+  .з-отмена{
+    background:transparent;
+    color:var(--текст);
+    border:1px solid var(--граница);
+    border-radius:999px;
+    padding:4px 12px;
+    font-size:13px;
+  }
+  .з-отмена[disabled]{opacity:.6;cursor:default}
+  .задача.отменена .з-имя{
+    text-decoration:line-through;
+    color:var(--приглушено);
+  }
+
+  /* ── Футер и всплывающая строка ────────────────────── */
+  footer{
+    margin-top:48px;
+    padding:16px 0 24px;
+    border-top:1px solid var(--граница);
+    font-family:'JetBrains Mono',ui-monospace,monospace;
+    font-size:11px;
+    letter-spacing:.08em;
+    color:var(--приглушено);
+  }
+  .весть{
+    position:fixed;
+    left:50%;
+    bottom:24px;
+    transform:translateX(-50%);
+    background:var(--поверхность);
+    border:1px solid var(--граница);
+    border-radius:8px;
+    padding:8px 16px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .весть.видно{opacity:1}
+</style>
+</head>
+<body>
+<div class="обёртка">
+
+  <header class="шапка">
+    <div>
+      <p class="метка">CEO OS · АЛТЫН ДАЛА · ДЕМО НА СИНТЕТИЧЕСКИХ ДАННЫХ</p>
+      <h1>Маркетинг</h1>
+    </div>
+    <nav class="соседи" aria-label="Панели пульта">
+      <button type="button" class="сосед" data-сосед>Финансы</button>
+      <button type="button" class="сосед" data-сосед>Производство</button>
+      <button type="button" class="сосед" data-сосед>Покупатели</button>
+      <button type="button" class="сосед" aria-current="page">Маркетинг</button>
+      <button type="button" class="сосед" data-сосед>Логистика</button>
+      <button type="button" class="сосед" data-сосед>Штаб задач</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ── 1. KPI ─────────────────────────────────────── -->
+    <section class="кпи-ряд" aria-label="Ключевые показатели кампании, июль 2026">
+
+      <article class="карта">
+        <p class="кпи-имя"><span class="точка т-ок" aria-hidden="true"></span>ROI кампании</p>
+        <p class="кпи-число">3,2</p>
+        <p class="кпи-под">«Лето-2026», июль 2026</p>
+      </article>
+
+      <article class="карта">
+        <p class="кпи-имя">Лиды за июль</p>
+        <p class="кпи-число">4&nbsp;120</p>
+        <p class="кпи-под">пять каналов привлечения</p>
+        <svg class="кпи-график" width="96" height="32" viewBox="0 0 96 32" aria-hidden="true">
+          <rect class="св-столб" x="0"  y="6"  width="12" height="24"/>
+          <rect class="св-столб" x="20" y="16" width="12" height="14"/>
+          <rect class="св-столб" x="40" y="19" width="12" height="11"/>
+          <rect class="св-столб" x="60" y="21" width="12" height="9"/>
+          <rect class="св-столб" x="80" y="25" width="12" height="5"/>
+        </svg>
+      </article>
+
+      <article class="карта">
+        <p class="кпи-имя"><span class="точка т-риск" aria-hidden="true"></span>CAC по кампании</p>
+        <p class="кпи-число">6&nbsp;400&nbsp;₸</p>
+        <p class="кпи-под">радио — самый дорогой канал, 11&nbsp;200&nbsp;₸</p>
+      </article>
+
+      <article class="карта">
+        <p class="кпи-имя"><span class="точка т-ок" aria-hidden="true"></span>Конверсия</p>
+        <p class="кпи-число">8,4%</p>
+        <p class="кпи-под">по всем каналам кампании</p>
+      </article>
+
+      <article class="карта">
+        <p class="кпи-имя"><span class="точка т-ок" aria-hidden="true"></span>Бюджет использован</p>
+        <p class="кпи-число">71%</p>
+        <p class="кпи-под">из 24&nbsp;млн&nbsp;₸ на «Лето-2026»</p>
+        <svg class="кпи-график" width="120" height="8" viewBox="0 0 120 8" aria-hidden="true">
+          <rect class="св-фон"   x="0" y="3" width="120" height="2" rx="1"/>
+          <rect class="св-линия" x="0" y="3" width="85"  height="2" rx="1"/>
+          <circle class="св-точка" cx="85" cy="4" r="2.5"/>
+        </svg>
+      </article>
+
+    </section>
+
+    <!-- ── 2. Сквозная нить ───────────────────────────── -->
+    <section aria-label="Сквозная нить по заказу P-107">
+      <h2>Сквозная нить: заказ #P-107</h2>
+      <div class="карта">
+        <p class="нить-заказ">#P-107 · сеть «Дархан» · 40&nbsp;млн&nbsp;₸</p>
+        <p class="нить-текст">
+          Кампания «Лето-2026» держит спрос сетей, включая «Дархан»: дегустации в сетях
+          дают 14% лидов и поддерживают полочный спрос крупнейшей сети — 18% выручки
+          компании. После июньской задержки сеть чувствительна к срокам, поэтому
+          маркетинговая поддержка на полке идёт синхронно с отгрузкой: план 23.08,
+          при простое линии №2 возможен сдвиг на 25.08.
+        </p>
+        <div class="нить-чипы">
+          <button type="button" class="нить-чип" data-сосед><span aria-hidden="true">→</span> в панели Логистика: отгрузка планом 23.08</button>
+          <button type="button" class="нить-чип" data-сосед><span aria-hidden="true">→</span> в панели Финансы: аванс 20&nbsp;млн&nbsp;₸ получен</button>
+          <button type="button" class="нить-чип" data-сосед><span aria-hidden="true">→</span> в панели Покупатели: «Дархан» — 18% выручки</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 3. Каналы кампании ─────────────────────────── -->
+    <section aria-label="Каналы кампании">
+      <h2>Каналы кампании «Лето-2026»</h2>
+      <div class="карта" style="padding:4px 16px 12px">
+        <div class="прокрутка">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Канал</th>
+                <th scope="col">Доля лидов</th>
+                <th scope="col">CAC</th>
+                <th scope="col">Статус</th>
+                <th scope="col"><span class="sr" aria-hidden="true"></span></th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <tr class="строка" tabindex="0" aria-expanded="false">
+                <td>Instagram</td>
+                <td>
+                  <span class="моно">38%</span>
+                  <svg width="120" height="8" viewBox="0 0 120 8" aria-hidden="true" style="vertical-align:middle;margin-left:8px">
+                    <rect class="св-фон" x="0" y="3" width="120" height="2" rx="1"/>
+                    <rect class="св-линия" x="0" y="3" width="114" height="2" rx="1"/>
+                    <circle class="св-точка" cx="114" cy="4" r="2.5"/>
+                  </svg>
+                </td>
+                <td class="моно">4&nbsp;900&nbsp;₸</td>
+                <td><span class="статус"><span class="точка т-ок" aria-hidden="true"></span>лучший CAC</span></td>
+                <td><span class="стрелка" aria-hidden="true">›</span></td>
+              </tr>
+              <tr class="дет" hidden>
+                <td colspan="5">
+                  <p>Канал набирает вес: даёт наибольшую долю лидов кампании при самом
+                  низком CAC — 4&nbsp;900&nbsp;₸ против средних 6&nbsp;400&nbsp;₸.
+                  Именно сюда решением CEO перераспределяется бюджет радио, срок 23.08.</p>
+                </td>
+              </tr>
+
+              <tr class="строка" tabindex="0" aria-expanded="false">
+                <td>2GIS</td>
+                <td>
+                  <span class="моно">22%</span>
+                  <svg width="120" height="8" viewBox="0 0 120 8" aria-hidden="true" style="vertical-align:middle;margin-left:8px">
+                    <rect class="св-фон" x="0" y="3" width="120" height="2" rx="1"/>
+                    <rect class="св-линия" x="0" y="3" width="66" height="2" rx="1"/>
+                    <circle class="св-точка" cx="66" cy="4" r="2.5"/>
+                  </svg>
+                </td>
+                <td class="моно">5&nbsp;800&nbsp;₸</td>
+                <td><span class="статус"><span class="точка т-ок" aria-hidden="true"></span>в норме</span></td>
+                <td><span class="стрелка" aria-hidden="true">›</span></td>
+              </tr>
+              <tr class="дет" hidden>
+                <td colspan="5">
+                  <p>Ровная динамика: доля лидов держится месяц к месяцу, CAC ниже
+                  среднего по кампании. Вмешательства не требуется — канал работает
+                  на локальный спрос по точкам продаж.</p>
+                </td>
+              </tr>
+
+              <tr class="строка" tabindex="0" aria-expanded="false">
+                <td>Наружная реклама</td>
+                <td>
+                  <span class="моно">18%</span>
+                  <svg width="120" height="8" viewBox="0 0 120 8" aria-hidden="true" style="vertical-align:middle;margin-left:8px">
+                    <rect class="св-фон" x="0" y="3" width="120" height="2" rx="1"/>
+                    <rect class="св-линия" x="0" y="3" width="54" height="2" rx="1"/>
+                    <circle class="св-точка" cx="54" cy="4" r="2.5"/>
+                  </svg>
+                </td>
+                <td class="моно">9&nbsp;100&nbsp;₸</td>
+                <td><span class="статус"><span class="точка т-ок" aria-hidden="true"></span>наблюдение</span></td>
+                <td><span class="стрелка" aria-hidden="true">›</span></td>
+              </tr>
+              <tr class="дет" hidden>
+                <td colspan="5">
+                  <p>Канал работает на узнаваемость: прямых лидов приносит меньше,
+                  чем стоит, CAC выше среднего по кампании. Держим до конца
+                  «Лета-2026», дальше — пересмотр вместе с итогами сезона.</p>
+                </td>
+              </tr>
+
+              <tr class="строка" tabindex="0" aria-expanded="false">
+                <td>Дегустации в сетях</td>
+                <td>
+                  <span class="моно">14%</span>
+                  <svg width="120" height="8" viewBox="0 0 120 8" aria-hidden="true" style="vertical-align:middle;margin-left:8px">
+                    <rect class="св-фон" x="0" y="3" width="120" height="2" rx="1"/>
+                    <rect class="св-линия" x="0" y="3" width="42" height="2" rx="1"/>
+                    <circle class="св-точка" cx="42" cy="4" r="2.5"/>
+                  </svg>
+                </td>
+                <td class="моно">7&nbsp;400&nbsp;₸</td>
+                <td><span class="статус"><span class="точка т-ок" aria-hidden="true"></span>в норме</span></td>
+                <td><span class="стрелка" aria-hidden="true">›</span></td>
+              </tr>
+              <tr class="дет" hidden>
+                <td colspan="5">
+                  <p>Прямой CAC выше среднего, но канал держит отношения с сетями:
+                  дегустации поддерживают полочный спрос — в том числе по заказу
+                  #P-107 для «Дархан». Оценивать вместе с панелью Покупатели.</p>
+                </td>
+              </tr>
+
+              <tr class="строка" tabindex="0" aria-expanded="false">
+                <td>Радио</td>
+                <td>
+                  <span class="моно">8%</span>
+                  <svg width="120" height="8" viewBox="0 0 120 8" aria-hidden="true" style="vertical-align:middle;margin-left:8px">
+                    <rect class="св-фон" x="0" y="3" width="120" height="2" rx="1"/>
+                    <rect class="св-линия" x="0" y="3" width="24" height="2" rx="1"/>
+                    <circle class="св-точка" cx="24" cy="4" r="2.5"/>
+                  </svg>
+                </td>
+                <td class="моно">11&nbsp;200&nbsp;₸</td>
+                <td><span class="статус"><span class="точка т-риск" aria-hidden="true"></span>CAC выше нормы</span></td>
+                <td><span class="стрелка" aria-hidden="true">›</span></td>
+              </tr>
+              <tr class="дет" hidden>
+                <td colspan="5">
+                  <p>Самый дорогой канал кампании: CAC 11&nbsp;200&nbsp;₸ против средних
+                  6&nbsp;400&nbsp;₸ при наименьшей доле лидов. Решение CEO — свернуть
+                  радио и перевести бюджет в Instagram, срок 23.08.</p>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+        <p class="подсказка-табл">Строка раскрывается — внутри динамика канала словами</p>
+      </div>
+    </section>
+
+    <!-- ── 4. Задачи департамента ─────────────────────── -->
+    <section aria-label="Задачи департамента">
+      <h2>Задачи департамента</h2>
+      <div class="карта">
+        <form class="форма-задачи" id="форма-задачи">
+          <label class="sr" for="поле-что" hidden>Что сделать</label>
+          <input class="поле поле-что" id="поле-что" type="text" placeholder="Что сделать" autocomplete="off">
+          <label class="sr" for="поле-срок" hidden>Срок</label>
+          <input class="поле поле-срок" id="поле-срок" type="text" placeholder="Срок, например 25.08" autocomplete="off">
+          <button class="главное" type="submit">Поставить задачу</button>
+        </form>
+        <p class="форма-под">Новая задача добавится в список с пометкой «черновик демо»</p>
+
+        <ul class="список-задач" id="список-задач">
+          <li class="задача">
+            <div>
+              <p class="з-имя">Свернуть радио, перераспределить в Instagram</p>
+              <p class="з-мета"><span class="з-статус">решение CEO</span> · срок 23.08</p>
+            </div>
+            <button type="button" class="з-отмена">Отменить</button>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>Мокап Extella · компания и цифры вымышлены · собрано для демонстрации</footer>
+
+</div>
+
+<div class="весть" id="весть" role="status" aria-live="polite"></div>
+
+<script>
+function тема(t){if(t==='light')document.documentElement.setAttribute('data-lm','1');else document.documentElement.removeAttribute('data-lm')}
+window.addEventListener('message',function(e){var d=e.data||{};if(d.type==='etb_theme'||d.type==='etb_init')тема(d.theme)});
+if(window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches)тема('light');
+
+/* ── Всплывающая строка ─────────────────────────────── */
+var весть = document.getElementById('весть');
+var вестьТаймер = null;
+function показатьВесть(текст){
+  весть.textContent = текст;
+  весть.classList.add('видно');
+  if (вестьТаймер) clearTimeout(вестьТаймер);
+  вестьТаймер = setTimeout(function(){
+    весть.classList.remove('видно');
+  }, 2000);
+}
+
+/* ── Соседние панели и чипы нити ────────────────────── */
+document.querySelectorAll('[data-сосед]').forEach(function(кнопка){
+  кнопка.addEventListener('click', function(){
+    показатьВесть('откроется соседним окном в Extella OS');
+  });
+});
+
+/* ── Раскрытие строк таблицы каналов ────────────────── */
+document.querySelectorAll('tr.строка').forEach(function(строка){
+  var деталь = строка.nextElementSibling;
+  function переключить(){
+    var открыт = !деталь.hidden;
+    деталь.hidden = открыт;
+    строка.classList.toggle('открыт', !открыт);
+    строка.setAttribute('aria-expanded', String(!открыт));
+  }
+  строка.addEventListener('click', переключить);
+  строка.addEventListener('keydown', function(e){
+    if (e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      переключить();
+    }
+  });
+});
+
+/* ── Задачи: добавление черновика ───────────────────── */
+var форма = document.getElementById('форма-задачи');
+var список = document.getElementById('список-задач');
+var полеЧто = document.getElementById('поле-что');
+var полеСрок = document.getElementById('поле-срок');
+
+форма.addEventListener('submit', function(e){
+  e.preventDefault();
+  var что = полеЧто.value.trim();
+  if (!что){
+    полеЧто.focus();
+    показатьВесть('Напишите, что сделать, — задача добавится черновиком');
+    return;
+  }
+  var срок = полеСрок.value.trim();
+
+  var задача = document.createElement('li');
+  задача.className = 'задача';
+
+  var блок = document.createElement('div');
+  var имя = document.createElement('p');
+  имя.className = 'з-имя';
+  имя.textContent = что;
+
+  var мета = document.createElement('p');
+  мета.className = 'з-мета';
+  var статус = document.createElement('span');
+  статус.className = 'з-статус';
+  статус.textContent = 'черновик демо';
+  мета.appendChild(статус);
+  мета.appendChild(document.createTextNode(срок ? ' · срок ' + срок : ' · без срока'));
+
+  блок.appendChild(имя);
+  блок.appendChild(мета);
+
+  var отмена = document.createElement('button');
+  отмена.type = 'button';
+  отмена.className = 'з-отмена';
+  отмена.textContent = 'Отменить';
+
+  задача.appendChild(блок);
+  задача.appendChild(отмена);
+  список.appendChild(задача);
+
+  полеЧто.value = '';
+  полеСрок.value = '';
+  показатьВесть('Задача добавлена черновиком демо');
+});
+
+/* ── Задачи: отмена ─────────────────────────────────── */
+список.addEventListener('click', function(e){
+  var кнопка = e.target.closest('.з-отмена');
+  if (!кнопка) return;
+  var задача = кнопка.closest('.задача');
+  задача.classList.add('отменена');
+  задача.querySelector('.з-статус').textContent = 'отменена';
+  кнопка.disabled = true;
+});
+</script>
+</body>
+</html>

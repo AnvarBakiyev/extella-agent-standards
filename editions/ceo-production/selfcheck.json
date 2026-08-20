@@ -1,0 +1,36 @@
+{
+  "schema": "extella.selfcheck/v1",
+  "product": {
+    "name": "ceo-production",
+    "version": ""
+  },
+  "artifact": {
+    "kind": "page",
+    "name": "index.html",
+    "sha256": "273cbdce801cf579b2d9c2ebd7b37e3f0f43c4359d7de4c59447b4295ca44a29"
+  },
+  "ran_at": "2026-08-20T18:10:47Z",
+  "runner": {
+    "where": "author-device",
+    "runtime": "python3.12.9"
+  },
+  "command": "",
+  "result": "not_ready",
+  "checks": [
+    {
+      "name": "self_check_runs",
+      "status": "fail",
+      "detail": "самопроверка не дала отчёта"
+    },
+    {
+      "name": "gate_finding",
+      "status": "fail",
+      "detail": "самопроверки нет вовсе: объяви её в MANIFEST.yaml или положи app/main.py --selftest. Без неё продукт проверяет только человек"
+    }
+  ],
+  "negative_control": {
+    "ran": false,
+    "mutation": "",
+    "self_check_went_red": false
+  }
+}
