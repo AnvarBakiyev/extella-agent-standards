@@ -209,3 +209,24 @@ test('раскрывающееся сравнение моделей показ�
   assert.ok(cmp.includes('вдумчивость') || cmp.includes('Вдумчивость'));
   assert.ok(cmp.includes('поток') || cmp.includes('Поток'));
 });
+
+test('главное действие — промпт со ссылкой на источник, а не снимок текста', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  // Правило раздела 10: «источник правил один… не копируй текст гида». Кнопка,
+  // копирующая весь текст, ему противоречила: снимок устаревает в тот же день,
+  // а ассистент не знает, что читает снимок.
+  const действия = page.slice(page.indexOf('<div class="actions">'), page.indexOf('</div>', page.indexOf('<div class="actions">')));
+  const главная = действия.slice(действия.indexOf('class="btn main"'), действия.indexOf('</button>'));
+  assert.ok(главная.includes('промпт'), 'главная кнопка — промпт, а не копия текста');
+  const промпт = page.slice(page.indexOf('var ПРОМПТ_АССИСТЕНТУ'), page.indexOf("].join('\\n')"));
+  // Ссылка на живой источник и вход обязаны быть в промпте.
+  assert.ok(промпт.includes('github.com/AnvarBakiyev/extella-agent-standards'), 'адрес источника есть');
+  assert.ok(промпт.includes('START_HERE.md'), 'назван единственный вход');
+  assert.ok(промпт.includes('Не копируй правила к себе'), 'запрет копии повторён ассистенту');
+  // Промпт короткий: человек видит, что это не простыня.
+  const строк = промпт.split('\n').filter(s => s.trim().startsWith("'")).length;
+  assert.ok(строк <= 20, `промпт должен быть коротким, а в нём ${строк} строк`);
+  // Копия всего текста остаётся, но второстепенной и честно названной снимком.
+  assert.ok(page.includes('Скопировать весь текст'));
+  assert.ok(page.includes('снимок, он устареет'), 'копия честно названа снимком');
+});
