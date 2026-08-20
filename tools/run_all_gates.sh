@@ -119,7 +119,8 @@ run_command "язык текстов для покупателя" python3 "$ROOT
   "$ROOT/README.md" "$ROOT/WRITING_RULES.md" "$ROOT/store_app/content.json"
 run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
   --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md" \
-  "$ROOT/INSTALLER_CANON.md"
+  "$ROOT/INSTALLER_CANON.md" "$ROOT/docs/DOCKER_APP_TRACK.md" \
+  "$ROOT/docs/ICON_STYLE_BRONZE.md"
 run check_design_rule
 run check_findings_log
 run check_agent_drift
