@@ -215,10 +215,14 @@ def update_listing_icon(items):
     if not ICON.is_file():
         raise DeployError(f"нет иконки {ICON.name}")
     live = next(x for x in items if x.get("id") == LIVE_LISTING_ID)
+    # Теги берём из канона LIVE_TAGS, а НЕ перечитываем из листинга: замер
+    # 20.08.2026 — поле tags приходит уже JSON-строкой, и повторный json.dumps
+    # оборачивал её ещё раз; каждый вызов edit-listing добавлял слой
+    # экранирования, и на карточке вместо тегов был «\"[\\\"guide…».
     fields = {
         "name": str(live.get("name") or "").strip(),
         "description": str(live.get("description") or "").strip(),
-        "tags": json.dumps(live.get("tags") or [], ensure_ascii=False),
+        "tags": json.dumps(LIVE_TAGS, ensure_ascii=False),
     }
     status, raw = request(OS_BASE, f"/api/edit-listing/{LIVE_LISTING_ID}",
                           fields=fields, files={"icon": ICON})
