@@ -292,7 +292,7 @@ HTML ≤ 3 МБ или zip с `index.html` в корне ≤ 20 МБ) и `icon`.
 | [`INSTALLER_CANON.md`](INSTALLER_CANON.md) | продукт ставит что-то на машину одной кнопкой: шесть шагов, источники токена, честные отказы |
 | [`docs/DOCKER_APP_TRACK.md`](docs/DOCKER_APP_TRACK.md) | серверное приложение в контейнере: установщик, песочница окна, белое окно |
 | [`docs/ICON_STYLE_BRONZE.md`](docs/ICON_STYLE_BRONZE.md) | иконка продукта: один стиль, глиф Lucide, `tools/bronze_icon.py` |
-| [`tools/local_model_mcp.py`](tools/local_model_mcp.py) | локальная модель инструментом агента: дешёвый поток без смены мозга |
+| [`tools/local_model_mcp.py`](tools/local_model_mcp.py) | локальная модель инструментом агента: поток за секунды и без оплаты токенов, мозг остаётся сильным |
 | `tools/` | **проверялки — и есть спецификация**; у каждой `--selftest` |
 
 ```bash
