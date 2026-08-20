@@ -33,7 +33,12 @@ def зов(база: str, путь: str, тело: dict | None = None, тайм�
         data=json.dumps(тело).encode() if тело is not None else None,
         method="POST" if тело is not None else "GET",
         headers={"X-Auth-Token": ТОКЕН, "X-Extella-Token": ТОКЕН,
-                 "X-Profile-Id": "default", "Content-Type": "application/json"})
+                 "X-Profile-Id": "default",
+                 # Без X-Agent-Id ядро отвечает 400 «Agent required» — первая
+                 # строка нашего же канона, на которую этот скрипт и наступил:
+                 # этапы 3–4 падали на targets/search, а причина была в шапке.
+                 "X-Agent-Id": "agent_extella_default",
+                 "Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(з, timeout=таймаут) as о:
             return о.status, о.read().decode(errors="replace")
@@ -48,8 +53,53 @@ def этап(номер: int, имя: str, ок: bool, детали: str) -> Non
         sys.exit(1)
 
 
+def запустить_листенер() -> str:
+    """Поднять листенер стенда и дождаться его регистрации.
+
+    Самое тёмное место стенда: на проде листенер запущен с --crypto-key,
+    который выдавался при установке через визард. Как рождается ключ нового
+    устройства — обкатка и выясняет. Первая попытка: запуск без ключа, токен
+    аккаунта в окружении; хвост журнала листенера уходит в протокол, чтобы
+    отказ был виден словами, а не молчанием.
+    """
+    import os, shutil, subprocess
+    # Листенер может быть уже жив с прошлой попытки в той же коробке: второй
+    # процесс рядом с первым — два опросчика одного устройства и двойное
+    # исполнение задач. Живость видна по свежим опросам в журнале.
+    ж = pathlib.Path("/root/listener.log")
+    if ж.exists() and "/ask" in ж.read_text(encoding="utf-8", errors="replace")[-2000:]:
+        return "зарегистрирован"
+    бинарь = ("/root/lv/bin/extella-listener"
+              if pathlib.Path("/root/lv/bin/extella-listener").exists()
+              else shutil.which("extella-listener") or "python3 -m extella_listener")
+    среда = dict(os.environ, EXTELLA_API_TOKEN=ТОКЕН, EXTELLA_AUTH_TOKEN=ТОКЕН)
+    pathlib.Path("/root/listener").mkdir(exist_ok=True)
+    ключ = pathlib.Path("/root/.crypto_key")
+    крипто = f"--crypto-key {ключ.read_text().strip()} " if ключ.exists() else ""
+    subprocess.Popen(
+        f"nohup {бинарь} --url https://disnet.extella.ai/ --type private "
+        f"--interval 5.0 --work-dir /root/listener {крипто}"
+        f"--description 'bench box (одноразовый контейнер стенда)' "
+        f"> /root/listener.log 2>&1 &",
+        shell=True, env=среда)
+    # Ждём появления таргета, а не просто процесса: процесс может жить и молчать.
+    for _ in range(12):
+        time.sleep(5)
+        код, т = зов(ЯДРО, "/api/targets/search", {"query": "bench"})
+        if код == 200 and "bench" in т.lower():
+            return "зарегистрирован"
+    хвост = ""
+    ж = pathlib.Path("/root/listener.log")
+    if ж.exists():
+        хвост = " ".join(ж.read_text(encoding="utf-8", errors="replace").split())[-300:]
+    return f"не зарегистрировался за 60 с · журнал: {хвост or 'пуст'}"
+
+
 def main() -> int:
     вид = sys.argv[1]
+
+    итог_листенера = запустить_листенер()
+    этап(3, "листенер стенда", итог_листенера == "зарегистрирован", итог_листенера)
 
     # 4. Таргет: листенер при первом запуске регистрирует устройство сам.
     #    Здесь проверяется ФАКТ: платформа видит это устройство.
