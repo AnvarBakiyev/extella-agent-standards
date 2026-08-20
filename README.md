@@ -289,6 +289,9 @@ HTML ≤ 3 МБ или zip с `index.html` в корне ≤ 20 МБ) и `icon`.
 | [`AGENT_BUILD_GUIDE.md`](AGENT_BUILD_GUIDE.md) | решения при стройке, канон, цикл «построил → проверил → починил» и метод работы с большим артефактом |
 | [`PUBLISH_YOUR_AGENT.md`](PUBLISH_YOUR_AGENT.md) | как оформить репозиторий, чтобы агента поставили одной ссылкой |
 | [`AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) · [`EVOLUTION_PHILOSOPHY.md`](EVOLUTION_PHILOSOPHY.md) | зачем система устроена именно так |
+| [`INSTALLER_CANON.md`](INSTALLER_CANON.md) | продукт ставит что-то на машину одной кнопкой: шесть шагов, источники токена, честные отказы |
+| [`docs/DOCKER_APP_TRACK.md`](docs/DOCKER_APP_TRACK.md) | серверное приложение в контейнере: установщик, песочница окна, белое окно |
+| [`docs/ICON_STYLE_BRONZE.md`](docs/ICON_STYLE_BRONZE.md) | иконка продукта: один стиль, глиф Lucide, `tools/bronze_icon.py` |
 | `tools/` | **проверялки — и есть спецификация**; у каждой `--selftest` |
 
 ```bash

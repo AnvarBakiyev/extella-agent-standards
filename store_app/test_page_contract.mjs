@@ -221,7 +221,11 @@ test('главное действие — промпт со ссылкой на 
   const промпт = page.slice(page.indexOf('var ПРОМПТ_АССИСТЕНТУ'), page.indexOf("].join('\\n')"));
   // Ссылка на живой источник и вход обязаны быть в промпте.
   assert.ok(промпт.includes('github.com/AnvarBakiyev/extella-agent-standards'), 'адрес источника есть');
-  assert.ok(промпт.includes('START_HERE.md'), 'назван единственный вход');
+  // Вход — README.md. START_HERE.md сам объявляет себя историей: «вход один и
+  // находится в README». Тест раньше требовал устаревший файл — и промпт вместе
+  // с английским переводом уводил ассистента не туда.
+  assert.ok(промпт.includes('README.md'), 'назван единственный вход');
+  assert.equal(промпт.includes('START_HERE'), false, 'устаревший вход не упоминается');
   assert.ok(промпт.includes('Не копируй правила к себе'), 'запрет копии повторён ассистенту');
   // Промпт короткий: человек видит, что это не простыня.
   const строк = промпт.split('\n').filter(s => s.trim().startsWith("'")).length;
