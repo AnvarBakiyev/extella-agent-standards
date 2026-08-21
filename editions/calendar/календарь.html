@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Календарь</title>
+<style>
+:root{--фон:#0A0A0A;--пов:#141414;--пов2:#181818;--текст:#F5F3EE;--текст2:#C9C3B8;
+  --текст3:#8C8C8C;--акцент:#D4944A;--петроль:#5FA8A0;--гр:rgba(243,238,229,.09)}
+:root[data-lm="1"]{--фон:#FAF9F5;--пов:#FFFFFF;--пов2:#F5F3EC;--текст:#0A0A0A;
+  --текст2:#2A2A2A;--текст3:#8C8C8C;--акцент:#C57E33;--петроль:#2F6B66;--гр:#D7E0DC}
+*{box-sizing:border-box}
+body{margin:0;background:var(--фон);color:var(--текст);
+  font:400 13px/1.5 Nunito,system-ui,-apple-system,sans-serif;padding:16px 24px 24px}
+button,input{font-family:inherit}
+.метка{font:500 11px 'JetBrains Mono',ui-monospace,monospace;color:var(--петроль);
+  letter-spacing:.08em;text-transform:uppercase}
+h1{font:600 26px/1.2 'Source Serif 4',Georgia,serif;margin:4px 0 16px}
+.шапка{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.месяц{font:600 20px/1.2 'Source Serif 4',Georgia,serif;min-width:200px}
+.нав{display:flex;gap:8px;align-items:center;margin-bottom:16px}
+.обычная{font-size:13px;font-weight:600;color:var(--текст);background:var(--пов);
+  border:1px solid var(--гр);border-radius:8px;padding:6px 12px;cursor:pointer}
+.обычная:focus-visible,.главная:focus-visible{outline:2px solid var(--акцент);outline-offset:2px}
+.сетка{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.дн{font-size:11px;font-weight:600;color:var(--текст3);letter-spacing:.06em;
+  text-transform:uppercase;padding:4px 8px}
+.день{background:var(--пов);border:1px solid var(--гр);border-radius:12px;
+  min-height:96px;padding:8px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+.день:hover{border-color:var(--текст3)}
+.день.чужой{opacity:.45}
+.день.сегодня{border-color:var(--акцент);border-width:2px}
+.день.выбран{background:var(--пов2)}
+.число{font-size:13px;font-weight:600;color:var(--текст2)}
+.сегодня .число{color:var(--акцент)}
+.чип{font-size:11px;line-height:1.35;color:var(--текст2);background:var(--пов2);
+  border:1px solid var(--гр);border-radius:6px;padding:2px 6px;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis}
+:root[data-lm="1"] .чип{background:var(--фон)}
+.ещё{font-size:11px;color:var(--текст3)}
+.панель{margin-top:16px;background:var(--пов);border:1px solid var(--гр);
+  border-radius:12px;padding:16px;display:none}
+.панель h2{font:600 15px/1.3 Nunito,sans-serif;margin:0 0 8px}
+.строка-задачи{display:flex;gap:8px;align-items:baseline;padding:6px 0;
+  border-bottom:1px solid var(--гр);font-size:13px}
+.строка-задачи:last-of-type{border-bottom:0}
+.срочка{font:500 11px 'JetBrains Mono',ui-monospace,monospace;color:var(--текст3);white-space:nowrap}
+.заметка{color:var(--текст3);font-size:13px}
+.новая{display:flex;gap:8px;margin-top:12px}
+.новая input{flex:1;min-width:0;font-size:13px;color:var(--текст);background:transparent;
+  border:1px solid var(--гр);border-radius:8px;padding:8px 12px}
+.новая input::placeholder{color:var(--текст3)}
+.новая input:focus{outline:none;border-color:var(--акцент)}
+.главная{font-size:13px;font-weight:600;color:#fff;background:var(--акцент);
+  border:0;border-radius:999px;padding:8px 16px;cursor:pointer}
+.главная[disabled]{opacity:.6;cursor:default}
+.весть{padding:24px;color:var(--текст3);font-size:13px}
+.подвал{margin-top:16px;font:400 11px 'JetBrains Mono',ui-monospace,monospace;color:var(--текст3)}
+</style>
+</head>
+<body>
+<div class="шапка">
+  <div>
+    <div class="метка">Задачи и календарь · этот компьютер</div>
+    <h1>Календарь</h1>
+  </div>
+  <div class="нав">
+    <button class="обычная" id="назад" aria-label="Прошлый месяц">←</button>
+    <button class="обычная" id="сегодня-кн">Сегодня</button>
+    <button class="обычная" id="вперёд" aria-label="Следующий месяц">→</button>
+    <span class="месяц" id="месяц"></span>
+  </div>
+</div>
+
+<div id="весть" class="весть">Считаю месяц…</div>
+<div class="сетка" id="сетка" style="display:none"></div>
+
+<div class="панель" id="панель">
+  <h2 id="панель-заголовок"></h2>
+  <div id="панель-список"></div>
+  <div class="новая">
+    <input id="новая-имя" type="text" autocomplete="off"
+           placeholder="Новая задача на этот день">
+    <button class="главная" id="поставить">Поставить</button>
+  </div>
+</div>
+<div class="подвал">данные — приложение «Задачи и календарь» на этом компьютере · агент ставит задачи фразой «поставь задачу…»</div>
+
+<script>
+// Календарь-панель Extella поверх задач tududi. Живёт НА ТОМ ЖЕ адресе, что
+// приложение (/_окно/ у прокси): API доступен без токенов в этой странице —
+// сессию держит автовход прокси. Построено 21.08.2026 по слову Анвара:
+// календарной сетки в tududi нет (маршрут /calendar пуст).
+function тема(t){
+  if (t === 'light') document.documentElement.setAttribute('data-lm','1');
+  else document.documentElement.removeAttribute('data-lm');
+}
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type === 'etb_theme' || d.type === 'etb_init') тема(d.theme);
+});
+if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) тема('light');
+
+var МЕСЯЦЫ = ['январь','февраль','март','апрель','май','июнь','июль',
+              'август','сентябрь','октябрь','ноябрь','декабрь'];
+var ДНИ = ['пн','вт','ср','чт','пт','сб','вс'];
+var показан = new Date(); показан.setDate(1);
+var выбранный = ключ(new Date());
+var задачи = {};                       // ключ ГГГГ-ММ-ДД → [задача]
+
+function ключ(д){
+  return д.getFullYear() + '-' + String(д.getMonth()+1).padStart(2,'0')
+       + '-' + String(д.getDate()).padStart(2,'0');
+}
+function весть(т){
+  var в = document.getElementById('весть');
+  в.textContent = т; в.style.display = т ? 'block' : 'none';
+  document.getElementById('сетка').style.display = т ? 'none' : 'grid';
+}
+
+function загрузить(){
+  весть('Считаю месяц…');
+  fetch('/api/v1/tasks', {credentials:'include'})
+    .then(function(о){ if(!о.ok) throw new Error('код ' + о.status); return о.json(); })
+    .then(function(д){
+      задачи = {};
+      (д.tasks || []).forEach(function(з){
+        if (!з.due_date) return;
+        var к = String(з.due_date).slice(0,10);
+        (задачи[к] = задачи[к] || []).push(з);
+      });
+      весть(''); нарисовать();
+    })
+    .catch(function(е){
+      весть('Задачи сейчас не читаются (' + е.message + '). Обновите окно; ' +
+            'если не поможет — скажите чату.');
+    });
+}
+
+function нарисовать(){
+  var с = document.getElementById('сетка');
+  с.innerHTML = '';
+  ДНИ.forEach(function(д){
+    var э = document.createElement('div'); э.className = 'дн'; э.textContent = д;
+    с.appendChild(э);
+  });
+  document.getElementById('месяц').textContent =
+    МЕСЯЦЫ[показан.getMonth()] + ' ' + показан.getFullYear();
+  var первый = new Date(показан);
+  var сдвиг = (первый.getDay() + 6) % 7;          // неделя с понедельника
+  первый.setDate(1 - сдвиг);
+  var сегодня = ключ(new Date());
+  for (var i = 0; i < 42; i++){
+    var д = new Date(первый); д.setDate(первый.getDate() + i);
+    var к = ключ(д);
+    var кл = document.createElement('div');
+    кл.className = 'день' + (д.getMonth() !== показан.getMonth() ? ' чужой' : '')
+                 + (к === сегодня ? ' сегодня' : '') + (к === выбранный ? ' выбран' : '');
+    кл.setAttribute('data-к', к);
+    var ч = document.createElement('div'); ч.className = 'число'; ч.textContent = д.getDate();
+    кл.appendChild(ч);
+    var список = задачи[к] || [];
+    список.slice(0,3).forEach(function(з){
+      var чип = document.createElement('div'); чип.className = 'чип';
+      чип.textContent = з.name || '—'; чип.title = з.name || '';
+      кл.appendChild(чип);
+    });
+    if (список.length > 3){
+      var е = document.createElement('div'); е.className = 'ещё';
+      е.textContent = 'ещё ' + (список.length - 3);
+      кл.appendChild(е);
+    }
+    кл.addEventListener('click', function(){
+      выбранный = this.getAttribute('data-к');
+      нарисовать(); панель();
+    });
+    с.appendChild(кл);
+  }
+  панель();
+}
+
+function панель(){
+  var п = document.getElementById('панель');
+  п.style.display = 'block';
+  var части = выбранный.split('-');
+  document.getElementById('панель-заголовок').textContent =
+    Number(части[2]) + ' ' + МЕСЯЦЫ[Number(части[1])-1] + ' ' + части[0];
+  var сп = document.getElementById('панель-список');
+  сп.innerHTML = '';
+  var список = задачи[выбранный] || [];
+  if (!список.length){
+    var п0 = document.createElement('div'); п0.className = 'весть';
+    п0.style.padding = '8px 0'; п0.textContent = 'На этот день задач нет.';
+    сп.appendChild(п0);
+  }
+  список.forEach(function(з){
+    var с = document.createElement('div'); с.className = 'строка-задачи';
+    var и = document.createElement('span'); и.textContent = з.name || '—'; и.style.flex = '1';
+    с.appendChild(и);
+    if (з.note){
+      var з2 = document.createElement('span'); з2.className = 'заметка';
+      з2.textContent = String(з.note).slice(0,80); с.appendChild(з2);
+    }
+    сп.appendChild(с);
+  });
+}
+
+document.getElementById('назад').onclick = function(){
+  показан.setMonth(показан.getMonth() - 1); нарисовать();
+};
+document.getElementById('вперёд').onclick = function(){
+  показан.setMonth(показан.getMonth() + 1); нарисовать();
+};
+document.getElementById('сегодня-кн').onclick = function(){
+  показан = new Date(); показан.setDate(1);
+  выбранный = ключ(new Date()); загрузить();
+};
+
+var кнопка = document.getElementById('поставить');
+function поставить(){
+  var имя = (document.getElementById('новая-имя').value || '').trim();
+  if (!имя){ document.getElementById('новая-имя').focus(); return; }
+  кнопка.disabled = true;
+  var было = кнопка.textContent; кнопка.textContent = 'Ставлю…';
+  fetch('/api/task', {method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name: имя, due_date: выбранный})})
+    .then(function(о){ if(!о.ok) throw new Error('код ' + о.status); return о.json(); })
+    .then(function(){ document.getElementById('новая-имя').value = ''; загрузить(); })
+    .catch(function(е){
+      весть('Задача не поставилась (' + е.message + '). Скажите чату.');
+      setTimeout(загрузить, 2500);
+    })
+    .finally(function(){ кнопка.disabled = false; кнопка.textContent = было; });
+}
+кнопка.onclick = поставить;
+document.getElementById('новая-имя').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') поставить();
+});
+
+загрузить();
+</script>
+</body>
+</html>
