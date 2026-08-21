@@ -1,0 +1,36 @@
+{
+  "schema": "extella.selfcheck/v1",
+  "product": {
+    "name": "stirling-pdf",
+    "version": ""
+  },
+  "artifact": {
+    "kind": "page",
+    "name": "index.html",
+    "sha256": "495b670b4014c87eefdb3f65575fe751f07756292c993ca1c949237f5a7b0903"
+  },
+  "ran_at": "2026-08-21T14:50:09Z",
+  "runner": {
+    "where": "author-device",
+    "runtime": "python3.12.9"
+  },
+  "command": "",
+  "result": "not_ready",
+  "checks": [
+    {
+      "name": "self_check_runs",
+      "status": "fail",
+      "detail": "самопроверка не дала отчёта"
+    },
+    {
+      "name": "gate_finding",
+      "status": "fail",
+      "detail": "самопроверки нет вовсе: объяви её в MANIFEST.yaml или положи app/main.py --selftest. Без неё продукт проверяет только человек"
+    }
+  ],
+  "negative_control": {
+    "ran": false,
+    "mutation": "",
+    "self_check_went_red": false
+  }
+}

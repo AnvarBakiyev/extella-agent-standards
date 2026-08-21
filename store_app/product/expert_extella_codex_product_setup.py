@@ -1,9 +1,9 @@
 def extella_codex_product_setup(action="preflight") -> str:
     import json, os, platform, secrets, shutil, subprocess, urllib.request
     step = action
-    BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-codex-bridge.git"
+    BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-bridges.git"
     BUILDER_REF = "v0.3.6"
-    SETUP_VERSION = "3.3.1"
+    SETUP_VERSION = "3.3.2"
     # Independent agent-building standards contract; do not advance with bridge-only releases.
     STANDARDS_REF = "v0.3.0"
     MARKETPLACE = "extella-codex"
@@ -86,6 +86,17 @@ def extella_codex_product_setup(action="preflight") -> str:
                     "EXTELLA_BRIDGE_SECRET", "OPENAI_API_KEY", "CODEX_API_KEY"]:
             env.pop(key, None)
         return env
+
+    def run_raw(args, timeout=120):
+        # Как run, но отдаёт весь результат вместе с stderr. Нужен там, где
+        # отказ обязан назвать ПРИЧИНУ: run() поднимает RuntimeError, текст
+        # ошибки теряется, и разбор идёт вслепую.
+        try:
+            return subprocess.run(args, stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE, text=True, timeout=timeout,
+                env=safe_env(), shell=False)
+        except Exception:
+            return None
 
     def run(args, timeout=120, allow_failure=False):
         try:
@@ -237,13 +248,25 @@ def extella_codex_product_setup(action="preflight") -> str:
             except Exception:
                 return result("error", "marketplace_remove_failed",
                     "Codex не смог обновить прежний источник Extella.")
-        try:
-            run([codex, "plugin", "marketplace", "add",
-                "AnvarBakiyev/extella-codex-bridge", "--ref", BUILDER_REF,
-                "--json"], timeout=180)
-        except Exception:
+        added = run_raw([codex, "plugin", "marketplace", "add",
+            "AnvarBakiyev/extella-bridges", "--ref", BUILDER_REF,
+            "--json"], timeout=180)
+        if added is None or added.returncode != 0:
+            # Отказ обязан назвать причину, а не только факт: прежний текст
+            # молчал, и разбор у тестировщика шёл вслепую (замер 21.08.2026).
+            seen = ((added.stderr or "") + (added.stdout or "")).lower() if added else ""
+            denied = any(mark in seen for mark in (
+                "permission denied", "repository not found",
+                "could not read username", "authentication failed", "403"))
+            if denied:
+                return result("error", "marketplace_no_access",
+                    "GitHub не отдал репозиторий моста. Раздача публичная, "
+                    "доступ для неё не нужен — скорее всего сохранился прежний "
+                    "закрытый источник. Удалите источник extella-codex и "
+                    "нажмите кнопку ещё раз.")
             return result("error", "marketplace_add_failed",
-                "Codex не смог добавить проверенный источник Extella.")
+                "Codex не смог добавить проверенный источник Extella: " +
+                (((added.stderr or "").strip()[-160:]) if added else "нет ответа"))
         try:
             run([codex, "plugin", "add", PLUGIN, "--json"], timeout=180)
         except Exception:

@@ -172,13 +172,29 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                           body=json.dumps(конф.get("тело") or {}).encode(),
                           headers={"Content-Type": "application/json"})
                 о = с.getresponse()
-                о.read()
+                тело_логина = о.read()
                 for к, з in о.getheaders():
                     if к.lower() == "set-cookie":
                         кусок = з.split(";", 1)[0]
                         if "=" in кусок:
                             и, зн = кусок.split("=", 1)
                             КУКИ[и.strip()] = зн.strip()
+                # Часть приложений отдаёт вход НЕ кукой, а полем в теле ответа
+                # (memos: accessToken). Конфиг автовхода говорит, какое поле
+                # взять и под каким именем куки нести: "кука_из_тела":
+                # {"поле": "accessToken", "имя": "memos.access-token"}.
+                киз = конф.get("кука_из_тела")
+                if киз and not КУКИ:
+                    try:
+                        зн = json.loads(тело_логина.decode()).get(киз.get("поле") or "")
+                        if зн and киз.get("как") == "bearer":
+                            # Приложение признаёт только Authorization: Bearer
+                            # (memos, замер 21.08.2026) — спец-ключ банки.
+                            КУКИ["__bearer"] = str(зн)
+                        elif зн:
+                            КУКИ[киз.get("имя") or "token"] = str(зн)
+                    except (ValueError, AttributeError):
+                        pass
                 return о.status < 400 and bool(КУКИ)
             except (OSError, json.JSONDecodeError, ValueError):
                 return False
@@ -268,8 +284,11 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                 self._автовход()
             исходный_cookie = заг.get("Cookie", "")
             for попытка in (1, 2):
-                if КУКИ:
-                    банка = "; ".join(f"{и}={з}" for и, з in КУКИ.items())
+                if "__bearer" in КУКИ and "Authorization" not in заг:
+                    заг["Authorization"] = "Bearer " + КУКИ["__bearer"]
+                обычные = {и: з for и, з in КУКИ.items() if и != "__bearer"}
+                if обычные:
+                    банка = "; ".join(f"{и}={з}" for и, з in обычные.items())
                     заг["Cookie"] = f"{исходный_cookie}; {банка}".strip("; ")
                 с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
                 try:
