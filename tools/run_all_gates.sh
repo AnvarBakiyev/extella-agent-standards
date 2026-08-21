@@ -120,7 +120,7 @@ run_command "язык текстов для покупателя" python3 "$ROOT
 run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
   --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md" \
   "$ROOT/INSTALLER_CANON.md" "$ROOT/docs/DOCKER_APP_TRACK.md" \
-  "$ROOT/docs/ICON_STYLE_BRONZE.md"
+  "$ROOT/docs/ICON_STYLE_BRONZE.md" "$ROOT/OS_CAPABILITIES.md"
 run_command "перевод не отстал" python3 "$ROOT/tools/check_translation.py" "$ROOT/store_app/content.json"
 run check_translation
 run check_design_rule
