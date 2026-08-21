@@ -306,8 +306,24 @@ def verify_live():
     problems = []
     if set(scopes) != set(SCOPES):
         problems.append(f"права {scopes} вместо {SCOPES}")
+    # Приложение H38-П, пункт 10: счётчик экспертов ничего не доказывает — он
+    # сойдётся и при чужом составе. Имён версия не отдаёт вовсе (поля нет),
+    # поэтому состав сверяется перечиткой области видимости по именам.
     if int(version.get("expert_count") or 0) < 1:
         problems.append("Expert не приложился")
+    else:
+        agent_id = source_agent(items)
+        headers = {"X-Auth-Token": token(), "X-Profile-Id": "default", "X-Agent-Id": agent_id}
+        for name in EXPERTS:
+            status_e, raw_e = request(CORE_BASE, "/api/expert/get",
+                                      body={"name": name, "global": False}, headers=headers)
+            if status_e != 200 or not expert_code(as_json(raw_e)).strip():
+                problems.append(f"эксперт {name} не читается обратно из области видимости")
+    # Пункт 11: поле установщика обязано называть ожидаемое имя, а не просто
+    # быть непустым. Прежняя приёмка его не смотрела вовсе.
+    installer = str(version.get("installer_expert") or "")
+    if installer and installer not in EXPERTS:
+        problems.append(f"установщик версии «{installer}» не из состава продукта")
     if not version.get("archive_ext"):
         problems.append("к версии не приложился архив — рантайм не доедет до покупателя")
     status, page = request(OS_BASE, f"/app-page/{LIVE_LISTING_ID}/")
@@ -317,6 +333,13 @@ def verify_live():
         problems.append("плейсхолдер токена не подставлен")
     elif 'id="claude-connect"' not in page:
         problems.append("кнопки Claude нет в отданной странице")
+    # Пункт 13: мало подставить токен приложения — в отданной странице не
+    # должно оказаться токена аккаунта. Проверка дешёвая, а пропуск дорогой.
+    if token()[:16] in page:
+        problems.append("в отданной странице виден токен аккаунта")
+    # Пункт 14 НЕ проверяется: адрес, которым установщик берёт архив, здесь
+    # неизвестен — пробные пути отвечают 404. Сверка архива по отпечатку
+    # остаётся незакрытой, и это названо, а не скрыто за общим «приёмка прошла».
     if problems:
         raise DeployError("приёмка не прошла: " + "; ".join(problems))
     print(f"  версия {VERSION} подтверждена чтением: права {sorted(scopes)}, "
@@ -356,8 +379,24 @@ def verify(listing_id):
     problems = []
     if set(scopes) != set(SCOPES):
         problems.append(f"права {scopes} вместо {SCOPES}")
+    # Приложение H38-П, пункт 10: счётчик экспертов ничего не доказывает — он
+    # сойдётся и при чужом составе. Имён версия не отдаёт вовсе (поля нет),
+    # поэтому состав сверяется перечиткой области видимости по именам.
     if int(version.get("expert_count") or 0) < 1:
         problems.append("Expert не приложился")
+    else:
+        agent_id = source_agent(items)
+        headers = {"X-Auth-Token": token(), "X-Profile-Id": "default", "X-Agent-Id": agent_id}
+        for name in EXPERTS:
+            status_e, raw_e = request(CORE_BASE, "/api/expert/get",
+                                      body={"name": name, "global": False}, headers=headers)
+            if status_e != 200 or not expert_code(as_json(raw_e)).strip():
+                problems.append(f"эксперт {name} не читается обратно из области видимости")
+    # Пункт 11: поле установщика обязано называть ожидаемое имя, а не просто
+    # быть непустым. Прежняя приёмка его не смотрела вовсе.
+    installer = str(version.get("installer_expert") or "")
+    if installer and installer not in EXPERTS:
+        problems.append(f"установщик версии «{installer}» не из состава продукта")
     status, page = request(OS_BASE, f"/app-page/{listing_id}/")
     if status != 200:
         problems.append(f"страница отдаётся с кодом {status}")
@@ -365,6 +404,13 @@ def verify(listing_id):
         problems.append("плейсхолдер токена не подставлен")
     elif 'id="claude-connect"' not in page:
         problems.append("кнопки Claude нет в отданной странице")
+    # Пункт 13: мало подставить токен приложения — в отданной странице не
+    # должно оказаться токена аккаунта. Проверка дешёвая, а пропуск дорогой.
+    if token()[:16] in page:
+        problems.append("в отданной странице виден токен аккаунта")
+    # Пункт 14 НЕ проверяется: адрес, которым установщик берёт архив, здесь
+    # неизвестен — пробные пути отвечают 404. Сверка архива по отпечатку
+    # остаётся незакрытой, и это названо, а не скрыто за общим «приёмка прошла».
     if problems:
         raise DeployError("приёмка не прошла: " + "; ".join(problems))
     print(f"  предрелиз подтверждён чтением: published={made.get('published')}, "
