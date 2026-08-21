@@ -220,7 +220,18 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             # местный сервер не разрешит их ЯВНО. Замер 16.08.2026: без этих двух
             # заголовков окно ОС показывало «проба молчит» и пустую доску, хотя
             # приложение было живо и по адресу открывалось.
-            self.send_header("Access-Control-Allow-Origin", "*")
+            # Допуск — ИМЕННОЙ (эхо Origin), не «*»: интерфейсы ходят с
+            # пометкой «с куками» (credentials: include), а такие запросы
+            # браузер с «*» отвергает молча. Замер 21.08.2026: tududi в окне ОС
+            # показывал форму логина при рабочем автовходе прокси. Для запросов
+            # без Origin (curl, простые) остаётся «*».
+            происхождение = self.headers.get("Origin")
+            if происхождение:
+                self.send_header("Access-Control-Allow-Origin", происхождение)
+                self.send_header("Access-Control-Allow-Credentials", "true")
+                self.send_header("Vary", "Origin")
+            else:
+                self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Private-Network", "true")
             super().end_headers()
 
@@ -289,6 +300,8 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                                  "content-security-policy", "content-encoding",
                                  "x-frame-options",
                                  "access-control-allow-origin",
+                                 "access-control-allow-credentials",
+                                 "access-control-allow-private-network",
                                  "cross-origin-resource-policy",
                                  "cross-origin-opener-policy",
                                  "cross-origin-embedder-policy",
