@@ -222,11 +222,42 @@ if (МОСТ) {
     fetch(ХРАНИЛИЩЕ, {method: 'POST', headers: {'Content-Type': 'application/json'},
                       body: JSON.stringify(т)}).catch(function(){});
   }
+  // НЕ ЖДЁМ ЕДИНСТВЕННОГО СИГНАЛА. Чертёжник объявляет о готовности один раз;
+  // если это мгновение прошло мимо (страница ещё ставила обработчики, рамка
+  // взялась из кэша), чертёж не загрузится никогда — окно останется пустым при
+  // живом рисунке. Замер 21.08.2026. Поэтому просим загрузиться настойчиво:
+  // несколько попыток, пока чертёжник не подтвердит.
+  var чертёж_принят = false;
+  function просить_загрузку(попытка){
+    if (чертёж_принят || попытка > 6) return;
+    прочитать_чертёж(function(xml){
+      последний_чертёж = xml;
+      try {
+        окно_.contentWindow.postMessage(JSON.stringify({
+          action: 'load', autosave: 1, xml: xml || ''
+        }), '*');
+        if (xml) {
+          setTimeout(function(){
+            окно_.contentWindow.postMessage(JSON.stringify({
+              action: 'fit', maxScale: 1.2, border: 20
+            }), '*');
+          }, 400);
+        }
+      } catch (х) {}
+    });
+    setTimeout(function(){ просить_загрузку(попытка + 1); }, 1200);
+  }
+  окно_.addEventListener('load', function(){
+    чертёж_принят = false;
+    setTimeout(function(){ просить_загрузку(1); }, 600);
+  });
+
   window.addEventListener('message', function(e){
     if (!e.data || typeof e.data !== 'string') return;
     var д;
     try { д = JSON.parse(e.data); } catch (х) { return; }
     if (!д || !д.event) return;
+    if (д.event === 'load') { чертёж_принят = true; return; }
     if (д.event === 'init') {
       прочитать_чертёж(function(xml){
         последний_чертёж = xml;
