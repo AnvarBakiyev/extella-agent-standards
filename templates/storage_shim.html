@@ -236,15 +236,49 @@
   // (Uptime Kuma, vue-router) был белым именно об это, хранилище тут ни при
   // чём. Подменяем на безопасные: пробуем родной, отказ глотаем — адрес в
   // строке просто не меняется, приложению этого достаточно.
+  //
+  // И ВТОРАЯ БЕДА ТОЙ ЖЕ ДВЕРИ (замер 21.08.2026, Заметки/memos): окно ОС
+  // держит загрузочную шторку, пока адрес приложения — голый «/». Мы открываем
+  // окно на настоящем маршруте, но роутер приложения через полсекунды сам
+  // переводит адрес на корень — своим pushState, БЕЗ обращения к сети, поэтому
+  // увод корня на прокси этого не ловит. Итог для человека: нажал плитку —
+  // экран «взорвался» логотипом, и так каждый раз.
+  //
+  // Держим адрес: попытку встать на корень подменяем стартовым маршрутом
+  // окна. Приложению всё равно (роутер рисует ту же страницу), а оболочка
+  // видит осмысленный адрес и шторку снимает.
   try {
+    var СТАРТ = location.pathname && location.pathname !== "/"
+              ? location.pathname : "";
+    function не_корень(аргументы) {
+      if (!СТАРТ || аргументы.length < 3) return аргументы;
+      var а = Array.prototype.slice.call(аргументы);
+      try {
+        var ц = new URL(String(а[2]), location.href);
+        if (ц.origin === location.origin && (ц.pathname === "/" || ц.pathname === "")) {
+          а[2] = СТАРТ + ц.search + ц.hash;
+        }
+      } catch (е) {}
+      return а;
+    }
     var род_push = history.pushState.bind(history);
     var род_замена = history.replaceState.bind(history);
     history.pushState = function () {
-      try { return род_push.apply(null, arguments); } catch (е) {}
+      try { return род_push.apply(null, не_корень(arguments)); } catch (е) {}
     };
     history.replaceState = function () {
-      try { return род_замена.apply(null, arguments); } catch (е) {}
+      try { return род_замена.apply(null, не_корень(arguments)); } catch (е) {}
     };
+    // Ссылки «домой» ведут на «/» напрямую — это полная навигация, и она тоже
+    // роняет шторку. Правим цель на лету, до того как её увидит браузер.
+    document.addEventListener("click", function (е) {
+      if (!СТАРТ) return;
+      var э = е.target;
+      while (э && э.tagName !== "A") э = э.parentNode;
+      if (!э || !э.getAttribute) return;
+      var h = э.getAttribute("href");
+      if (h === "/" || h === "") э.setAttribute("href", СТАРТ);
+    }, true);
   } catch (е) {}
 
   // sessionStorage браузер закрывает тем же махом. Он не переживает перезапуск и
