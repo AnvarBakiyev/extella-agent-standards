@@ -24,6 +24,7 @@ import argparse
 import http.server
 import json
 import pathlib
+import sys
 import threading
 
 # Латиницей намеренно: кириллица приезжает процентами и не совпадает.
@@ -36,6 +37,13 @@ import threading
 # Банка кук прокси-режима: песочница окна ОС сетевые куки режет нацело, поэтому
 # сессию контейнера держит прокси в памяти процесса (шестая дверь, 21.08.2026).
 КУКИ = {}
+# Включается флагом --журнал: печатать каждый запрос в лог службы.
+ЖУРНАЛ = [False]
+# Пути, которые прокси НЕ передаёт в контейнер, а гасит пустым ответом.
+# Нужны для вечных потоков: окно ОС снимает загрузочную шторку по событию
+# «страница догрузилась», а незакрытый поток внутри его не даёт (замер
+# 21.08.2026, Заметки/memos: /api/v1/sse).
+ГЛУШИТЬ = []
 ЗАМОК = threading.Lock()
 
 # ── Действия по кнопке ────────────────────────────────────────────────────────
@@ -206,8 +214,15 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
         def __init__(self, *a, **kw):
             super().__init__(*a, directory=str(папка), **kw)
 
-        def log_message(self, *a):
-            pass                      # тишина: журнал сервера тут ничего не даёт
+        def log_message(self, формат, *a):
+            # Тишина по умолчанию: обычный журнал сервера в работе не нужен.
+            # С --журнал он включается — это «журнал охоты» из
+            # docs/DOCKER_APP_TRACK.md: единственный способ увидеть, ДОШЁЛ ли
+            # запрос из окна ОС и чем ответили. Без него белое окно
+            # диагностируется гаданием (замер 21.08.2026, Заметки).
+            if ЖУРНАЛ[0]:
+                sys.stderr.write("[запрос] " + (формат % a) + "\n")
+                sys.stderr.flush()
 
         def _ответ(self, код, тело: bytes, тип="application/json; charset=utf-8"):
             self.send_response(код)
@@ -267,8 +282,37 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             путь = self.path.split("?")[0]
             return путь in (ПУТЬ_ХРАНИЛИЩА, ПУТЬ_ВЕРСИИ, ПУТЬ_ДЕЙСТВИЯ)
 
+        def _перелить_поток(self, о):
+            """Отдать бесконечный ответ кусками, не накапливая его в памяти."""
+            self.send_response(о.status)
+            for к, з in о.getheaders():
+                if к.lower() in ("content-length", "transfer-encoding", "connection",
+                                 "content-encoding", "content-security-policy",
+                                 "x-frame-options", "set-cookie",
+                                 "access-control-allow-origin",
+                                 "access-control-allow-credentials",
+                                 "cross-origin-resource-policy",
+                                 "cross-origin-opener-policy",
+                                 "cross-origin-embedder-policy"):
+                    continue
+                self.send_header(к, з)
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            try:
+                while True:
+                    кусок = о.read1(4096)
+                    if not кусок:
+                        break
+                    self.wfile.write(кусок)
+                    self.wfile.flush()
+            except (OSError, ValueError):
+                pass                      # окно закрылось — обычное завершение
+
         def _проксировать(self):
             import http.client
+            путь = self.path.split("?")[0]
+            if any(путь == г or путь.startswith(г.rstrip("/") + "/") for г in ГЛУШИТЬ):
+                return self._ответ(204, b"", "text/plain")
             длина = int(self.headers.get("Content-Length") or 0)
             тело = self.rfile.read(длина) if длина else None
             заг = {к: з for к, з in self.headers.items()
@@ -287,17 +331,34 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             if автовход and not КУКИ:
                 self._автовход()
             исходный_cookie = заг.get("Cookie", "")
+            # Клиент с СОБСТВЕННЫМ Authorization авторизуется сам — банку к
+            # нему не доклеиваем. Иначе приложение видит сессионную куку рядом
+            # с Bearer-токеном, принимает запрос за браузерный и требует
+            # CSRF-токен, которого у машинного клиента нет: тот же POST с тем
+            # же токеном напрямую в контейнер — 200, через прокси — 500
+            # «CSRF token missing» (замер 21.08.2026, tududi /api/v1/task).
+            своя_авторизация = "Authorization" in заг
             for попытка in (1, 2):
-                if "__bearer" in КУКИ and "Authorization" not in заг:
-                    заг["Authorization"] = "Bearer " + КУКИ["__bearer"]
-                обычные = {и: з for и, з in КУКИ.items() if и != "__bearer"}
-                if обычные:
-                    банка = "; ".join(f"{и}={з}" for и, з in обычные.items())
-                    заг["Cookie"] = f"{исходный_cookie}; {банка}".strip("; ")
+                if not своя_авторизация:
+                    if "__bearer" in КУКИ and "Authorization" not in заг:
+                        заг["Authorization"] = "Bearer " + КУКИ["__bearer"]
+                    обычные = {и: з for и, з in КУКИ.items() if и != "__bearer"}
+                    if обычные:
+                        банка = "; ".join(f"{и}={з}" for и, з in обычные.items())
+                        заг["Cookie"] = f"{исходный_cookie}; {банка}".strip("; ")
                 с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
                 try:
                     с.request(self.command, self.path, body=тело, headers=заг)
                     о = с.getresponse()
+                    # ПОТОК СОБЫТИЙ (text/event-stream) читать целиком НЕЛЬЗЯ:
+                    # ответ бесконечен по замыслу. Прежний код ждал его конца,
+                    # держал поток прокси до таймаута в 90 с и не отдавал
+                    # клиенту ни байта — приложение не получало ни одного
+                    # события и раз за разом открывало соединение заново
+                    # (замер 21.08.2026, Заметки: /api/v1/sse). Такие ответы
+                    # переливаем кусками, пока клиент слушает.
+                    if "text/event-stream" in (о.getheader("Content-Type") or ""):
+                        return self._перелить_поток(о)
                     данные = о.read()
                 except OSError as е:
                     return self._ответ(502, json.dumps(
@@ -494,6 +555,10 @@ def main() -> int:
     р.add_argument("--вставка", default="",
                    help="дополнительный HTML-файл, вшиваемый в страницы вместе с шимом "
                         "(добавки конкретному приложению — например, кнопка Календаря)")
+    р.add_argument("--глушить", action="append", default=[],
+                   help="путь, который не передавать в контейнер (вечные потоки)")
+    р.add_argument("--журнал", action="store_true",
+                   help="печатать каждый запрос в лог службы (диагностика окна)")
     р.add_argument("--автовход", default="",
                    help="json-файл {путь, тело} — прокси входит в контейнер сам "
                         "(беспарольный локальный контур по решению владельца)")
@@ -503,6 +568,8 @@ def main() -> int:
     if а.вставка:
         шим += pathlib.Path(а.вставка).expanduser().read_text()
     файл = pathlib.Path(а.данные).expanduser() / f"{а.имя}.json"
+    ЖУРНАЛ[0] = bool(а.журнал)
+    ГЛУШИТЬ.extend(а.глушить)
     сервер = http.server.ThreadingHTTPServer(
         ("127.0.0.1", а.порт),
         сделать_обработчик(pathlib.Path(а.папка).expanduser(), файл, а.прокси_на,

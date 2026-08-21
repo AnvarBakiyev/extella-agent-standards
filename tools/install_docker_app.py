@@ -135,7 +135,8 @@ def ждать_порт(порт: int, секунд: int = 90) -> float:
 
 def работа(образ: str, slug: str, имя: str, порт_внутри: int,
            том: list[str] | None, лицензия: str, порт: int | None, сухой: bool,
-           глиф: str = "app-window", среда: list[str] | None = None) -> int:
+           глиф: str = "app-window", среда: list[str] | None = None,
+           путь: str = "/") -> int:
     if not re.fullmatch(r"[a-z][a-z0-9-]{1,30}", slug):
         raise Отказ("slug — только строчная латиница, цифры и дефис")
     порт = порт or свободный_порт()
@@ -219,7 +220,7 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
         if not (издание / "icon.png").exists():
             print("  " + прогнать("bronze_icon.py", глиф, str(издание / "icon.png")).strip())
         (издание / "app.json").write_text(json.dumps({
-            "имя": имя, "порт": порт, "путь": "/", "проба": "/",
+            "имя": имя, "порт": порт, "путь": путь, "проба": "/",
             "подпись": f"адрес: localhost:{порт} · серверное приложение в контейнере "
                        f"на вашем компьютере, данные — файлами в томе",
         }, ensure_ascii=False, indent=2) + "\n")
@@ -321,6 +322,9 @@ def main() -> int:
                    help="KEY=VALUE в .env (секреты и учётка владельца); можно несколько раз")
     р.add_argument("--лицензия", default="")
     р.add_argument("--порт", type=int, default=None)
+    р.add_argument("--путь", default="/",
+                   help="маршрут, на котором открывается окно (см. восьмую дверь: "
+                        "приложение на голом «/» ОС держит под загрузочной шторкой)")
     р.add_argument("--глиф", default="app-window",
                    help="Lucide-глиф для плитки Bronze Engraved")
     р.add_argument("--сухой", action="store_true")
@@ -333,7 +337,7 @@ def main() -> int:
         return 1
     try:
         return работа(а.образ, а.slug, а.имя, а.порт_внутри, а.том,
-                      а.лицензия, а.порт, а.сухой, а.глиф, а.среда)
+                      а.лицензия, а.порт, а.сухой, а.глиф, а.среда, а.путь)
     except Отказ as о:
         print(f"ОТКАЗ: {о}", file=sys.stderr)
         return 1
