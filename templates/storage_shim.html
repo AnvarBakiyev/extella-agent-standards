@@ -219,6 +219,9 @@
     // Замер 20.08.2026: Доска схем работала, а полоска её хоронила.
     if (/undefined \(reading '(open|databases|deleteDatabase)'\)/.test(
         String((е && е.message) || (о && о.message) || ""))) return;
+    // Замки между вкладками: см. заглушку ниже. Если приложение всё-таки
+    // добралось до запертой двери — это не смерть, а отсутствие блокировки.
+    if (String((е && е.message) || (о && о.message) || "").indexOf("LockManager") >= 0) return;
     var части = [];
     if (е && е.message) части.push(String(е.message));
     if (о && о.name && String(е.message || "").indexOf(о.name) < 0) части.push(о.name);
@@ -244,8 +247,35 @@
     // Дверь IndexedDB, см. фильтр выше: тот же шум приезжает и обещанием.
     if (/undefined \(reading '(open|databases|deleteDatabase)'\)/.test(
         String((р && р.message) || ""))) return;
+    if (String((р && р.message) || "").indexOf("LockManager") >= 0) return;
     сбой((р && (р.message || р)) || "оборванное обещание");
   });
+
+  // ── ЗАМКИ МЕЖДУ ВКЛАДКАМИ (Web Locks) ────────────────────────────────────
+  // Песочница запрещает navigator.locks.request целиком: «Access to the Locks
+  // API is denied in this context». Приложения берут замок, чтобы две вкладки
+  // не писали разом (замер 21.08.2026, Stirling-PDF). В окне ОС вкладка одна,
+  // и делить нечего — отдаём замок сразу, работа идёт дальше.
+  try {
+    var естьЗамки = false;
+    try { естьЗамки = !!(navigator.locks && navigator.locks.request); } catch (е) {}
+    if (!естьЗамки) {
+      Object.defineProperty(Navigator.prototype, "locks", {
+        configurable: true,
+        get: function () {
+          return {
+            request: function (имя, а, б) {
+              var дело = (typeof а === "function") ? а : б;
+              return Promise.resolve(дело ? дело({ name: имя, mode: "exclusive" }) : undefined);
+            },
+            query: function () {
+              return Promise.resolve({ held: [], pending: [] });
+            }
+          };
+        }
+      });
+    }
+  } catch (е) {}
 
   // ── COOKIE В ПЕСОЧНИЦЕ ───────────────────────────────────────────────────
   // Окно ОС открывает продукт в песочнице БЕЗ общего происхождения — намеренно,
