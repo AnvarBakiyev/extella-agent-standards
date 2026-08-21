@@ -36,9 +36,20 @@ def local_model_ask(prompt="", max_tokens="", model="") -> str:
         return отказ("в LM Studio не загружена ни одна модель")
     выбранная = model if model and not model.startswith("{{") else ""
     if not выбранная:
-        быстрые = [и for и in имена
-                   if "embed" not in и.lower() and "reasoning" not in и.lower()]
-        выбранная = (быстрые or имена)[0]
+        # Порядок в списке НЕ постоянен: замер 21.08.2026 — первой стала модель
+        # для кода вместо замеренной быстрой, хотя список тот же. Поэтому не
+        # «первая подходящая», а список предпочтений с падением вниз.
+        # Предпочтение, а не гарантия: чего нет на машине, то пропускается.
+        годные = [и for и in имена
+                  if "embed" not in и.lower() and "reasoning" not in и.lower()]
+        предпочтение = ("gemma-2-9b", "ministral-3-3b", "gemma", "ministral")
+        выбранная = ""
+        for метка in предпочтение:
+            совпало = [и for и in годные if метка in и.lower()]
+            if совпало:
+                выбранная = совпало[0]
+                break
+        выбранная = выбранная or (годные or имена)[0]
 
     тело = json.dumps({"model": выбранная,
                        "messages": [{"role": "user", "content": prompt}],
