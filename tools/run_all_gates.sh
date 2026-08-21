@@ -143,6 +143,7 @@ run set_published
 run inject_probe
 run local_model_mcp
 run deploy_local_model_experts
+run check_output_gate
 run make_icon
 run build_agent_cabinet
 run build_automation_cabinet
