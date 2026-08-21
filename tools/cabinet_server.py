@@ -33,6 +33,9 @@ import threading
 # ДРУГОЙ (агент), и надо перечитать. Замер 17.08.2026: без него открытая доска
 # сохраняла свою старую сцену поверх нарисованного агентом — и рисунок исчезал.
 ВЕРСИЯ = [0]
+# Банка кук прокси-режима: песочница окна ОС сетевые куки режет нацело, поэтому
+# сессию контейнера держит прокси в памяти процесса (шестая дверь, 21.08.2026).
+КУКИ = {}
 ЗАМОК = threading.Lock()
 
 # ── Действия по кнопке ────────────────────────────────────────────────────────
@@ -208,6 +211,14 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             # Сжатие просим выключить: вшивать шим в gzip-поток — себе дороже.
             заг["Accept-Encoding"] = "identity"
             заг["Host"] = f"127.0.0.1:{прокси_на}"
+            # ШЕСТАЯ ДВЕРЬ, грань «куки»: песочница окна ОС режет сетевые куки
+            # нацело — Set-Cookie не сохраняется, сессия логина не живёт.
+            # Куки держит САМ ПРОКСИ: банка в памяти процесса, на каждый запрос
+            # доклеивается. Контур одного пользователя на 127.0.0.1 — честно.
+            if КУКИ:
+                свои = заг.get("Cookie", "")
+                банка = "; ".join(f"{и}={з}" for и, з in КУКИ.items())
+                заг["Cookie"] = f"{свои}; {банка}".strip("; ")
             с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
             try:
                 с.request(self.command, self.path, body=тело, headers=заг)
@@ -228,13 +239,31 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                 # документ, но ОТКАЗЫВАЕТСЯ рисовать его во вложенном окне —
                 # белое полотно без скриптов и без единой ошибки. Замер
                 # 20.08.2026, Сторож: запросы в журнале есть, рендера нет.
-                # Приложение живёт только в нашем окне, снимать безопасно.
+                # ШЕСТАЯ ДВЕРЬ (замер 21.08.2026, tududi + helmet): семейство
+                # Cross-Origin-* — прежде всего Cross-Origin-Resource-Policy:
+                # same-origin — душит В ПЕСОЧНИЦЕ каждый скрипт и fetch: у окна
+                # происхождение null, для него всё «кросс». В обычной вкладке
+                # приложение живёт, в окне ОС — белое. Снимаем семейство и куки
+                # (их держит банка прокси, наружу не отдаём).
                 if к.lower() in ("content-length", "transfer-encoding", "connection",
                                  "content-security-policy", "content-encoding",
                                  "x-frame-options",
-                                 "access-control-allow-origin"):
+                                 "access-control-allow-origin",
+                                 "cross-origin-resource-policy",
+                                 "cross-origin-opener-policy",
+                                 "cross-origin-embedder-policy",
+                                 "origin-agent-cluster",
+                                 "set-cookie"):
+                    if к.lower() == "set-cookie":
+                        кусок = з.split(";", 1)[0]
+                        if "=" in кусок:
+                            и, зн = кусок.split("=", 1)
+                            КУКИ[и.strip()] = зн.strip()
                     continue
                 self.send_header(к, з)
+            # Свой допуск (ACAO) НЕ шлём здесь: его добавляет end_headers ко
+            # всем ответам сервера — второй экземпляр даёт «multiple values»,
+            # и браузер отвергает CORS целиком. Замер 21.08.2026, tududi.
             self.send_header("Content-Length", str(len(данные)))
             self.end_headers()
             self.wfile.write(данные)
@@ -260,6 +289,21 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             self._ответ(405, b'{}')
 
         def do_OPTIONS(self):
+            # Предполёт проксируемых путей отвечаем САМИ: helmet контейнера о
+            # происхождении null может и не договориться, а нам нужен только
+            # зелёный свет для песочницы (шестая дверь, 21.08.2026, tududi).
+            if прокси_на and not self._служебный():
+                # ACAO не шлём — его добавит end_headers, дубль ломает CORS.
+                self.send_response(204)
+                self.send_header("Access-Control-Allow-Methods",
+                                 "GET, POST, PUT, DELETE, PATCH, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers",
+                                 self.headers.get("Access-Control-Request-Headers")
+                                 or "Content-Type, Authorization")
+                self.send_header("Access-Control-Max-Age", "600")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
             # Действия — только своим: чужому предполёт не отдаём, и запрос
             # до нас просто не доедет.
             if self.path.split("?")[0] == ПУТЬ_ДЕЙСТВИЯ and \
