@@ -147,8 +147,35 @@ def _вставить_шим(данные: bytes, шим: str) -> bytes:
 
 
 def сделать_обработчик(папка: pathlib.Path, файл_данных: pathlib.Path,
-                       прокси_на: int | None = None, шим: str = ""):
+                       прокси_на: int | None = None, шим: str = "",
+                       автовход: str = ""):
     class Обработчик(http.server.SimpleHTTPRequestHandler):
+        def _автовход(self) -> bool:
+            """Войти в контейнер за человека — машинным секретом из файла.
+
+            Решение владельца 21.08.2026: в локальном контуре паролей нет —
+            вход уже охраняет Extella, а порт наружу не торчит. Файл автовхода
+            (права 600, рядом с .env) держит {"путь", "тело"}; куки сессии
+            ложатся в банку прокси. Секрет машинный, человеку не показывается."""
+            import http.client
+            try:
+                конф = json.loads(pathlib.Path(автовход).expanduser().read_text())
+                с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=30)
+                с.request("POST", конф.get("путь") or "/api/login",
+                          body=json.dumps(конф.get("тело") or {}).encode(),
+                          headers={"Content-Type": "application/json"})
+                о = с.getresponse()
+                о.read()
+                for к, з in о.getheaders():
+                    if к.lower() == "set-cookie":
+                        кусок = з.split(";", 1)[0]
+                        if "=" in кусок:
+                            и, зн = кусок.split("=", 1)
+                            КУКИ[и.strip()] = зн.strip()
+                return о.status < 400 and bool(КУКИ)
+            except (OSError, json.JSONDecodeError, ValueError):
+                return False
+
         def __init__(self, *a, **kw):
             super().__init__(*a, directory=str(папка), **kw)
 
@@ -215,19 +242,26 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             # нацело — Set-Cookie не сохраняется, сессия логина не живёт.
             # Куки держит САМ ПРОКСИ: банка в памяти процесса, на каждый запрос
             # доклеивается. Контур одного пользователя на 127.0.0.1 — честно.
-            if КУКИ:
-                свои = заг.get("Cookie", "")
-                банка = "; ".join(f"{и}={з}" for и, з in КУКИ.items())
-                заг["Cookie"] = f"{свои}; {банка}".strip("; ")
-            с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
-            try:
-                с.request(self.command, self.path, body=тело, headers=заг)
-                о = с.getresponse()
-                данные = о.read()
-            except OSError as е:
-                return self._ответ(502, json.dumps(
-                    {"ошибка": f"приложение в контейнере молчит: {е}"},
-                    ensure_ascii=False).encode())
+            исходный_cookie = заг.get("Cookie", "")
+            for попытка in (1, 2):
+                if КУКИ:
+                    банка = "; ".join(f"{и}={з}" for и, з in КУКИ.items())
+                    заг["Cookie"] = f"{исходный_cookie}; {банка}".strip("; ")
+                с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
+                try:
+                    с.request(self.command, self.path, body=тело, headers=заг)
+                    о = с.getresponse()
+                    данные = о.read()
+                except OSError as е:
+                    return self._ответ(502, json.dumps(
+                        {"ошибка": f"приложение в контейнере молчит: {е}"},
+                        ensure_ascii=False).encode())
+                # Сессия умерла или её не было: прокси входит сам и повторяет
+                # запрос один раз (решение владельца о беспарольном контуре).
+                if (о.status == 401 and автовход and попытка == 1
+                        and self._автовход()):
+                    continue
+                break
             if шим and "text/html" in (о.getheader("Content-Type") or ""):
                 данные = _вставить_шим(данные, шим)
             self.send_response(о.status)
@@ -395,13 +429,17 @@ def main() -> int:
     р.add_argument("--прокси-на", dest="прокси_на", type=int, default=None,
                    help="проксировать всё (кроме служебных путей) на этот локальный порт")
     р.add_argument("--шим", default="", help="файл шима для вставки в проксируемый HTML")
+    р.add_argument("--автовход", default="",
+                   help="json-файл {путь, тело} — прокси входит в контейнер сам "
+                        "(беспарольный локальный контур по решению владельца)")
     а = р.parse_args()
 
     шим = pathlib.Path(а.шим).expanduser().read_text() if а.шим else ""
     файл = pathlib.Path(а.данные).expanduser() / f"{а.имя}.json"
     сервер = http.server.ThreadingHTTPServer(
         ("127.0.0.1", а.порт),
-        сделать_обработчик(pathlib.Path(а.папка).expanduser(), файл, а.прокси_на, шим))
+        сделать_обработчик(pathlib.Path(а.папка).expanduser(), файл, а.прокси_на,
+                           шим, а.автовход))
     сервер.serve_forever()
     return 0
 
