@@ -464,12 +464,17 @@ def main() -> int:
     р.add_argument("--прокси-на", dest="прокси_на", type=int, default=None,
                    help="проксировать всё (кроме служебных путей) на этот локальный порт")
     р.add_argument("--шим", default="", help="файл шима для вставки в проксируемый HTML")
+    р.add_argument("--вставка", default="",
+                   help="дополнительный HTML-файл, вшиваемый в страницы вместе с шимом "
+                        "(добавки конкретному приложению — например, кнопка Календаря)")
     р.add_argument("--автовход", default="",
                    help="json-файл {путь, тело} — прокси входит в контейнер сам "
                         "(беспарольный локальный контур по решению владельца)")
     а = р.parse_args()
 
     шим = pathlib.Path(а.шим).expanduser().read_text() if а.шим else ""
+    if а.вставка:
+        шим += pathlib.Path(а.вставка).expanduser().read_text()
     файл = pathlib.Path(а.данные).expanduser() / f"{а.имя}.json"
     сервер = http.server.ThreadingHTTPServer(
         ("127.0.0.1", а.порт),
