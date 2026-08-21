@@ -174,7 +174,11 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                 о = с.getresponse()
                 тело_логина = о.read()
                 for к, з in о.getheaders():
-                    if к.lower() == "set-cookie":
+                    # Grpc-Metadata-Set-Cookie — не экзотика, а обычный путь
+                    # приложений на connect-rpc: memos отдаёт refresh-куку
+                    # ИМЕННО так, и сборщик по имени «Set-Cookie» её не видел —
+                    # окно показывало логин при живом токене (замер 21.08.2026).
+                    if к.lower() in ("set-cookie", "grpc-metadata-set-cookie"):
                         кусок = з.split(";", 1)[0]
                         if "=" in кусок:
                             и, зн = кусок.split("=", 1)
@@ -184,7 +188,7 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                 # взять и под каким именем куки нести: "кука_из_тела":
                 # {"поле": "accessToken", "имя": "memos.access-token"}.
                 киз = конф.get("кука_из_тела")
-                if киз and not КУКИ:
+                if киз:
                     try:
                         зн = json.loads(тело_логина.decode()).get(киз.get("поле") or "")
                         if зн and киз.get("как") == "bearer":
@@ -332,8 +336,12 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                                  "cross-origin-opener-policy",
                                  "cross-origin-embedder-policy",
                                  "origin-agent-cluster",
-                                 "set-cookie"):
-                    if к.lower() == "set-cookie":
+                                 "set-cookie", "grpc-metadata-set-cookie"):
+                    if к.lower() in ("set-cookie", "grpc-metadata-set-cookie"):
+                        # Приложения на connect-rpc ставят куку служебным
+                        # заголовком Grpc-Metadata-Set-Cookie (memos: ротация
+                        # refresh-токена). Не собирать её — значит потерять
+                        # сессию в середине работы.
                         кусок = з.split(";", 1)[0]
                         if "=" in кусок:
                             и, зн = кусок.split("=", 1)
