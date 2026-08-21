@@ -17,6 +17,32 @@
 (function () {
   var АДРЕС = "/_extella_storage";
 
+  // СЕДЬМАЯ ДВЕРЬ. В песочнице окна ОС само ЧТЕНИЕ navigator.serviceWorker
+  // бросает SecurityError («…sandboxed and lacks the allow-same-origin flag»),
+  // и загрузчик приложения умирает, не дойдя до дела. Замер 21.08.2026,
+  // tududi: форма логина при рабочем автовходе, полоска с настоящей причиной
+  // появилась только после crossorigin-пометки скриптов. Лечение: убрать
+  // свойство вовсе («воркеров нет» — это умеют все), а если браузер не даёт —
+  // тихая заглушка, которая ничего не обещает.
+  try { void navigator.serviceWorker; } catch (е7) {
+    try { delete Navigator.prototype.serviceWorker; } catch (е8) {}
+    try { void navigator.serviceWorker; } catch (е9) {
+      try {
+        Object.defineProperty(Navigator.prototype, "serviceWorker", {
+          configurable: true,
+          get: function () {
+            return {
+              register: function () { return new Promise(function () {}); },
+              getRegistrations: function () { return Promise.resolve([]); },
+              addEventListener: function () {}, removeEventListener: function () {},
+              ready: new Promise(function () {}), controller: null
+            };
+          }
+        });
+      } catch (е10) {}
+    }
+  }
+
   // СНИМАЕМ ЧУЖОЙ ПЕРЕХВАТЧИК СТРАНИЦ. Приложение могло раньше поставить свой
   // service worker на весь порт — он переживает удаление файлов и продолжает
   // отдавать СТАРУЮ копию из кэша: правки не доезжают, а окно может остаться
@@ -76,6 +102,7 @@
   // так. Считаем версии: своя запись поднимает счётчик и у нас, чужая — только
   // у сервера, и тогда работу надо перечитать.
   var МОЯ_ВЕРСИЯ = (данные && данные._версия) || 0;
+  var в_полёте = 0;
   delete данные._версия;
 
   function записать(тело) {
@@ -87,6 +114,8 @@
         try { МОЯ_ВЕРСИЯ = JSON.parse(x.responseText || "{}").версия || МОЯ_ВЕРСИЯ; }
         catch (e) {}
       };
+      в_полёте++;
+      x.onloadend = function () { в_полёте = Math.max(0, в_полёте - 1); };
       x.send(JSON.stringify(тело));
     } catch (e) {}
   }
@@ -310,27 +339,33 @@
   // Перезагружаем, только когда человек ничего не делает: иначе отберём у него
   // руку посреди штриха.
   (function следить() {
-    var ПАУЗА = 3000, БЕЗДЕЙСТВИЕ = 1500;
-    var последнее_касание = 0;
+    var ПАУЗА = 3000, БЕЗДЕЙСТВИЕ = 20000;
+    var последнее_касание = 0, ждёт = false;
     ["pointerdown", "keydown", "wheel"].forEach(function (с) {
       window.addEventListener(с, function () { последнее_касание = Date.now(); }, true);
     });
     setInterval(function () {
-      if (Date.now() - последнее_касание < БЕЗДЕЙСТВИЕ) return;
+      // Своя запись в полёте: серверная версия сейчас честно вырастет от НАС —
+      // опрос в этот момент ловил собственное сохранение как «чужую правку» и
+      // перезагружал страницу посреди набора. Слово Анвара 21.08.2026:
+      // «печатаешь — слетает». Ждём, пока свои записи долетят.
+      if (в_полёте > 0) return;
       try {
         var x = new XMLHttpRequest();
         x.open("GET", "/_extella_version", true);
         x.onload = function () {
           try {
             var в = JSON.parse(x.responseText || "{}").версия;
-            if (typeof в === "number" && в > МОЯ_ВЕРСИЯ) {
-              // Перезагрузить себя из песочницы нельзя надёжно (location.reload
-              // — запертая дверь того же класса, что History API). Просим
-              // ОБЁРТКУ: ей перенавигация своей рамки разрешена. Замер
-              // 20.08.2026: «новая доска» чистила хранилище, а открытое окно
-              // молча оставалось со старой сценой и воскрешало её автосейвом.
+            if (typeof в !== "number" || в <= МОЯ_ВЕРСИЯ) { ждёт = false; return; }
+            // Чужая правка. Насильная перезагрузка съедала незаписанный ввод
+            // и сбрасывала ячейку — поэтому обновляем сами ТОЛЬКО когда человек
+            // давно не трогал страницу; работает — предлагаем кнопкой, решает он.
+            if (Date.now() - последнее_касание > БЕЗДЕЙСТВИЕ) {
               try { window.parent.postMessage({type: "extella_перечитать"}, "*"); } catch (е2) {}
               try { location.reload(); } catch (е3) {}
+            } else if (!ждёт) {
+              ждёт = true;
+              try { window.parent.postMessage({type: "extella_обновление_ждёт"}, "*"); } catch (е4) {}
             }
           } catch (e) {}
         };

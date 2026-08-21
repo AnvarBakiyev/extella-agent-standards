@@ -78,6 +78,8 @@ p{color:var(--tx2);margin:0 0 16px}
 
 <div class="полоска" id="полоска">
   <span id="полоска_текст"></span>
+  <button type="button" class="сказать" id="полоска_обновить"
+          style="display:none;padding:4px 12px">Обновить</button>
   <button type="button" id="полоска_закрыть" title="Скрыть">×</button>
 </div>
 
@@ -192,6 +194,23 @@ function перечитать_окно(){
 window.addEventListener('message', function(e){
   var d = e.data || {};
   if (d.type === 'extella_перечитать') перечитать_окно();
+});
+
+// Обновление — КНОПКОЙ, не насилием. Слово Анвара 21.08.2026: перезагрузка
+// посреди набора съедала ввод и сбрасывала ячейку. Пока человек работает,
+// чужая правка ждёт его решения; обновляется само только при долгом простое
+// (это решает шим внутри приложения).
+var кнопка_обновить = document.getElementById('полоска_обновить');
+кнопка_обновить.onclick = function(){
+  кнопка_обновить.style.display = 'none';
+  полоска_.style.display = 'none';
+  перечитать_окно();
+};
+window.addEventListener('message', function(e){
+  var d = e.data || {};
+  if (d.type !== 'extella_обновление_ждёт') return;
+  кнопка_обновить.style.display = '';
+  полоской('Появились изменения — например, от агента. Обновить сейчас или доработайте и нажмите позже.');
 });
 
 window.addEventListener('message', function(e){
