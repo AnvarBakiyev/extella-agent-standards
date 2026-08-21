@@ -3,7 +3,7 @@ def extella_codex_product_setup(action="preflight") -> str:
     step = action
     BUILDER_REPO = "https://github.com/AnvarBakiyev/extella-bridges.git"
     BUILDER_REF = "v0.3.6"
-    SETUP_VERSION = "3.3.2"
+    SETUP_VERSION = "3.3.3"
     # Independent agent-building standards contract; do not advance with bridge-only releases.
     STANDARDS_REF = "v0.3.0"
     MARKETPLACE = "extella-codex"
@@ -194,8 +194,20 @@ def extella_codex_product_setup(action="preflight") -> str:
     launchctl = find_command("launchctl")
     node = find_command("node")
     if not codex:
+        # Прежний текст говорил «Codex не установлен» человеку, у которого
+        # приложение стояло и было открыто (замер 21.08.2026, отказ у
+        # тестировщика). Слово одно, вещи разные: установщику нужна КОМАНДА
+        # codex, а приложение её с собой не приносит. Отказ обязан назвать,
+        # что именно ищется и где искалось, иначе разбор идёт вслепую.
+        roots = candidate_roots()
         return result("error", "codex_not_installed",
-            "Codex не установлен на этом компьютере.")
+            "Не найдена команда codex. Приложение Codex тут ни при чём: "
+            "установщику нужна именно команда, а приложение её не приносит. "
+            "Проверить в Терминале: codex --version. Если команда не найдётся, "
+            "поставить её командой npm install -g @openai/codex и нажать "
+            "кнопку ещё раз. Если найдётся — пришлите вывод команды "
+            "which codex, значит она лежит там, куда установщик не смотрит.",
+            searched_dirs=len(roots), searched_head=roots[:6])
     if not git or not launchctl or not node:
         return result("error", "system_tools_missing",
             "На компьютере не найдены системные инструменты git, node или launchctl.")
