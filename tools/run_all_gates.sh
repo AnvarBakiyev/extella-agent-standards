@@ -108,6 +108,7 @@ run check_self_check
 # существовала (build.py --check), но её никто не звал.
 run maintainers
 run_command "снимок страницы гида" python3 "$ROOT/store_app/build.py" --check
+run check_canon_numbers
 run_command "правило по дизайну" python3 "$ROOT/tools/check_design_rule.py"
 run_command "единственный источник" python3 "$ROOT/tools/check_single_source.py"
 run_command "журнал находок" python3 "$ROOT/tools/check_findings_log.py"
