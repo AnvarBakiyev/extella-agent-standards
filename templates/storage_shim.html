@@ -105,7 +105,18 @@
   var в_полёте = 0;
   delete данные._версия;
 
-  function записать(тело) {
+  // Запись С ЗАДЕРЖКОЙ. Приложения проверяют хранилище на живость так: пишут
+  // ключ со случайным именем, читают и тут же удаляют. Stirling-PDF делал это
+  // десятки раз (замер 21.08.2026: 20 ключей «lswt-…» из 27 в файле). Каждая
+  // проба уходила на диск отдельной записью и поднимала счётчик версии — окно
+  // считало это чужой правкой и предлагало «Обновить», а при простое
+  // перечитывало себя само. Задержка схлопывает пару «записал-удалил» в одну
+  // запись: на диск едет итог, мусор до него не доезжает.
+  var ЗАДЕРЖКА_ЗАПИСИ = 400;
+  var таймер_записи = null;
+  var ждёт_запись = null;
+
+  function отправить(тело) {
     try {
       var x = new XMLHttpRequest();
       x.open("POST", АДРЕС, true);
@@ -119,6 +130,33 @@
       x.send(JSON.stringify(тело));
     } catch (e) {}
   }
+
+  function записать(тело) {
+    ждёт_запись = тело;
+    в_полёте++;                       // пока ждём — вотчер молчит: правка СВОЯ
+    if (таймер_записи) clearTimeout(таймер_записи);
+    таймер_записи = setTimeout(function () {
+      таймер_записи = null;
+      var т = ждёт_запись; ждёт_запись = null;
+      в_полёте = Math.max(0, в_полёте - 1);
+      if (т) отправить(т);
+    }, ЗАДЕРЖКА_ЗАПИСИ);
+  }
+
+  // Закрывают окно — недописанное не теряем.
+  window.addEventListener("pagehide", function () {
+    if (таймер_записи) { clearTimeout(таймер_записи); таймер_записи = null; }
+    var т = ждёт_запись; ждёт_запись = null;
+    if (!т) return;
+    try {
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(АДРЕС, new Blob([JSON.stringify(т)],
+                             {type: "application/json"}));
+        return;
+      }
+    } catch (e) {}
+    отправить(т);
+  });
 
   var хранилище = {
     getItem: function (k) {
@@ -252,29 +290,44 @@
   });
 
   // ── ЗАМКИ МЕЖДУ ВКЛАДКАМИ (Web Locks) ────────────────────────────────────
-  // Песочница запрещает navigator.locks.request целиком: «Access to the Locks
-  // API is denied in this context». Приложения берут замок, чтобы две вкладки
-  // не писали разом (замер 21.08.2026, Stirling-PDF). В окне ОС вкладка одна,
-  // и делить нечего — отдаём замок сразу, работа идёт дальше.
+  // Песочница запрещает navigator.locks.request: «Access to the Locks API is
+  // denied in this context». Приложения берут замок, чтобы две вкладки не
+  // писали разом; в окне ОС вкладка одна, делить нечего — отдаём сразу.
+  // ВАЖНО, чем это лечится неправильно: проверять НАЛИЧИЕ navigator.locks
+  // бесполезно — объект на месте, бросает только ВЫЗОВ. Первая заглушка стояла
+  // под таким условием и не вставала вовсе: Stirling-PDF висел на «Loading
+  // tool…» вечно (замер 21.08.2026). Поэтому подменяем всегда, но сначала
+  // честно пробуем родные замки: где они работают, работает родное.
   try {
-    var естьЗамки = false;
-    try { естьЗамки = !!(navigator.locks && navigator.locks.request); } catch (е) {}
-    if (!естьЗамки) {
-      Object.defineProperty(Navigator.prototype, "locks", {
-        configurable: true,
-        get: function () {
-          return {
-            request: function (имя, а, б) {
-              var дело = (typeof а === "function") ? а : б;
-              return Promise.resolve(дело ? дело({ name: имя, mode: "exclusive" }) : undefined);
-            },
-            query: function () {
-              return Promise.resolve({ held: [], pending: [] });
+    var родныеЗамки = null;
+    try { родныеЗамки = navigator.locks; } catch (е) {}
+    Object.defineProperty(Navigator.prototype, "locks", {
+      configurable: true,
+      get: function () {
+        return {
+          request: function (имя, а, б) {
+            var дело = (typeof а === "function") ? а : б;
+            var опции = (typeof а === "function") ? {} : (а || {});
+            if (родныеЗамки && родныеЗамки.request) {
+              try {
+                var р = родныеЗамки.request.call(родныеЗамки, имя, опции, дело);
+                if (р && typeof р.catch === "function") {
+                  return р.catch(function () {
+                    return дело ? дело({ name: имя, mode: опции.mode || "exclusive" }) : undefined;
+                  });
+                }
+                return р;
+              } catch (е2) {}
             }
-          };
-        }
-      });
-    }
+            return Promise.resolve(
+              дело ? дело({ name: имя, mode: опции.mode || "exclusive" }) : undefined);
+          },
+          query: function () {
+            return Promise.resolve({ held: [], pending: [] });
+          }
+        };
+      }
+    });
   } catch (е) {}
 
   // ── COOKIE В ПЕСОЧНИЦЕ ───────────────────────────────────────────────────
@@ -324,6 +377,153 @@
   // вместо исключения. Приложение видит «баз нет» — это состояние обычное
   // (режим инкогнито), и переживают его почти все. Работа при этом не теряется:
   // сама схема живёт в простом хранилище, а оно уведено на диск.
+  // Маленькая база в памяти: ровно та часть IndexedDB, которой пользуются
+  // приложения (хранилища, ключи, индексы перебором, курсоры). События
+  // асинхронные, как у настоящей: синхронный ответ ломает библиотеки, которые
+  // вешают обработчики уже ПОСЛЕ вызова.
+  function сделать_базы() {
+    function позже(дело) { setTimeout(дело, 0); }
+    function запрос() {
+      var з = { result: undefined, error: null, onsuccess: null, onerror: null };
+      з.__дать = function (значение) {
+        з.result = значение;
+        позже(function () { if (з.onsuccess) з.onsuccess({ target: з }); });
+      };
+      return з;
+    }
+    function поКлючу(запись, путь) {
+      if (!путь) return undefined;
+      var части = String(путь).split(".");
+      var зн = запись;
+      for (var i = 0; i < части.length && зн != null; i++) зн = зн[части[i]];
+      return зн;
+    }
+    function хранилище(имя, опции) {
+      опции = опции || {};
+      var карта = new Map();
+      var счётчик = 1;
+      var индексы = {};
+      var с = {
+        name: имя,
+        keyPath: опции.keyPath || null,
+        autoIncrement: !!опции.autoIncrement,
+        indexNames: { contains: function (и) { return !!индексы[и]; }, length: 0 },
+        __карта: карта,
+        put: function (значение, ключ) {
+          var к = ключ != null ? ключ
+                 : (с.keyPath ? поКлючу(значение, с.keyPath) : счётчик++);
+          if (к == null) к = счётчик++;
+          карта.set(String(к), значение);
+          var з = запрос(); з.__дать(к); return з;
+        },
+        add: function (значение, ключ) { return с.put(значение, ключ); },
+        get: function (ключ) { var з = запрос(); з.__дать(карта.get(String(ключ))); return з; },
+        getAll: function () {
+          var з = запрос(); з.__дать(Array.from(карта.values())); return з;
+        },
+        getAllKeys: function () {
+          var з = запрос(); з.__дать(Array.from(карта.keys())); return з;
+        },
+        count: function () { var з = запрос(); з.__дать(карта.size); return з; },
+        "delete": function (ключ) { карта["delete"](String(ключ)); var з = запрос(); з.__дать(undefined); return з; },
+        clear: function () { карта.clear(); var з = запрос(); з.__дать(undefined); return з; },
+        createIndex: function (имя_и, путь) { индексы[имя_и] = путь; return с.index(имя_и); },
+        deleteIndex: function (имя_и) { delete индексы[имя_и]; },
+        index: function (имя_и) {
+          var путь = индексы[имя_и];
+          return {
+            get: function (значение) {
+              var з = запрос(), итог;
+              карта.forEach(function (в) {
+                if (итог === undefined && поКлючу(в, путь) === значение) итог = в;
+              });
+              з.__дать(итог); return з;
+            },
+            getAll: function (значение) {
+              var з = запрос(), сп = [];
+              карта.forEach(function (в) {
+                if (значение === undefined || поКлючу(в, путь) === значение) сп.push(в);
+              });
+              з.__дать(сп); return з;
+            },
+            openCursor: function () { return с.openCursor(); },
+            count: function () { var з = запрос(); з.__дать(карта.size); return з; }
+          };
+        },
+        openCursor: function () {
+          var ключи = Array.from(карта.keys()), i = 0, з = запрос();
+          function шаг() {
+            if (i >= ключи.length) { з.__дать(null); return; }
+            var к = ключи[i++];
+            з.__дать({
+              key: к, primaryKey: к, value: карта.get(к),
+              "continue": function () { шаг(); },
+              "delete": function () { карта["delete"](к); var у = запрос(); у.__дать(undefined); return у; },
+              update: function (в) { карта.set(к, в); var у = запрос(); у.__дать(к); return у; }
+            });
+          }
+          шаг();
+          return з;
+        }
+      };
+      return с;
+    }
+    var базы = {};
+    function база(имя, версия) {
+      var хранилища = базы[имя] || (базы[имя] = {});
+      var б = {
+        name: имя, version: версия || 1,
+        objectStoreNames: {
+          contains: function (и) { return !!хранилища[и]; },
+          get length() { return Object.keys(хранилища).length; },
+          item: function (i) { return Object.keys(хранилища)[i]; }
+        },
+        createObjectStore: function (и, о) { return (хранилища[и] = хранилище(и, о)); },
+        deleteObjectStore: function (и) { delete хранилища[и]; },
+        transaction: function (имена, режим) {
+          var т = {
+            mode: режим || "readonly", db: б,
+            oncomplete: null, onerror: null, onabort: null,
+            objectStore: function (и) { return хранилища[и] || (хранилища[и] = хранилище(и, {})); },
+            abort: function () { позже(function () { if (т.onabort) т.onabort({}); }); }
+          };
+          позже(function () { if (т.oncomplete) т.oncomplete({}); });
+          return т;
+        },
+        close: function () {}, onclose: null, onversionchange: null
+      };
+      return б;
+    }
+    return {
+      open: function (имя, версия) {
+        var з = запрос();
+        з.onupgradeneeded = null; з.onblocked = null;
+        var новая = !базы[имя];
+        var б = база(имя, версия);
+        з.transaction = { oncomplete: null, onerror: null, abort: function () {} };
+        позже(function () {
+          з.result = б;
+          if (новая && з.onupgradeneeded) {
+            try { з.onupgradeneeded({ target: з, oldVersion: 0, newVersion: версия || 1 }); }
+            catch (e) {}
+          }
+          if (з.onsuccess) з.onsuccess({ target: з });
+        });
+        return з;
+      },
+      deleteDatabase: function (имя) {
+        delete базы[имя];
+        var з = запрос(); з.__дать(undefined); return з;
+      },
+      databases: function () {
+        return Promise.resolve(Object.keys(базы).map(function (и) {
+          return { name: и, version: 1 };
+        }));
+      },
+      cmp: function (а, б) { return а < б ? -1 : (а > б ? 1 : 0); }
+    };
+  }
+
   var базы_закрыты = false;
   try {
     var прб = window.indexedDB.open("__extella_проба_баз");
@@ -344,14 +544,23 @@
     // Честнее, чтобы баз НЕ БЫЛО ВОВСЕ: undefined — состояние из инкогнито
     // и старых браузеров, его обрабатывает каждая библиотека с первой строки
     // (typeof indexedDB === "undefined" → сразу запасной путь, без обещаний).
+    // ТРЕТИЙ ПОДХОД (21.08.2026), и он лучше обоих прежних. «Баз нет» пережили
+    // Доска и Таблица, но Stirling-PDF держит В БАЗАХ сами файлы: его менеджер
+    // на undefined не падает в запасной путь, а остаётся крутить спиннер «My
+    // Files» вечно, и документ открыть нельзя. Поэтому не отказ и не обещание
+    // отказа, а МАЛЕНЬКАЯ НАСТОЯЩАЯ БАЗА в памяти окна: операции честно
+    // завершаются, приложение видит пустое хранилище и работает. Плата честная
+    // и названа в карточке: эти базы живут до закрытия окна (простое хранилище
+    // по-прежнему уходит на диск, там работа не теряется).
     try {
-      Object.defineProperty(window, "indexedDB", { configurable: true, value: undefined });
+      Object.defineProperty(window, "indexedDB",
+                            { configurable: true, value: сделать_базы() });
     } catch (x) {}
   }
 
   var закрыто = [];
   if (cookie_закрыт) закрыто.push("cookie");
-  if (базы_закрыты) закрыто.push("базы браузера");
+  if (базы_закрыты) закрыто.push("базы браузера (работают до закрытия окна)");
   доложить(true, закрыто.length
     ? "в песочнице закрыто: " + закрыто.join(", ") + " — работа хранится на диске"
     : "");
