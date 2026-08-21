@@ -116,7 +116,7 @@ window.addEventListener('message', function(e){
 });
 if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) тема('light');
 
-var АДРЕС = 'http://localhost:34792/?offline=1&lang=ru';
+var АДРЕС = 'http://localhost:34792/?embed=1&proto=json&ui=sketch&lang=ru&noSaveBtn=1&noExitBtn=1&saveAndExit=0&spin=1';
 var ПРОБА = 'http://localhost:34792/';
 var РАЗВЕДЧИК = '';
 var окно_ = document.getElementById('окно');
@@ -195,6 +195,62 @@ window.addEventListener('message', function(e){
   var d = e.data || {};
   if (d.type === 'extella_перечитать') перечитать_окно();
 });
+
+// ── МОСТ С ЧЕРТЁЖНЫМ ПРИЛОЖЕНИЕМ (draw.io) ──────────────────────────────────
+// ЗАЧЕМ. Чертёжник в окне ОС не сохранял ничего: в шапке висело «Изменения не
+// сохранены», и работа жила только в памяти окна (замер 21.08.2026). Своего
+// хранилища у него в этом режиме нет — зато есть родной разговор по
+// сообщениям. Обёртка на нём и держит две вещи разом: отдаёт чертёж при
+// открытии (в том числе нарисованный агентом) и забирает каждую правку
+// человека обратно в файл на диске.
+var МОСТ = АДРЕС.indexOf('embed=1') >= 0;
+if (МОСТ) {
+  var ХРАНИЛИЩЕ = new URL('/_extella_storage', АДРЕС).href;
+  var КЛЮЧ_ЧЕРТЕЖА = 'extella_диаграмма';
+  var последний_чертёж = null;
+
+  function прочитать_чертёж(готово){
+    fetch(ХРАНИЛИЩЕ, {cache: 'no-store'})
+      .then(function(о){ return о.json(); })
+      .then(function(д){ готово((д && д[КЛЮЧ_ЧЕРТЕЖА]) || ''); })
+      .catch(function(){ готово(''); });
+  }
+  function записать_чертёж(xml){
+    if (xml === последний_чертёж) return;      // без правки не пишем
+    последний_чертёж = xml;
+    var т = {}; т[КЛЮЧ_ЧЕРТЕЖА] = xml;
+    fetch(ХРАНИЛИЩЕ, {method: 'POST', headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify(т)}).catch(function(){});
+  }
+  window.addEventListener('message', function(e){
+    if (!e.data || typeof e.data !== 'string') return;
+    var д;
+    try { д = JSON.parse(e.data); } catch (х) { return; }
+    if (!д || !д.event) return;
+    if (д.event === 'init') {
+      прочитать_чертёж(function(xml){
+        последний_чертёж = xml;
+        окно_.contentWindow.postMessage(JSON.stringify({
+          action: 'load', autosave: 1, xml: xml || ''
+        }), '*');
+        // Подогнать по окну: без этого чертёж открывается на 1% масштаба —
+        // холст выглядит пустым при живом рисунке (замер 21.08.2026).
+        if (xml) {
+          setTimeout(function(){
+            окно_.contentWindow.postMessage(JSON.stringify({
+              action: 'fit', maxScale: 1.2, border: 20
+            }), '*');
+          }, 400);
+        }
+      });
+    } else if (д.event === 'autosave' || д.event === 'save') {
+      if (д.xml) записать_чертёж(д.xml);
+    } else if (д.event === 'exit') {
+      // Выход из чертёжника в окне ОС некуда — остаёмся и просто сохраняемся.
+      if (д.xml) записать_чертёж(д.xml);
+    }
+  });
+}
 
 // Обновление — КНОПКОЙ, не насилием. Слово Анвара 21.08.2026: перезагрузка
 // посреди набора съедала ввод и сбрасывала ячейку. Пока человек работает,
