@@ -26,10 +26,29 @@ if куда.startswith("{{"):
 if только_сами.startswith("{{"):
     только_сами = ""
 
-КОРЕНЬ = os.path.expanduser("~/Documents/Extella/extella-agent-standards/tools/")
+# ГДЕ ЛЕЖАТ ИНСТРУМЕНТЫ — ИЩЕМ, А НЕ ЗНАЕМ. Вшитый путь верен только на
+# машине автора: у коллеги репозиторий лежит иначе, и эксперт молча не находит
+# скрипт. Спрашиваем среду, потом смотрим обычные места, и только потом сдаёмся
+# — с внятной причиной, а не с пустым выводом.
+КОРЕНЬ = os.environ.get("EXTELLA_TOOLS") or ""
+if not КОРЕНЬ:
+    for где in ("~/Documents/Extella/extella-agent-standards/tools/",
+                "~/extella-agent-standards/tools/",
+                "~/Documents/extella-agent-standards/tools/",
+                "~/extella-cabinet/tools/"):
+        путь = os.path.expanduser(где)
+        if os.path.isdir(путь):
+            КОРЕНЬ = путь
+            break
+if not КОРЕНЬ:
+    print(json.dumps({"ошибка": "не нашёл папку инструментов Extella. Укажите её "
+                      "переменной среды EXTELLA_TOOLS"}, ensure_ascii=False), flush=True)
+    raise SystemExit(0)
+# Питон берём тот, что есть: путь python.org живёт только на машине автора.
 py = "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
 if not os.path.exists(py):
-    py = "python3"
+    import shutil
+    py = shutil.which("python3") or shutil.which("python") or "python3"
 
 if not адрес or адрес.startswith("{{"):
     print(json.dumps({"ошибка": "нет параметра адрес: дайте ссылку на страницу"},
