@@ -33,7 +33,7 @@ DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Исправлена установка Codex и Claude "
     "на чистых машинах и восстановление после отложенной задачи. Живой продукт не затронут."
 )
-VERSION = "3.5.2"
+VERSION = "3.6.0"
 SCOPES = ["expert.run", "device.run"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
@@ -55,6 +55,15 @@ EXPERTS = {
     "extella_codex_product_setup": HERE / "expert_extella_codex_product_setup.py",
     "extella_claude_product_setup": CLAUDE_PLUGIN / "experts/extella_claude_product_setup.py",
     "extella_local_llm_product_setup": HERE / "expert_extella_local_llm_setup.py",
+    # «День первый»: витрина зовёт этих экспертов через app-agent/run, а тот
+    # разрешает имена из скоупа версии (H51) — не приложенный сюда эксперт
+    # ответит покупателю 502 «Expert not found» при живом эксперте в аккаунте.
+    "journey_scan": HERE.parent.parent / "experts/journey_scan.py",
+    "journey_organize": HERE.parent.parent / "experts/journey_organize.py",
+    "journey_board_scheme": HERE.parent.parent / "experts/journey_board_scheme.py",
+    "journey_publish": HERE.parent.parent / "experts/journey_publish.py",
+    "journey_ask_agent": HERE.parent.parent / "experts/journey_ask_agent.py",
+    "local_model_ask": HERE.parent.parent / "experts/local_model_ask.py",
 }
 PAGE = HERE.parent / "index.html"
 ICON = HERE.parent / "icon.png"

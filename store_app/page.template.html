@@ -169,6 +169,50 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:8px;padding:0
 .метка-раздела{font:400 11px/1.4 ui-monospace,Menlo,monospace;color:var(--tm);margin:24px 0 8px}
 .ведущая{color:var(--tm);margin:0 0 24px;max-width:64ch}
 button,input,select,textarea{font-family:inherit}
+
+/* ── ДЕНЬ ПЕРВЫЙ ─────────────────────────────────────────────────────────── */
+/* Принцип референса в нашем коде: одна сильная сцена, крупный сериф,
+   бронзовое свечение. Сцена закреплена, акты подъезжают под неё. */
+.дп-шапка{padding:32px 0 16px}
+.дп-заг{font-size:clamp(28px,4.6vw,44px);line-height:1.15;max-width:16ch}
+.дп-вступ{color:var(--tx2);max-width:56ch;margin:8px 0 20px}
+.дп-сцена{position:sticky;top:0;z-index:4;background:var(--bg);padding:8px 0 4px}
+.дп-полотно{position:relative;height:30vh;min-height:200px;background:var(--s1);
+            border:1px solid var(--bd);border-radius:12px;overflow:hidden}
+.дп-полотно canvas{position:absolute;inset:0;width:100%;height:100%}
+.дп-финал{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+          pointer-events:none}
+.дп-финал.видно{display:flex}
+.дп-значок{background:var(--a);color:#fff;border-radius:12px;padding:20px 28px;
+           font:600 18px/1.3 var(--sans);box-shadow:0 0 60px rgba(212,148,74,.4);
+           transform:scale(.4);opacity:0;transition:transform .8s,opacity .8s}
+.дп-значок.вырос{transform:scale(1);opacity:1}
+.дп-акт{min-height:56vh;display:flex;flex-direction:column;justify-content:center;
+        opacity:.22;transform:translateY(22px);transition:opacity .6s,transform .6s;
+        border-top:1px solid var(--bd);padding:40px 0;position:relative}
+.дп-акт.открыт,.дп-акт.виден{opacity:1;transform:none}
+.дп-номер{position:absolute;right:0;top:24px;font:400 clamp(48px,8vw,84px)/1 var(--serif);
+          color:var(--bd2);margin:0;pointer-events:none}
+.дп-акт h3{font-size:clamp(20px,3vw,28px);margin:6px 0 10px;max-width:24ch}
+.дп-акт p{color:var(--tx2);max-width:54ch}
+.дп-исход{margin-top:14px;font:400 13px/1.8 var(--mono);color:var(--tx2);min-height:26px;
+          white-space:pre-wrap;max-width:62ch}
+.дп-исход b{font:600 19px/1.5 var(--sans);color:var(--tx)}
+.дп-исход .дп-цифры{font:600 clamp(24px,4vw,36px)/1.3 var(--serif);color:var(--tx)}
+.дп-цена{color:var(--tx3)}
+.дп-правило{border:1px solid var(--petrol);border-radius:12px;padding:14px 18px;
+            margin:14px 0;max-width:54ch;display:none}
+.дп-правило.видно{display:block}
+.дп-кто{font:400 11px/1.4 var(--mono);color:var(--petrol);margin:0 0 6px}
+.дп-текст{font:400 16px/1.5 var(--serif);margin:0 0 12px}
+.дп-кубики{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+.дп-кубик{border:1px solid var(--bd);border-radius:8px;padding:10px 14px;
+          background:var(--s2);color:var(--tx);cursor:pointer;font-size:14px}
+.дп-кубик.взят{border-color:var(--a);color:var(--a)}
+.дп-сборка{min-height:48px;border:1px dashed var(--bd);border-radius:8px;padding:12px;
+           color:var(--tx3);font-size:14px;margin-bottom:12px}
+.дп-имя{background:var(--s2);border:1px solid var(--bd);border-radius:8px;
+        padding:10px 14px;color:var(--tx);font-size:14px;margin:0 8px 12px 0}
 </style>
 </head>
 <body>
@@ -298,47 +342,100 @@ button,input,select,textarea{font-family:inherit}
   </div>
 
   <div class="экран" data-экран="проба">
-  <div class="journey" id="journey">
-    <p class="label">ПОПРОБОВАТЬ · ЖИВЫЕ ВЫЗОВЫ</p>
-    <h2>Не рассказ, а нажатие</h2>
-    <p>Кнопки ниже вправду зовут эксперта на вашей машине. Секундомер настоящий,
-    ответ настоящий. Если что-то не готово — страница скажет, что именно.</p>
-
-    <div class="scene" id="scene-classify">
-      <div class="scene-head">
-        <h3>Обращение уходит в нужный отдел</h3>
-        <p>Локальная модель на этом компьютере относит текст к отделу. Бесплатно,
-        и текст не покидает компьютер.</p>
-      </div>
-      <div class="scene-pick" id="pick-classify">
-        <button class="chip on" data-t="не приходит акт сверки за июль">не приходит акт сверки</button>
-        <button class="chip" data-t="хочу узнать цены на годовой тариф">цены на тариф</button>
-        <button class="chip" data-t="приложение падает при входе">приложение падает</button>
-      </div>
-      <button class="btn main" id="run-classify">Отнести к отделу</button>
-      <div class="scene-out" id="out-classify">Выберите обращение и нажмите.</div>
+  <div class="дп" id="день-первый">
+    <div class="дп-шапка">
+      <p class="label">ДЕНЬ ПЕРВЫЙ · ЖИВАЯ ИСТОРИЯ</p>
+      <h2 class="дп-заг">У тебя в Загрузках беспорядок</h2>
+      <p class="дп-вступ">Extella разберёт его прямо сейчас: бесплатно, на этом
+      компьютере, не отправляя наружу ничего. По дороге ты увидишь, из чего она
+      сделана, — не по описаниям, а по работе. Файлы не покидают Загрузки:
+      порядок наводится подпапками внутри, и у каждого шага есть откат.</p>
+      <button class="btn main" id="дп-старт">Показать, какой</button>
     </div>
 
-    <div class="scene" id="scene-agent">
-      <div class="scene-head">
-        <h3>Страница будит агента аккаунта</h3>
-        <p>Три слоя подряд: страница в окне зовёт эксперта на вашей машине, а он
-        зовёт агента. Каждый слой настоящий, время каждого видно отдельно.</p>
-      </div>
-      <button class="btn" id="run-agent">Спросить агента</button>
-      <div class="scene-out" id="out-agent">Замер на этой машине: около 17 секунд кругом.</div>
+    <div class="дп-сцена">
+      <div class="дп-полотно"><canvas id="дп-холст"></canvas></div>
+      <div class="дп-финал" id="дп-финал"><div class="дп-значок" id="дп-значок"></div></div>
     </div>
 
-    <div class="scene" id="scene-loop">
-      <div class="scene-head">
-        <h3>Кольцо: агент сам зовёт эксперта</h3>
-        <p>Страница → эксперт → агент → и агент со своей стороны зовёт эксперта с
-        локальной моделью. Отсюда растут длинные цепочки работы: каждый слой
-        умеет позвать следующий.</p>
+    <div class="дп-акт открыт" id="дп-а1">
+      <p class="дп-номер">I</p>
+      <p class="label">ИСПОЛНИТЕЛЬ</p>
+      <h3>Это выполнил эксперт — код на твоём компьютере</h3>
+      <p>Ни модели, ни интернета, ни оплаты. Эксперт — исполняемый код с
+      параметрами; машина, где он исполняется, зовётся устройством и выбирается
+      при запуске.</p>
+      <div class="дп-исход" id="дп-и1">Цифры появятся после нажатия наверху.</div>
+    </div>
+
+    <div class="дп-акт" id="дп-а2">
+      <p class="дп-номер">II</p>
+      <p class="label">СМЫСЛ БЕЗ ОБЛАКА</p>
+      <h3>Модель на твоём диске понимает, о чём файлы</h3>
+      <p>По расширениям умеет и код. По смыслу — только модель. Эта стоит на
+      твоём диске: названия файлов никуда не уходят, ответ ничего не стоит.
+      Если модели нет — будет честный отказ и кнопка установки на экране
+      «Локальные модели».</p>
+      <button class="btn main" id="дп-ш2" disabled>Назвать темы моих файлов</button>
+      <div class="дп-исход" id="дп-и2"></div>
+    </div>
+
+    <div class="дп-акт" id="дп-а3">
+      <p class="дп-номер">III</p>
+      <p class="label">ПРАВИЛО</p>
+      <h3>Сейчас Extella откажется делать то, что ты попросил</h3>
+      <p>Попроси навести порядок — и раскладка не начнётся. Эксперта остановит
+      правило, и ты прочтёшь его дословно. Правило читается всегда и имеет
+      высший приоритет: даже твоя кнопка ему не указ.</p>
+      <button class="btn main" id="дп-ш3" disabled>Навести порядок</button>
+      <div class="дп-правило" id="дп-правило">
+        <p class="дп-кто">ПРАВИЛО ОСТАНОВИЛО РАБОТУ</p>
+        <p class="дп-текст" id="дп-текст-правила"></p>
+        <button class="btn main" id="дп-разрешаю">Разрешаю</button>
       </div>
-      <button class="btn" id="run-loop">Замкнуть кольцо</button>
-      <div class="scene-out" id="out-loop">Дольше остальных: около 50 секунд кругом,
-и это впритык к отсечке платформы — этап может уйти в фон.</div>
+      <div class="дп-исход" id="дп-и3"></div>
+    </div>
+
+    <div class="дп-акт" id="дп-а4">
+      <p class="дп-номер">IV</p>
+      <p class="label">РАБОТА СДЕЛАНА</p>
+      <h3>Открой Finder — там уже порядок</h3>
+      <p>Раскладка выполнена настоящим экспертом внутри Загрузок, папка открылась
+      сама. Рядом лёг файл отката: одно нажатие — и всё как было. Работа без
+      отката в Extella считается дефектом.</p>
+      <button class="btn" id="дп-откат" disabled>Вернуть как было</button>
+      <div class="дп-исход" id="дп-и4"></div>
+    </div>
+
+    <div class="дп-акт" id="дп-а5">
+      <p class="дп-номер">V</p>
+      <p class="label">ВТОРОЕ ПРИЛОЖЕНИЕ</p>
+      <h3>Одно приложение зовёт другое</h3>
+      <p>Эксперт нарисует карту твоих Загрузок прямо в «Доске схем» — отдельном
+      приложении на этом же столе. Твоих рисунков он не касается: пишет только
+      своё, со своей меткой, и повтор заменяет лишь его собственный рисунок.</p>
+      <button class="btn main" id="дп-ш5" disabled>Нарисовать карту в Доске схем</button>
+      <div class="дп-исход" id="дп-и5"></div>
+    </div>
+
+    <div class="дп-акт" id="дп-а6">
+      <p class="дп-номер">VI</p>
+      <p class="label">ТВОЁ ПРИЛОЖЕНИЕ</p>
+      <h3>Всё, что ты прошёл, — уже приложение. Собери его</h3>
+      <p>Части ниже — это шаги, которые ты сам только что сделал. Поставь их в
+      ряд, дай имя — и в магазине появится черновик: не опубликован, виден
+      только тебе, удаляется одним нажатием.</p>
+      <div class="дп-кубики" id="дп-кубики">
+        <button class="дп-кубик">Осмотреть папку</button>
+        <button class="дп-кубик">Разобрать моделью</button>
+        <button class="дп-кубик">Спросить разрешение</button>
+        <button class="дп-кубик">Разложить с откатом</button>
+        <button class="дп-кубик">Нарисовать карту</button>
+      </div>
+      <div class="дп-сборка" id="дп-сборка">Нажимай части — встанут по порядку работы.</div>
+      <input class="дп-имя" id="дп-имя" value="Порядок в Загрузках" maxlength="60">
+      <button class="btn main" id="дп-ш6" disabled>Создать черновик приложения</button>
+      <div class="дп-исход" id="дп-и6"></div>
     </div>
   </div>
 
@@ -1304,91 +1401,288 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     });
   }
 
-  (function путешествие(){
-    var набор = document.getElementById('pick-classify');
-    var кнопка = document.getElementById('run-classify');
-    var вывод = document.getElementById('out-classify');
-    if (!набор || !кнопка || !вывод) return;
-    var выбран = набор.querySelector('.chip.on');
+  (function деньПервый(){
+    var ПАПКА = '~/Downloads';
+    var холст = document.getElementById('дп-холст');
+    if (!холст) return;
+    var кисть = холст.getContext('2d');
 
-    набор.addEventListener('click', function(e){
-      var c = e.target.closest('.chip'); if (!c) return;
-      набор.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('on'); });
-      c.classList.add('on'); выбран = c;
-      вывод.className = 'scene-out'; вывод.textContent = 'Готово к запуску.';
-    });
+    // ── Звук: тон на отклик слоя, аккорд на завершение акта.
+    var ктх = null;
+    function тон(ч, д, з){
+      try {
+        ктх = ктх || new (window.AudioContext || window.webkitAudioContext)();
+        var о = ктх.createOscillator(), г = ктх.createGain();
+        о.type = 'sine'; о.frequency.value = ч;
+        var т0 = ктх.currentTime + (з || 0);
+        г.gain.setValueAtTime(0.0001, т0);
+        г.gain.exponentialRampToValueAtTime(0.12, т0 + 0.01);
+        г.gain.exponentialRampToValueAtTime(0.0001, т0 + д);
+        о.connect(г); г.connect(ктх.destination); о.start(т0); о.stop(т0 + д + 0.02);
+      } catch (e) {}
+    }
+    function аккорд(){ тон(523, .3); тон(659, .3, .08); тон(784, .4, .16); }
 
-    кнопка.addEventListener('click', function(){
-      if (!выбран) { вывод.textContent = 'Сначала выберите обращение.'; return; }
-      кнопка.disabled = true;
-      вывод.className = 'scene-out';
-      вывод.textContent = 'Зову локальную модель на этом компьютере…';
-      // Секундомер честный: меряем круг целиком, как его чувствует человек,
-      // и рядом называем время самой модели — это разные величины.
-      var старт = (window.performance && performance.now) ? performance.now() : Date.now();
-      зовСценария('local_model_classify', {
-        text: выбран.getAttribute('data-t'),
-        categories: 'продажи, поддержка, бухгалтерия'
-      }).then(function(ответ){
-        var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
-        if (ответ && ответ.status === 'success' && ответ.category) {
-          вывод.className = 'scene-out ok';
-          вывод.innerHTML = '<b>' + текстом(ответ.category) + '</b>\n' +
-            '<span class="t">' + сек.toFixed(1) + ' с кругом · модель ' +
-            текстом(ответ.model || 'локальная') + ' · бесплатно · текст не покинул компьютер</span>';
-        } else {
-          вывод.className = 'scene-out';
-          вывод.textContent = (ответ && ответ.message) ? ответ.message : 'Модель не дала ответа.';
-        }
-      }).catch(function(e){
-        вывод.className = 'scene-out';
-        вывод.textContent = e.message || String(e);
-      }).then(function(){ кнопка.disabled = false; });
-    });
-
-    // Сцена 2 и 3: цепочка через агента. Отдельный эксперт-звонарь, а не
-    // расширение белого списка установщика: у показа свой узкий контракт.
-    function цепочка(идКнопки, идВывода, вопрос, подпись){
-      var к = document.getElementById(идКнопки), в = document.getElementById(идВывода);
-      if (!к || !в) return;
-      к.addEventListener('click', function(){
-        к.disabled = true;
-        в.className = 'scene-out';
-        в.textContent = 'Иду по цепочке: страница → эксперт → агент…';
-        var старт = (window.performance && performance.now) ? performance.now() : Date.now();
-        зовСценария('journey_ask_agent', {
-          agent_id: 'agent_8LlxoJMZsU0ka4zAPdd5v', question: вопрос
-        }).then(function(о){
-          var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
-          if (о && о.status === 'success' && о.answer) {
-            в.className = 'scene-out ok';
-            в.innerHTML = '<b>' + текстом(о.answer) + '</b>\n' +
-              '<span class="t">' + сек.toFixed(1) + ' с кругом · из них агент ' +
-              текстом(String(о.seconds || '?')) + ' с · ' + текстом(подпись) + '</span>';
-          } else {
-            в.className = 'scene-out';
-            в.textContent = (о && о.message) ? о.message : 'Агент не дал ответа.';
-          }
-        }).catch(function(e){
-          в.className = 'scene-out';
-          // Отложенная задача — не поломка: этап дольше отсечки платформы.
-          в.textContent = e.отложено
-            ? 'Цепочка длиннее отсечки платформы и продолжается в фоне. Нажмите ещё раз через минуту.'
-            : (e.message || String(e));
-        }).then(function(){ к.disabled = false; });
+    // ── Сцена: узлы, связи, импульсы и фоновые пылинки — сцена дышит всегда.
+    var УЗЛЫ = {
+      папка:   {x:.10, y:.5,  имя:'Загрузки',       живой:false, свет:0},
+      эксперт: {x:.30, y:.5,  имя:'эксперт',         живой:false, свет:0},
+      модель:  {x:.50, y:.24, имя:'модель на диске', живой:false, свет:0},
+      правило: {x:.50, y:.76, имя:'правило',         живой:false, свет:0},
+      доска:   {x:.70, y:.28, имя:'Доска схем',      живой:false, свет:0},
+      прил:    {x:.88, y:.55, имя:'твоё приложение', живой:false, свет:0}
+    };
+    var СВЯЗИ = [], импульсы = [], пылинки = [], сжатие = 0;
+    for (var i = 0; i < 26; i++) {
+      пылинки.push({x: Math.random(), y: Math.random(),
+                    vx: (Math.random() - .5) * .0007, vy: (Math.random() - .5) * .0005,
+                    r: Math.random() * 1.6 + .4});
+    }
+    function размер(){
+      var к = window.devicePixelRatio || 1, п = холст.parentElement.getBoundingClientRect();
+      if (п.width < 8) return;
+      if (холст.width !== Math.round(п.width * к)) { холст.width = п.width * к; холст.height = п.height * к; }
+      кисть.setTransform(к, 0, 0, к, 0, 0);
+    }
+    window.addEventListener('resize', размер);
+    function цвет(и){ return getComputedStyle(document.documentElement).getPropertyValue(и).trim(); }
+    function кадр(){
+      размер();
+      var w = холст.parentElement.clientWidth, h = холст.parentElement.clientHeight;
+      кисть.clearRect(0, 0, w, h);
+      var акц = цвет('--a'), петр = цвет('--petrol'), гр = цвет('--bd'), тк = цвет('--tx3');
+      пылинки.forEach(function(п){
+        п.x = (п.x + п.vx + 1) % 1; п.y = (п.y + п.vy + 1) % 1;
+        кисть.globalAlpha = .18; кисть.beginPath();
+        кисть.arc(п.x * w, п.y * h, п.r, 0, 7); кисть.fillStyle = тк; кисть.fill();
+        кисть.globalAlpha = 1;
       });
+      function точка(у){
+        var cx = .5, cy = .5;
+        return {x: (у.x + (cx - у.x) * сжатие) * w, y: (у.y + (cy - у.y) * сжатие) * h};
+      }
+      СВЯЗИ.forEach(function(с){
+        var a = точка(УЗЛЫ[с.от]), b = точка(УЗЛЫ[с.до]);
+        кисть.beginPath(); кисть.moveTo(a.x, a.y);
+        кисть.quadraticCurveTo((a.x + b.x) / 2, (a.y + b.y) / 2 - 18, b.x, b.y);
+        кисть.strokeStyle = с.живая ? петр : гр; кисть.lineWidth = с.живая ? 1.6 : 1;
+        кисть.setLineDash(с.живая ? [] : [4, 5]); кисть.stroke(); кисть.setLineDash([]);
+      });
+      импульсы.forEach(function(и){
+        var a = точка(УЗЛЫ[и.от]), b = точка(УЗЛЫ[и.до]), t = и.t;
+        var cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2 - 18;
+        var x = (1-t)*(1-t)*a.x + 2*(1-t)*t*cx + t*t*b.x;
+        var y = (1-t)*(1-t)*a.y + 2*(1-t)*t*cy + t*t*b.y;
+        кисть.beginPath(); кисть.arc(x, y, 4, 0, 7); кисть.fillStyle = акц; кисть.fill();
+        кисть.globalAlpha = .22; кисть.beginPath(); кисть.arc(x, y, 11, 0, 7);
+        кисть.strokeStyle = акц; кисть.stroke(); кисть.globalAlpha = 1;
+      });
+      Object.keys(УЗЛЫ).forEach(function(к){
+        var у = УЗЛЫ[к], п = точка(у);
+        if (у.свет > 0){
+          кисть.globalAlpha = у.свет * .45; кисть.beginPath();
+          кисть.arc(п.x, п.y, 12 + (1 - у.свет) * 20, 0, 7);
+          кисть.strokeStyle = акц; кисть.stroke(); кисть.globalAlpha = 1; у.свет -= 0.016;
+        }
+        кисть.globalAlpha = 1 - сжатие;
+        кисть.beginPath(); кисть.arc(п.x, п.y, 11, 0, 7);
+        кисть.fillStyle = у.живой ? акц : 'transparent';
+        кисть.strokeStyle = у.живой ? акц : гр; кисть.lineWidth = 1.4;
+        кисть.fill(); кисть.stroke();
+        кисть.font = '11px ' + цвет('--mono'); кисть.fillStyle = тк; кисть.textAlign = 'center';
+        кисть.fillText(у.имя, п.x, п.y + 26);
+        кисть.globalAlpha = 1;
+      });
+      импульсы.forEach(function(и){ и.t += и.скорость; });
+      импульсы = импульсы.filter(function(и){ return и.t <= 1; });
+      requestAnimationFrame(кадр);
+    }
+    function связь(о, д){ if (!СВЯЗИ.some(function(с){ return с.от === о && с.до === д; })) СВЯЗИ.push({от: о, до: д, живая: false}); }
+    function пустить(о, д, с){ связь(о, д); импульсы.push({от: о, до: д, t: 0, скорость: 1 / (с * 60)}); }
+    function зажечь(и, ч){
+      УЗЛЫ[и].живой = true; УЗЛЫ[и].свет = 1;
+      СВЯЗИ.forEach(function(с){ if (с.до === и) с.живая = true; });
+      тон(ч, .18);
+    }
+    var наблюдатель = new IntersectionObserver(function(зап){
+      зап.forEach(function(з){ if (з.isIntersecting) з.target.classList.add('виден'); });
+    }, {threshold: .3});
+    document.querySelectorAll('.дп-акт').forEach(function(а){ наблюдатель.observe(а); });
+
+    function занять(к, слова, работа){
+      var было = к.textContent;
+      к.disabled = true; к.textContent = слова;
+      return работа().catch(function(e){
+        return {status: 'error', message: e.отложено
+          ? 'Шаг продолжается в фоне — нажми ещё раз через полминуты.'
+          : (e.message || String(e))};
+      }).then(function(о){ к.disabled = false; к.textContent = было; return о; });
+    }
+    function открытьАкт(н, кнопка){
+      var а = document.getElementById('дп-а' + н);
+      if (а) { а.classList.add('виден'); а.scrollIntoView({behavior: 'smooth', block: 'center'}); }
+      if (кнопка) { var к = document.getElementById(кнопка); if (к) к.disabled = false; }
     }
 
-    цепочка('run-agent', 'out-agent',
-            'Ответь одним словом: столица Казахстана?',
-            'страница → эксперт → агент');
+    var сводка = null;
 
-    цепочка('run-loop', 'out-loop',
-            'Позови эксперта local_model_classify с global=true, параметры: ' +
-            "text='не приходит акт сверки за июль', " +
-            "categories='продажи, поддержка, бухгалтерия'. " +
-            'Верни ТОЛЬКО категорию одним словом.',
-            'страница → эксперт → агент → эксперт → локальная модель');
+    // АКТ 1: осмотр Загрузок.
+    document.getElementById('дп-старт').onclick = function(){
+      var в = document.getElementById('дп-и1');
+      в.textContent = 'Эксперт пошёл смотреть папку…';
+      пустить('папка', 'эксперт', .7);
+      var т0 = performance.now();
+      занять(this, 'смотрю…', function(){ return зовСценария('journey_scan', {folder: ПАПКА}); })
+      .then(function(о){
+        var сек = ((performance.now() - т0) / 1000).toFixed(1);
+        if (о.status !== 'success') { в.textContent = о.message || 'не вышло'; return; }
+        сводка = о;
+        зажечь('папка', 440); зажечь('эксперт', 523);
+        var кат = Object.keys(о.categories || {}).slice(0, 4).map(function(к){
+          return о.categories[к] + ' ' + к.toLowerCase();
+        }).join(' · ');
+        в.innerHTML = '<span class="дп-цифры">' + о.total + ' файлов, ' + о.size_mb + ' МБ</span>\n' +
+          кат + '\n<span class="дп-цена">' + сек + ' с · на этом компьютере · бесплатно</span>';
+        аккорд(); открытьАкт(2, 'дп-ш2');
+      });
+    };
+
+    // АКТ 2: темы локальной моделью.
+    document.getElementById('дп-ш2').onclick = function(){
+      var в = document.getElementById('дп-и2');
+      в.textContent = 'Спрашиваю модель на твоём диске… первые разы она просыпается до минуты.';
+      пустить('эксперт', 'модель', .7);
+      var имена = [];
+      if (сводка && сводка.examples) Object.keys(сводка.examples).forEach(function(к){
+        сводка.examples[к].forEach(function(и){ if (имена.length < 8) имена.push(и); });
+      });
+      var т0 = performance.now();
+      занять(this, 'думает…', function(){
+        return зовСценария('local_model_ask', {
+          prompt: 'Вот имена файлов из одной папки: ' + имена.join('; ') +
+                  '. Назови 3-4 темы, которыми занимается хозяин папки. ' +
+                  'Ответь ТОЛЬКО темами через запятую.',
+          max_tokens: '60'});
+      }).then(function(о){
+        var сек = ((performance.now() - т0) / 1000).toFixed(1);
+        if (о.status !== 'success' || !о.answer) {
+          в.textContent = (о.message || 'модель не ответила') +
+            '\nПоставить её можно на экране «Локальные модели».';
+          открытьАкт(3, 'дп-ш3'); return;
+        }
+        зажечь('модель', 620);
+        в.innerHTML = '<b>' + текстом(о.answer) + '</b>\n<span class="дп-цена">' + сек +
+          ' с · ' + текстом(о.model || 'модель на диске') + ' · названия не покидали компьютер</span>';
+        аккорд(); открытьАкт(3, 'дп-ш3');
+      });
+    };
+
+    // АКТ 3: отказ по правилу — первый вызов НАМЕРЕННО без подтверждения.
+    document.getElementById('дп-ш3').onclick = function(){
+      var в = document.getElementById('дп-и3');
+      в.textContent = 'Прошу эксперта разложить…';
+      пустить('эксперт', 'правило', .7);
+      занять(this, 'прошу…', function(){
+        return зовСценария('journey_organize', {folder: ПАПКА, action: 'execute'});
+      }).then(function(о){
+        if (о.status === 'refused') {
+          зажечь('правило', 349);
+          document.getElementById('дп-текст-правила').textContent = '«' + о.rule + '»';
+          document.getElementById('дп-правило').classList.add('видно');
+          в.textContent = 'Файлы не тронуты. Решение за тобой.';
+        } else {
+          в.textContent = о.message || 'неожиданный ответ';
+        }
+      });
+    };
+    document.getElementById('дп-разрешаю').onclick = function(){
+      var в = document.getElementById('дп-и3');
+      в.textContent = 'Разрешение получено, раскладываю внутри Загрузок…';
+      var т0 = performance.now();
+      занять(this, 'раскладываю…', function(){
+        return зовСценария('journey_organize', {folder: ПАПКА, action: 'execute', confirm: 'да-перемещай'});
+      }).then(function(о){
+        var сек = ((performance.now() - т0) / 1000).toFixed(1);
+        if (о.status !== 'success') { в.textContent = о.message || 'не вышло'; return; }
+        в.innerHTML = '<b>Разложено внутри Загрузок: ' + о.moved + ' файлов</b>\n' +
+          '<span class="дп-цена">' + сек + ' с · Finder открылся сам · откат рядом с файлами</span>';
+        document.getElementById('дп-и4').textContent = 'Файл отката: ' + (о.undo || '');
+        document.getElementById('дп-откат').disabled = false;
+        аккорд(); открытьАкт(4); открытьАкт(5, 'дп-ш5');
+      });
+    };
+
+    // АКТ 4: откат.
+    document.getElementById('дп-откат').onclick = function(){
+      var в = document.getElementById('дп-и4');
+      в.textContent = 'Возвращаю как было…';
+      занять(this, 'возвращаю…', function(){
+        return зовСценария('journey_organize', {folder: ПАПКА, action: 'undo'});
+      }).then(function(о){
+        в.textContent = о.status === 'success'
+          ? 'Возвращено файлов: ' + о.restored + '. Как будто ничего и не было.'
+          : (о.message || 'не вышло');
+      });
+    };
+
+    // АКТ 5: карта в Доске схем.
+    document.getElementById('дп-ш5').onclick = function(){
+      var в = document.getElementById('дп-и5');
+      в.textContent = 'Эксперт рисует в соседнем приложении…';
+      пустить('эксперт', 'доска', .8);
+      var т0 = performance.now();
+      занять(this, 'рисую…', function(){
+        return зовСценария('journey_board_scheme', {folder: ПАПКА});
+      }).then(function(о){
+        var сек = ((performance.now() - т0) / 1000).toFixed(1);
+        if (о.status !== 'success') { в.textContent = о.message || 'не вышло'; return; }
+        зажечь('доска', 698);
+        в.innerHTML = '<b>Карта легла на Доску схем</b>\n<span class="дп-цена">' + сек +
+          ' с · элементов: ' + о.drawn + ' · твои рисунки не тронуты (' + о.kept +
+          ' элементов на месте) · открой Доску заново</span>';
+        аккорд(); открытьАкт(6);
+      });
+    };
+
+    // АКТ 6: сборка и черновик.
+    var собрано = [];
+    document.getElementById('дп-кубики').addEventListener('click', function(e){
+      var к = e.target.closest('.дп-кубик');
+      if (!к || к.classList.contains('взят')) return;
+      к.classList.add('взят'); собрано.push(к.textContent);
+      document.getElementById('дп-сборка').textContent = собрано.join('  →  ');
+      document.getElementById('дп-ш6').disabled = собрано.length < 2;
+      тон(640 + собрано.length * 70, .09);
+    });
+    document.getElementById('дп-ш6').onclick = function(){
+      var имя = document.getElementById('дп-имя').value.trim() || 'Порядок в Загрузках';
+      var в = document.getElementById('дп-и6');
+      в.textContent = 'Создаю черновик в магазине…';
+      пустить('эксперт', 'прил', .9);
+      var т0 = performance.now();
+      занять(this, 'создаю…', function(){
+        return зовСценария('journey_publish', {name: имя, parts: собрано.join('|')});
+      }).then(function(о){
+        var сек = ((performance.now() - т0) / 1000).toFixed(1);
+        if (о.status !== 'success') { в.textContent = о.message || 'не вышло'; return; }
+        УЗЛЫ.прил.имя = имя;
+        зажечь('прил', 880); аккорд();
+        в.innerHTML = '<b>' + текстом(имя) + ' — черновик создан</b>\n' +
+          '<span class="дп-цена">' + сек + ' с · не опубликован · виден только тебе · ' +
+          'удаляется одним нажатием</span>';
+        // Финал: сцена сжимается в значок — вся история стала приложением.
+        var шаги = 0, т = setInterval(function(){
+          сжатие = Math.min(1, сжатие + 0.02); шаги++;
+          if (шаги > 60) {
+            clearInterval(т);
+            document.getElementById('дп-значок').textContent = имя;
+            document.getElementById('дп-финал').classList.add('видно');
+            setTimeout(function(){ document.getElementById('дп-значок').classList.add('вырос'); }, 40);
+          }
+        }, 16);
+      });
+    };
+    размер(); кадр();
   })();
 
   // ── ЭКРАНЫ ────────────────────────────────────────────────────────────────
