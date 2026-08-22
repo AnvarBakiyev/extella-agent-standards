@@ -26,7 +26,7 @@
   // пояснениях, но не в проводе (канон 4.5в).
   // Версию поднимать при каждой правке шима: по ней в журнале видно, какая
   // копия реально выполняется в окне (кэш браузера умеет показывать старую).
-  var ВЕРСИЯ_ШИМА = "2026-08-22-9";
+  var ВЕРСИЯ_ШИМА = "2026-08-22-11";
 
   // Сказать человеку ОДИН раз: почему часть приложения может не работать.
   var сказано_про_потоки = false;
@@ -42,7 +42,7 @@
   function отметиться(этап, что) {
     try {
       new Image().src = "/__shim?stage=" + encodeURIComponent(этап) +
-                        "&what=" + encodeURIComponent(String(что).slice(0, 120));
+                        "&what=" + encodeURIComponent(String(что).slice(0, 300));
     } catch (е) {}
   }
   try {
@@ -573,8 +573,31 @@
 
     async function показать(данные){
       if (!pdfjs) {
-        pdfjs = await import("/_extella_page/lib/pdf.min.mjs");
-        pdfjs.GlobalWorkerOptions.workerSrc = "/_extella_page/lib/pdf.worker.min.mjs";
+        // СНАЧАЛА берём библиотеку САМОГО ПРИЛОЖЕНИЯ. Она уже загружена в
+        // окне, и это важно не ради экономии: своя копия другой версии
+        // спорит с ней за общий реестр и падает «The API version … does not
+        // match the Worker version …» (замер 22.08.2026 — в браузере
+        // проходило, в окне нет). Имя файла сборки меняется при обновлении
+        // приложения, поэтому ищем его среди подключённых скриптов.
+        var свои = Array.prototype.slice.call(
+          document.querySelectorAll('script[src*="/assets/"]'));
+        for (var i = 0; i < свои.length && !pdfjs; i++) {
+          try {
+            var м = await import(свои[i].src);
+            for (var к in м) {
+              if (м[к] && typeof м[к].getDocument === "function") { pdfjs = м[к]; break; }
+            }
+            if (!pdfjs && typeof м.getDocument === "function") pdfjs = м;
+          } catch (е) {}
+        }
+        if (pdfjs) {
+          отметиться("rescue-lib", "библиотека приложения");
+        } else {
+          // Своя копия — запасной путь, если приложение сменит устройство.
+          pdfjs = await import("/_extella_page/lib/pdf.min.mjs");
+          pdfjs.GlobalWorkerOptions.workerSrc = "/_extella_page/lib/pdf.worker.min.mjs";
+          отметиться("rescue-lib", "своя копия");
+        }
       }
       var байты = данные instanceof Blob
         ? new Uint8Array(await данные.arrayBuffer()) : данные;
