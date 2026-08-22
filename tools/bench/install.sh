@@ -120,9 +120,32 @@ if [ "$PUBLIC" = "1" ]; then
   printf '%s {\n\treverse_proxy 127.0.0.1:8799\n}\n' "$DOMAIN" | \
     $SUDO tee /etc/caddy/conf.d/priemka.caddy >/dev/null
   $SUDO systemctl reload caddy 2>/dev/null || $SUDO systemctl restart caddy
+
+  # Кнопка находит свой стенд: кладём в аккаунт пользователя ярлык на ЭТОТ стенд.
+  # Идемпотентно — если ярлык на этот же стенд уже есть, не плодим второй.
+  log "ярлык на рабочий стол OS…"
+  PANEL="https://$DOMAIN/u/$SLUG/"
+  python3 - "$EXTELLA_TOKEN" "$PANEL" "https://$DOMAIN" <<'PY' || \
+    echo "  (ярлык не создан — можно добавить вручную по адресу ниже)"
+import sys, json, urllib.request, urllib.error
+T, URL, HOST = sys.argv[1], sys.argv[2], sys.argv[3]
+def api(method, path, body=None):
+    d = json.dumps(body).encode() if body is not None else None
+    r = urllib.request.Request("https://os.extella.ai" + path, data=d, method=method,
+                               headers={"X-Extella-Token": T, "Content-Type": "application/json"})
+    return json.loads(urllib.request.urlopen(r, timeout=30).read() or b"{}")
+items = api("GET", "/api/desktop/items")
+if any(HOST in (s.get("url") or "") for s in items.get("shortcuts", [])):
+    print("  ярлык на этот стенд уже есть — оставляю")
+else:
+    api("POST", "/api/desktop/shortcut",
+        {"name": "Приёмка: откроется ли у других", "url": URL, "folder": ""})
+    print("  ярлык добавлен на рабочий стол OS")
+PY
+
   echo
-  echo "СТЕНД ГОТОВ. Твоя кнопка (приватный адрес):"
-  echo "  https://$DOMAIN/u/$SLUG/"
+  echo "СТЕНД ГОТОВ. Кнопка «Приёмка: откроется ли у других» на твоём столе OS."
+  echo "Прямой адрес (на всякий): $PANEL"
   echo "Первый заход может подождать выдачу TLS-сертификата (до минуты)."
 else
   echo
