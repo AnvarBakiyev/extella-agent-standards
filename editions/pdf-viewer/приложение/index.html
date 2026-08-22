@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Просмотр PDF</title>
+<style>
+:root{--фон:#0A0A0A;--пов:#141414;--пов2:#181818;--текст:#F5F3EE;--текст2:#C9C3B8;
+  --текст3:#8C8C8C;--акцент:#D4944A;--петроль:#5FA8A0;--гр:rgba(243,238,229,.09)}
+:root[data-lm="1"]{--фон:#FAF9F5;--пов:#FFFFFF;--пов2:#F5F3EC;--текст:#0A0A0A;
+  --текст2:#2A2A2A;--текст3:#8C8C8C;--акцент:#C57E33;--петроль:#2F6B66;--гр:#D7E0DC}
+*{box-sizing:border-box}
+body{margin:0;background:var(--фон);color:var(--текст);
+  font:400 13px/1.5 Nunito,system-ui,-apple-system,sans-serif;
+  display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.шапка{display:flex;align-items:center;gap:12px;padding:10px 16px;
+  border-bottom:1px solid var(--гр);background:var(--пов);flex:none;flex-wrap:wrap}
+.метка{font:500 11px 'JetBrains Mono',ui-monospace,monospace;color:var(--петроль);
+  letter-spacing:.08em;text-transform:uppercase;margin-right:auto}
+.главная{font-size:13px;font-weight:600;color:#fff;background:var(--акцент);
+  border:0;border-radius:999px;padding:8px 16px;cursor:pointer}
+.обычная{font-size:13px;font-weight:600;color:var(--текст);background:var(--пов2);
+  border:1px solid var(--гр);border-radius:8px;padding:6px 12px;cursor:pointer}
+.обычная[disabled]{opacity:.4;cursor:default}
+.обычная:focus-visible,.главная:focus-visible{outline:2px solid var(--акцент);outline-offset:2px}
+.где{font:500 12px 'JetBrains Mono',ui-monospace,monospace;color:var(--текст2);
+  font-variant-numeric:tabular-nums;min-width:74px;text-align:center}
+.холст{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;
+  align-items:center;gap:16px;background:var(--фон)}
+canvas{max-width:100%;box-shadow:0 2px 16px rgba(0,0,0,.25);border-radius:4px;background:#fff}
+.весть{color:var(--текст3);text-align:center;padding:48px 24px;max-width:520px;margin:auto}
+.весть h1{font:600 22px/1.3 'Source Serif 4',Georgia,serif;color:var(--текст);margin:0 0 10px}
+.имя{font-size:12px;color:var(--текст3);max-width:280px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div class="шапка">
+  <span class="метка">Просмотр PDF · этот компьютер</span>
+  <span class="имя" id="имя"></span>
+  <button class="обычная" id="назад" disabled aria-label="Предыдущая страница">←</button>
+  <span class="где" id="где">— / —</span>
+  <button class="обычная" id="вперёд" disabled aria-label="Следующая страница">→</button>
+  <button class="обычная" id="меньше" disabled aria-label="Мельче">−</button>
+  <button class="обычная" id="больше" disabled aria-label="Крупнее">+</button>
+  <button class="главная" id="открыть">Открыть документ</button>
+  <input type="file" id="файл" accept="application/pdf,.pdf">
+</div>
+
+<div class="холст" id="холст">
+  <div class="весть" id="весть">
+    <h1>Откройте документ</h1>
+    <p>Нажмите «Открыть документ» и выберите PDF на компьютере. Файл никуда
+       не отправляется — он читается прямо здесь, в окне.</p>
+  </div>
+</div>
+
+<script type="module">
+// ПРОСМОТР PDF ДЛЯ ОКНА ОС. Зачем свой: встроенный просмотрщик
+// PDF-инструментов требует рабочие потоки браузера, а в окне Extella они
+// мертвы (замер 22.08.2026 — воркер создаётся, но код внутри не исполняется).
+// Здесь всё считается в главном потоке: замер на 27-страничном документе —
+// 0,1 с на разбор. Медленнее только на очень тяжёлых сканах, зато работает.
+import * as pdfjs from './lib/pdf.min.mjs';
+
+// Файл рабочего потока указываем ЧЕСТНО, хотя в окне ОС он не запустится:
+// библиотека без этого указания вообще отказывается работать («No
+// GlobalWorkerOptions.workerSrc specified»). Где потоки живут — она возьмёт
+// их и посчитает быстрее; где мертвы (окно Extella) — сама перейдёт на
+// счёт в главном потоке. Оба пути рабочие, разница только в скорости.
+pdfjs.GlobalWorkerOptions.workerSrc = new URL('./lib/pdf.worker.min.mjs', import.meta.url).href;
+
+function тема(t){
+  if (t === 'light') document.documentElement.setAttribute('data-lm','1');
+  else document.documentElement.removeAttribute('data-lm');
+}
+window.addEventListener('message', e => {
+  const d = e.data || {};
+  if (d.type === 'etb_theme' || d.type === 'etb_init') тема(d.theme);
+});
+if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) тема('light');
+
+const холст = document.getElementById('холст');
+const весть = document.getElementById('весть');
+const где = document.getElementById('где');
+const имя_ = document.getElementById('имя');
+let документ = null, страница = 1, масштаб = 1.3;
+
+function кнопки(){
+  document.getElementById('назад').disabled = !документ || страница <= 1;
+  document.getElementById('вперёд').disabled = !документ || страница >= документ.numPages;
+  document.getElementById('меньше').disabled = !документ;
+  document.getElementById('больше').disabled = !документ;
+  где.textContent = документ ? `${страница} / ${документ.numPages}` : '— / —';
+}
+
+async function нарисовать(){
+  if (!документ) return;
+  холст.innerHTML = '';
+  const стр = await документ.getPage(страница);
+  const вид = стр.getViewport({scale: масштаб * (window.devicePixelRatio || 1)});
+  const кан = document.createElement('canvas');
+  кан.width = вид.width; кан.height = вид.height;
+  кан.style.width = (вид.width / (window.devicePixelRatio || 1)) + 'px';
+  холст.appendChild(кан);
+  // Кнопки и счётчик обновляем ДО отрисовки. Причина: без рабочего потока
+  // обещание рендера у библиотеки не завершается — картинка на холсте уже
+  // есть, а код после `await` не продолжается никогда, и интерфейс остаётся
+  // мёртвым при живом документе (замер 22.08.2026).
+  кнопки();
+  стр.render({canvasContext: кан.getContext('2d'), viewport: вид});
+}
+
+async function открыть(файл){
+  имя_.textContent = файл.name;
+  холст.innerHTML = '';
+  const п = document.createElement('div');
+  п.className = 'весть'; п.textContent = 'Читаю документ…';
+  холст.appendChild(п);
+  try {
+    const байты = new Uint8Array(await файл.arrayBuffer());
+    документ = await pdfjs.getDocument({data: байты}).promise;
+    страница = 1;
+    кнопки();
+    await нарисовать();
+  } catch (е) {
+    холст.innerHTML = '';
+    const о = document.createElement('div');
+    о.className = 'весть';
+    о.innerHTML = '<h1>Не открылось</h1><p>' +
+      'Файл не читается как PDF: ' + String(е && е.message || е).slice(0, 160) +
+      '</p>';
+    холст.appendChild(о);
+    документ = null; кнопки();
+  }
+}
+
+document.getElementById('открыть').onclick = () => document.getElementById('файл').click();
+document.getElementById('файл').onchange = е => {
+  const ф = е.target.files && е.target.files[0];
+  if (ф) открыть(ф);
+};
+document.getElementById('назад').onclick = () => { if (страница > 1) { страница--; нарисовать(); } };
+document.getElementById('вперёд').onclick = () => {
+  if (документ && страница < документ.numPages) { страница++; нарисовать(); }
+};
+document.getElementById('меньше').onclick = () => { масштаб = Math.max(0.5, масштаб - 0.2); нарисовать(); };
+document.getElementById('больше').onclick = () => { масштаб = Math.min(4, масштаб + 0.2); нарисовать(); };
+document.addEventListener('keydown', е => {
+  if (е.key === 'ArrowRight' || е.key === 'PageDown') document.getElementById('вперёд').click();
+  if (е.key === 'ArrowLeft' || е.key === 'PageUp') document.getElementById('назад').click();
+});
+// Документ можно просто перетащить в окно.
+document.addEventListener('dragover', е => е.preventDefault());
+document.addEventListener('drop', е => {
+  е.preventDefault();
+  const ф = е.dataTransfer && е.dataTransfer.files && е.dataTransfer.files[0];
+  if (ф) открыть(ф);
+});
+кнопки();
+</script>
+</body>
+</html>
