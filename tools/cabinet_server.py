@@ -183,9 +183,15 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             try:
                 конф = json.loads(pathlib.Path(автовход).expanduser().read_text())
                 с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=30)
+                # Origin обязателен: приложения проверяют, что запрос пришёл
+                # «изнутри», и без него отвечают CSRF-отказом вместо входа
+                # (замер 23.08.2026, Робот браузера: CSRF_MISSING_ORIGIN).
+                # Для машинного входа это честно: мы и есть тот самый «изнутри».
                 с.request("POST", конф.get("путь") or "/api/login",
                           body=json.dumps(конф.get("тело") or {}).encode(),
-                          headers={"Content-Type": "application/json"})
+                          headers={"Content-Type": "application/json",
+                                   "Origin": f"http://127.0.0.1:{прокси_на}",
+                                   "Referer": f"http://127.0.0.1:{прокси_на}/"})
                 о = с.getresponse()
                 тело_логина = о.read()
                 for к, з in о.getheaders():
