@@ -291,6 +291,7 @@ HTML ≤ 3 МБ или zip с `index.html` в корне ≤ 20 МБ) и `icon`.
 | [`AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) · [`EVOLUTION_PHILOSOPHY.md`](EVOLUTION_PHILOSOPHY.md) | зачем система устроена именно так |
 | [`INSTALLER_CANON.md`](INSTALLER_CANON.md) | продукт ставит что-то на машину одной кнопкой: шесть шагов, источники токена, честные отказы |
 | [`docs/DOCKER_APP_TRACK.md`](docs/DOCKER_APP_TRACK.md) | серверное приложение в контейнере: установщик, песочница окна, белое окно |
+| [`SYMPTOMS.md`](SYMPTOMS.md) | **сломалось — начинать отсюда**: что видно слева, раздел свода справа |
 | [`OS_CAPABILITIES.md`](OS_CAPABILITIES.md) | карта возможностей рабочего стола ОС — читать, не выполняя |
 | [`docs/ICON_STYLE_BRONZE.md`](docs/ICON_STYLE_BRONZE.md) | иконка продукта: один стиль, глиф Lucide, `tools/bronze_icon.py` |
 | [`experts/local_model_classify.py`](experts/local_model_classify.py) | локальная модель инструментом агента: поток за секунды и без оплаты токенов, мозг остаётся сильным. Путь проверен запуском — эксперт, не MCP |
