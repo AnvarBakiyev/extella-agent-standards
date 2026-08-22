@@ -39,7 +39,42 @@ def следующий_свободный(текст: str) -> int:
     return (max(номера) + 1) if номера else 1
 
 
+def свободный_по_веткам() -> int:
+    """Свободный номер H с учётом ЛЕТЯЩИХ веток origin, а не только main.
+
+    Гейт ловит дубль в слитом файле. Но два чата в параллельных ветках берут один
+    номер по памяти, и столкновение всплывает лишь на merge (замер 22.08.2026:
+    H51–H53 заняты одной веткой, гейт main молчал). Этот режим смотрит номера во
+    ВСЕХ ветках origin и отдаёт число выше всех занятых — его чат и берёт.
+    """
+    import subprocess
+    номера = set()
+    try:
+        subprocess.run(["git", "fetch", "-q", "origin"], cwd=str(КОРЕНЬ), timeout=60)
+        ветки = subprocess.run(["git", "branch", "-r"], cwd=str(КОРЕНЬ),
+                               capture_output=True, text=True).stdout.split()
+        for в in ветки:
+            в = в.strip()
+            if not в.startswith("origin/") or в.endswith("HEAD"):
+                continue
+            вывод = subprocess.run(
+                ["git", "grep", "-hoE", r"^### H[0-9]+\.", в, "--", "DEPLOY_REQUIREMENTS.md"],
+                cwd=str(КОРЕНЬ), capture_output=True, text=True).stdout
+            for м in re.finditer(r"H(\d+)", вывод):
+                номера.add(int(м.group(1)))
+    except Exception:
+        pass
+    # плюс локальный файл
+    for м in БАЗОВЫЙ.finditer(ФАЙЛ.read_text(encoding="utf-8")):
+        номера.add(int(м.group(1)[1:]))
+    return (max(номера) + 1) if номера else 1
+
+
 def main(аргументы: list) -> int:
+    if "--резерв" in аргументы:
+        print(f"H{свободный_по_веткам()}")
+        return 0
+
     if "--selftest" in аргументы:
         чисто = "### H1. А\n\n### H2. Б\n\n### H2-бис. поправка\n"
         грязно = "### H1. А\n\n### H2. Б\n\n### H2. В\n"
