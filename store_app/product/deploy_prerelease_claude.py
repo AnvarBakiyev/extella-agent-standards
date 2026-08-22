@@ -58,6 +58,8 @@ EXPERTS = {
     # «День первый»: витрина зовёт этих экспертов через app-agent/run, а тот
     # разрешает имена из скоупа версии (H51) — не приложенный сюда эксперт
     # ответит покупателю 502 «Expert not found» при живом эксперте в аккаунте.
+    "journey_capabilities": HERE.parent.parent / "experts/journey_capabilities.py",
+    "journey_concept": HERE.parent.parent / "experts/journey_concept.py",
     "journey_scan": HERE.parent.parent / "experts/journey_scan.py",
     "journey_organize": HERE.parent.parent / "experts/journey_organize.py",
     "journey_board_scheme": HERE.parent.parent / "experts/journey_board_scheme.py",
