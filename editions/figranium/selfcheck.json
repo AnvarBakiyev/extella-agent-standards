@@ -1,0 +1,36 @@
+{
+  "schema": "extella.selfcheck/v1",
+  "product": {
+    "name": "figranium",
+    "version": ""
+  },
+  "artifact": {
+    "kind": "page",
+    "name": "index.html",
+    "sha256": "a103c640ab60c1ee38fd86165c2ade53c52bb1dba838273ae67a535b3911088c"
+  },
+  "ran_at": "2026-08-22T10:19:43Z",
+  "runner": {
+    "where": "author-device",
+    "runtime": "python3.12.9"
+  },
+  "command": "",
+  "result": "not_ready",
+  "checks": [
+    {
+      "name": "self_check_runs",
+      "status": "fail",
+      "detail": "самопроверка не дала отчёта"
+    },
+    {
+      "name": "gate_finding",
+      "status": "fail",
+      "detail": "самопроверки нет вовсе: объяви её в MANIFEST.yaml или положи app/main.py --selftest. Без неё продукт проверяет только человек"
+    }
+  ],
+  "negative_control": {
+    "ran": false,
+    "mutation": "",
+    "self_check_went_red": false
+  }
+}
