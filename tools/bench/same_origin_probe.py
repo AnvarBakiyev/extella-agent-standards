@@ -120,6 +120,9 @@ def хром(лид: str, врем: pathlib.Path, скрин: pathlib.Path | Non
     команда.append(f"{ОС}/app-page/{лид}/")
     итог = subprocess.run(команда, capture_output=True, text=True, timeout=120)
     консоль = [с for с in (итог.stderr or "").splitlines() if "CONSOLE" in с]
+    if скрин and not (скрин.exists() and скрин.stat().st_size > 0):
+        # Пустой скриншот — сохраняем stderr браузера, чтобы видеть причину.
+        (скрин.parent / "хром_стдерр.txt").write_text(итог.stderr or "", encoding="utf-8")
     return итог.stdout or "", консоль
 
 

@@ -63,8 +63,9 @@ def приёмка(лид: str) -> dict:
     # Browser занимает ~30% прогонов возвращает пустоту (нет png) без ошибки —
     # перемежающийся флак. Скриншот = источник вердикта, поэтому при пустом png
     # повторяем весь прогон целиком (свежий прокси/порт/браузер), до 3 попыток.
+    import time
     сб, png, std = None, None, None
-    for попытка in range(3):
+    for попытка in range(4):
         with ЗАМОК:
             сб = same_origin_probe.собрать(лид)
         if сб.get("ошибка"):
@@ -74,6 +75,7 @@ def приёмка(лид: str) -> dict:
         std = измерить_плотность(png)
         if std is not None:
             break
+        time.sleep(12 * (попытка + 1))     # backoff: перешагнуть транзиентное окно
     в = классифицировать_домен(std, сб["конс"], видимый_текст(сб["dom"]))
     if png and png.exists():
         b64 = base64.b64encode(png.read_bytes()).decode()
