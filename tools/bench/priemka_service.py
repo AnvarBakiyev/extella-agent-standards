@@ -21,6 +21,7 @@ import base64
 import http.server
 import json
 import pathlib
+import secrets
 import sys
 import threading
 import urllib.parse
@@ -33,12 +34,29 @@ from check_opens_elsewhere import (измерить_плотность,      # n
 from probe_window import видимый_текст                      # noqa: E402
 
 ПОРТ = 8799
-КЛЮЧ_ФАЙЛ = pathlib.Path.home() / "extella-bench" / "bench_service_key.txt"
+БАЗА = pathlib.Path.home() / "extella-bench"
+КЛЮЧ_ФАЙЛ = БАЗА / "bench_service_key.txt"
+СЛАГ_ФАЙЛ = БАЗА / "bench_panel_slug.txt"         # секретный путь панели «для меня»
+ПАНЕЛЬ_ФАЙЛ = БАЗА / "panel_priemka.html"
 ЗАМОК = threading.Lock()
 
 
 def ключ() -> str:
     return КЛЮЧ_ФАЙЛ.read_text().strip() if КЛЮЧ_ФАЙЛ.exists() else ""
+
+
+def слаг() -> str:
+    if not СЛАГ_ФАЙЛ.exists():
+        СЛАГ_ФАЙЛ.write_text(secrets.token_urlsafe(24))
+        СЛАГ_ФАЙЛ.chmod(0o600)
+    return СЛАГ_ФАЙЛ.read_text().strip()
+
+
+def панель_html() -> bytes:
+    html = ПАНЕЛЬ_ФАЙЛ.read_text(encoding="utf-8")
+    конфиг = ('<script>window.BENCH_URL="";window.BENCH_KEY='
+              + json.dumps(ключ()) + ';</script>\n')
+    return html.replace("<script>", конфиг + "<script>", 1).encode("utf-8")
 
 
 def приёмка(лид: str) -> dict:
@@ -91,6 +109,16 @@ class Сервис(http.server.BaseHTTPRequestHandler):
         разбор = urllib.parse.urlparse(self.path)
         if разбор.path == "/health":
             return self._json(200, {"стенд": "жив"})
+        if разбор.path.rstrip("/") == "/u/" + слаг():
+            if not ПАНЕЛЬ_ФАЙЛ.exists():
+                return self._json(404, {"ошибка": "панель не установлена на стенде"})
+            тело = панель_html()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(тело)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return self.wfile.write(тело)
         if разбор.path != "/priemka":
             return self._json(404, {"ошибка": "нет такого пути"})
         if self.headers.get("X-Bench-Key", "") != ключ() or not ключ():
