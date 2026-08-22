@@ -26,7 +26,7 @@
   // пояснениях, но не в проводе (канон 4.5в).
   // Версию поднимать при каждой правке шима: по ней в журнале видно, какая
   // копия реально выполняется в окне (кэш браузера умеет показывать старую).
-  var ВЕРСИЯ_ШИМА = "2026-08-22-3";
+  var ВЕРСИЯ_ШИМА = "2026-08-22-4";
 
   function отметиться(этап, что) {
     try {
@@ -73,6 +73,15 @@
       // (в нём import.meta), и запуск его обычным воркером падает
       // «Cannot use 'import.meta' outside a module» (замер 22.08.2026).
       // Смотрим в сам код, а не в то, как нас позвали.
+      // Маячок внутрь воркера. Снаружи видно только «создан», а нам нужно
+      // знать, ЖИВ ли он: в окне ОС воркер рождается с чужим происхождением,
+      // и его собственные загрузки могут молча не пройти.
+      function с_маячком(код, метка) {
+        var адрес = location.origin + "/__shim?stage=worker-alive&what=" +
+                    encodeURIComponent(метка);
+        return "try{fetch(" + JSON.stringify(адрес) + ",{mode:'no-cors'});}catch(e){}\n" + код;
+      }
+
       function тип_по_коду(код, опции) {
         var модуль = /\bimport\s*\.\s*meta\b/.test(код)
                   || /^\s*(import|export)\s/m.test(код);
@@ -116,7 +125,8 @@
               s.open("GET", м[1], false);
               s.send(null);
               if (s.status >= 200 && s.status < 300 && s.responseText) {
-                var бб = new Blob([s.responseText], { type: "text/javascript" });
+                var бб = new Blob([с_маячком(s.responseText, "wrap-blob")],
+                                  { type: "text/javascript" });
                 var ww = new РодWorker(URL.createObjectURL(бб),
                                        тип_по_коду(s.responseText, опции));
                 отметиться("worker-wrap-blob", "ок");
@@ -142,7 +152,8 @@
             x.open("GET", абс, false);       // синхронно и один раз за воркер
             x.send(null);
             if (x.status >= 200 && x.status < 300 && x.responseText) {
-              var б = new Blob([x.responseText], { type: "text/javascript" });
+              var б = new Blob([с_маячком(x.responseText, "wrap-url")],
+                                { type: "text/javascript" });
               var w = new РодWorker(URL.createObjectURL(б),
                                     тип_по_коду(x.responseText, опции));
               отметиться("worker-wrap", "ок");
