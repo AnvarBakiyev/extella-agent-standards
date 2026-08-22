@@ -26,7 +26,7 @@
   // пояснениях, но не в проводе (канон 4.5в).
   // Версию поднимать при каждой правке шима: по ней в журнале видно, какая
   // копия реально выполняется в окне (кэш браузера умеет показывать старую).
-  var ВЕРСИЯ_ШИМА = "2026-08-23-6";
+  var ВЕРСИЯ_ШИМА = "2026-08-23-7";
 
   // Сказать человеку ОДИН раз: почему часть приложения может не работать.
   var сказано_про_потоки = false;
@@ -136,6 +136,31 @@
             new Blob(["self.postMessage(1)"], { type: "text/javascript" })));
         } catch (е) {}
         try { проба_воркера("data", "data:text/javascript,self.postMessage(1)"); } catch (е) {}
+        // РАУНД 2 (по итогам первого: простые classic-воркеры ЖИВЫ, боевые
+        // умирают error'ом без описания). Разница с пробой — тип «module» и
+        // прелюдия. Разводим по одной переменной за пробу:
+        try {                                        // module-воркер из blob
+          var мб = URL.createObjectURL(new Blob(["self.postMessage(1)"],
+                                                { type: "text/javascript" }));
+          var wм = new РодWorker(мб, { type: "module" });
+          var тм = setTimeout(function () { отметиться("probe-module", "создан, но молчит 4с");
+            try { wм.terminate(); } catch (е) {} }, 4000);
+          wм.onmessage = function () { clearTimeout(тм); отметиться("probe-module", "ЖИВ");
+            try { wм.terminate(); } catch (е) {} };
+          wм.onerror = function (e) { clearTimeout(тм); отметиться("probe-module",
+            "ошибка: " + ((e && e.message) || "без описания").slice(0, 120)); };
+        } catch (е) { отметиться("probe-module", "бросил: " + String(е.message).slice(0, 100)); }
+        try {                                        // classic + наша прелюдия
+          var пб = URL.createObjectURL(new Blob([ПРЕЛЮДИЯ + "\nself.postMessage(1)"],
+                                                { type: "text/javascript" }));
+          var wп = new РодWorker(пб);
+          var тп = setTimeout(function () { отметиться("probe-prelude", "создан, но молчит 4с");
+            try { wп.terminate(); } catch (е) {} }, 4000);
+          wп.onmessage = function () { clearTimeout(тп); отметиться("probe-prelude", "ЖИВ");
+            try { wп.terminate(); } catch (е) {} };
+          wп.onerror = function (e) { clearTimeout(тп); отметиться("probe-prelude",
+            "ошибка: " + ((e && e.message) || "без описания").slice(0, 120)); };
+        } catch (е) { отметиться("probe-prelude", "бросил: " + String(е.message).slice(0, 100)); }
       }
 
       // Тип воркера — по коду, не по вызову: скрипт pdf.js — ES-модуль
@@ -643,6 +668,11 @@
     // Замки между вкладками: см. заглушку ниже. Если приложение всё-таки
     // добралось до запертой двери — это не смерть, а отсутствие блокировки.
     if (String((е && е.message) || (о && о.message) || "").indexOf("LockManager") >= 0) return;
+    // ResizeObserver loop — известный доброкачественный шум браузера при
+    // перестройке раскладки: приложение живо и работает. Замер 23.08.2026:
+    // карточка «не смогло запуститься» легла поверх работающего окна.
+    if (String((е && е.message) || (о && о.message) || "")
+          .indexOf("ResizeObserver loop") >= 0) return;
     var части = [];
     if (е && е.message) части.push(String(е.message));
     if (о && о.name && String(е.message || "").indexOf(о.name) < 0) части.push(о.name);
@@ -798,8 +828,11 @@
       var панель = светлая ? "#F5F3EC" : "#141414";
       var гр = светлая ? "#D7E0DC" : "rgba(243,238,229,.09)";
       СЛОЙ.__цвета = { фон: фон, текст: текст, панель: панель, гр: гр };
+      // z-index большой: мёртвая панель родного вьюера (зум, страницы)
+      // плавала ПОВЕРХ спасателя и не работала — человек честно жал кнопки
+      // покойника (замечание владельца 23.08.2026).
       СЛОЙ.style.cssText = (место
-          ? "position:absolute;inset:0;z-index:50;"
+          ? "position:absolute;inset:0;z-index:2147480000;"
           : "position:fixed;inset:0;z-index:2147483000;") +
         "background:" + фон + ";color:" + текст + ";" +
         "display:flex;flex-direction:column;font:400 13px/1.5 system-ui,sans-serif";
@@ -1019,8 +1052,17 @@
           var з = запрос(); з.__дать(Array.from(карта.keys())); return з;
         },
         count: function () { var з = запрос(); з.__дать(карта.size); return з; },
-        "delete": function (ключ) { карта["delete"](String(ключ)); var з = запрос(); з.__дать(undefined); return з; },
-        clear: function () { карта.clear(); var з = запрос(); з.__дать(undefined); return з; },
+        "delete": function (ключ) {
+          // Маячок: жалоба «файл не удаляется» (23.08.2026) — по этой метке
+          // видно, доходит ли удаление до хранилища или гаснет раньше.
+          try { отметиться("db-delete", имя + "/" + String(ключ).slice(0, 60) +
+                           " было=" + карта.size); } catch (е) {}
+          карта["delete"](String(ключ)); var з = запрос(); з.__дать(undefined); return з;
+        },
+        clear: function () {
+          try { отметиться("db-clear", имя + " было=" + карта.size); } catch (е) {}
+          карта.clear(); var з = запрос(); з.__дать(undefined); return з;
+        },
         createIndex: function (имя_и, путь) { индексы[имя_и] = путь; return с.index(имя_и); },
         deleteIndex: function (имя_и) { delete индексы[имя_и]; },
         index: function (имя_и) {
