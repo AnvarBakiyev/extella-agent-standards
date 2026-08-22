@@ -140,6 +140,21 @@ footer a{color:var(--a)}
 .stale.open{display:block}
 mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0 2px}
 :root[data-lm="1"] mark{background:rgba(197,126,51,.2)}
+
+/* ── ПУТЕШЕСТВИЕ ─────────────────────────────────────────────────────────── */
+.journey{margin:28px 0 8px}
+.scene{border:1px solid var(--ln);border-radius:14px;padding:16px 18px;margin-top:14px}
+.scene-head h3{margin:0 0 4px}
+.scene-head p{margin:0 0 12px;color:var(--tm)}
+.scene-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1px solid var(--ln);background:transparent;color:var(--tx);
+      border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+.chip.on{border-color:var(--acc);color:var(--acc)}
+.scene-out{margin-top:12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;
+           color:var(--tm);line-height:1.55;white-space:pre-wrap}
+.scene-out.ok{color:var(--tx)}
+.scene-out b{font-size:16px}
+.scene-out .t{color:var(--tm)}
 </style>
 </head>
 <body>
@@ -236,6 +251,53 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
       <button class="btn main" id="local-llm-fast">Подключить</button>
     </div>
     <div class="codex-state" id="local-llm-state-fast">Готово к установке. Скачивание ~6 ГБ — прогресс будет виден здесь.</div>
+  </div>
+
+  <!-- ПУТЕШЕСТВИЕ: кнопки, которые вправду зовут. Не рассказ о силе, а сама
+       сила: живой вызов, секундомер и честная подпись, чего он стоил. Отказ
+       тут ценнее украшения — он доказывает, что вызов был настоящий. -->
+  <div class="journey" id="journey">
+    <p class="label">ПОПРОБОВАТЬ · ЖИВЫЕ ВЫЗОВЫ</p>
+    <h2>Не рассказ, а нажатие</h2>
+    <p>Кнопки ниже вправду зовут эксперта на вашей машине. Секундомер настоящий,
+    ответ настоящий. Если что-то не готово — страница скажет, что именно.</p>
+
+    <div class="scene" id="scene-classify">
+      <div class="scene-head">
+        <h3>Обращение уходит в нужный отдел</h3>
+        <p>Локальная модель на этом компьютере относит текст к отделу. Бесплатно,
+        и текст не покидает компьютер.</p>
+      </div>
+      <div class="scene-pick" id="pick-classify">
+        <button class="chip on" data-t="не приходит акт сверки за июль">не приходит акт сверки</button>
+        <button class="chip" data-t="хочу узнать цены на годовой тариф">цены на тариф</button>
+        <button class="chip" data-t="приложение падает при входе">приложение падает</button>
+      </div>
+      <button class="btn main" id="run-classify">Отнести к отделу</button>
+      <div class="scene-out" id="out-classify">Выберите обращение и нажмите.</div>
+    </div>
+
+    <div class="scene" id="scene-agent">
+      <div class="scene-head">
+        <h3>Страница будит агента аккаунта</h3>
+        <p>Три слоя подряд: страница в окне зовёт эксперта на вашей машине, а он
+        зовёт агента. Каждый слой настоящий, время каждого видно отдельно.</p>
+      </div>
+      <button class="btn main" id="run-agent">Спросить агента</button>
+      <div class="scene-out" id="out-agent">Замер на этой машине: около 17 секунд кругом.</div>
+    </div>
+
+    <div class="scene" id="scene-loop">
+      <div class="scene-head">
+        <h3>Кольцо: агент сам зовёт эксперта</h3>
+        <p>Страница → эксперт → агент → и агент со своей стороны зовёт эксперта с
+        локальной моделью. Отсюда растут длинные цепочки работы: каждый слой
+        умеет позвать следующий.</p>
+      </div>
+      <button class="btn" id="run-loop">Замкнуть кольцо</button>
+      <div class="scene-out" id="out-loop">Дольше остальных: около 50 секунд кругом,
+и это впритык к отсечке платформы — этап может уйти в фон.</div>
+    </div>
   </div>
 
   <details class="compare">
@@ -359,21 +421,17 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   // BEGIN_H17_PARSER
   // H17: шлюз ОС и ядро заворачивают результат независимо. Эксперт обязан
   // вернуть JSON-строку; Python repr намеренно не угадываем и показываем как отказ.
-  function разобрать_ответ_эксперта(value){
+  // Транспорт отдельно от домена (канон H56): обёртки снимает одна функция, а
+  // ЧТО внутри — решает каждый вызывающий по своему контракту. Прежде проверка
+  // формы установщика стояла внутри снятия обёрток, и любой другой эксперт
+  // получал «ответил не той формой», хотя отвечал верно.
+  function снять_обёртки(value){
     // Глубина десять — ПРЕДОХРАНИТЕЛЬ, а не замер: точного числа обёрток
-    // платформа не обещает, живым вызовом подтверждено лишь несколько
-    // вложенных. На четырёх разбор останавливался и honest-отказ обвинял
-    // эксперта в неверной форме, хотя форма была верной, а обёрток больше.
+    // платформа не обещает, живым вызовом подтверждено лишь несколько.
     for (var depth = 0; depth < 10; depth++) {
-      // Доменный ответ снимать нельзя. Транспорт заворачивает в result, но и у
-      // доменного объекта поле result бывает своим: без этой остановки разбор
-      // съедал бы полезные данные вместе с обёрткой.
-      if (value && typeof value === 'object' &&
-          typeof value.status === 'string' && typeof value.code === 'string') break;
+      // Доменный ответ снимать нельзя: у него бывает своё поле result.
+      if (value && typeof value === 'object' && typeof value.status === 'string') break;
       if (value && typeof value === 'object' && value.result !== undefined) {
-        // Отложенная задача — не порча ответа. Этап продолжается на сервере,
-        // а шаги идемпотентны, поэтому честный следующий шаг — повторить
-        // нажатие: установка продолжится с места, где остановилась.
         if (value.task_id && typeof value.result === 'string' &&
             value.result.indexOf('deferred') === 0) {
           var отложено = new Error('Этап выполняется дольше обычного и продолжается в фоне. ' +
@@ -388,11 +446,6 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       if (typeof value === 'string') {
         try { value = JSON.parse(value); }
         catch (_) {
-          // Прежний текст назывался кодом H17 и на этом заканчивался: человек
-          // у экрана не мог сделать НИЧЕГО, и мы тоже — по снимку не видно,
-          // что именно приехало (замер 21.08.2026, отказ у тестировщика).
-          // Показываем начало ответа: по нему видно, traceback это, Python
-          // repr или чужая обёртка. Домашний путь прячем — снимок уходит в чат.
           var улика = String(value).replace(/\/Users\/[^\/\s"']+/g, '/Users/…')
                                    .replace(/\s+/g, ' ').slice(0, 140);
           throw new Error('Установщик ответил не по форме (H17). Пришлите это ' +
@@ -402,11 +455,19 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       }
       break;
     }
-    if (!value || typeof value !== 'object' || typeof value.status !== 'string' ||
-        typeof value.code !== 'string') {
-      throw new Error('Установщик ответил не той формой, которую ждёт приложение.');
+    if (!value || typeof value !== 'object' || typeof value.status !== 'string') {
+      throw new Error('Ответ пришёл не той формой: нет признака состояния — разобрать нечем.');
     }
     return value;
+  }
+
+  function разобрать_ответ_эксперта(value){
+    // Контракт УСТАНОВЩИКА: у него обязателен ещё и код шага.
+    var ответ = снять_обёртки(value);
+    if (typeof ответ.code !== 'string') {
+      throw new Error('Установщик ответил не той формой, которую ждёт приложение.');
+    }
+    return ответ;
   }
   // END_H17_PARSER
 
@@ -1137,6 +1198,124 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   статус((СНИМОК && СНИМОК["версия_содержимого"]) || 'встроенное');
   подтянуть(false);
 })();
+
+  // ── ПУТЕШЕСТВИЕ: живой вызов эксперта ─────────────────────────────────────
+  // Отдельный от установщика путь вызова, со СВОИМ узким белым списком полей.
+  // Расширять общий список ради витрины нельзя: он охраняет то, что страница
+  // вообще способна передать на устройство.
+  function зовСценария(имяЭксперта, поля){
+    var причина = причинаБезТокена();
+    if (причина) return Promise.reject(new Error(причина));
+    return fetch('/api/app-agent/run', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({app_token: APP_TOKEN, expert_name: имяЭксперта, params: поля})
+    }).then(function(r){
+      return r.text().then(function(raw){
+        if (r.status === 403) {
+          throw new Error('Разрешите приложению запуск Expert на устройстве и повторите.');
+        }
+        if (!r.ok) {
+          var деталь = '';
+          try { деталь = String((JSON.parse(raw) || {}).detail || ''); } catch (_) {}
+          if (/not found/i.test(деталь)) {
+            throw new Error('Эксперт не найден в области этого устройства. ' +
+              'Переустановите продукт с рабочего стола.');
+          }
+          throw new Error('ОС ответила ' + r.status + (деталь ? ' · ' + деталь.slice(0,120) : ''));
+        }
+        var внешнее;
+        try { внешнее = JSON.parse(raw); } catch (_) { throw new Error('ОС вернула не JSON.'); }
+        return снять_обёртки(внешнее);
+      });
+    });
+  }
+
+  (function путешествие(){
+    var набор = document.getElementById('pick-classify');
+    var кнопка = document.getElementById('run-classify');
+    var вывод = document.getElementById('out-classify');
+    if (!набор || !кнопка || !вывод) return;
+    var выбран = набор.querySelector('.chip.on');
+
+    набор.addEventListener('click', function(e){
+      var c = e.target.closest('.chip'); if (!c) return;
+      набор.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('on'); });
+      c.classList.add('on'); выбран = c;
+      вывод.className = 'scene-out'; вывод.textContent = 'Готово к запуску.';
+    });
+
+    кнопка.addEventListener('click', function(){
+      if (!выбран) { вывод.textContent = 'Сначала выберите обращение.'; return; }
+      кнопка.disabled = true;
+      вывод.className = 'scene-out';
+      вывод.textContent = 'Зову локальную модель на этом компьютере…';
+      // Секундомер честный: меряем круг целиком, как его чувствует человек,
+      // и рядом называем время самой модели — это разные величины.
+      var старт = (window.performance && performance.now) ? performance.now() : Date.now();
+      зовСценария('local_model_classify', {
+        text: выбран.getAttribute('data-t'),
+        categories: 'продажи, поддержка, бухгалтерия'
+      }).then(function(ответ){
+        var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
+        if (ответ && ответ.status === 'success' && ответ.category) {
+          вывод.className = 'scene-out ok';
+          вывод.innerHTML = '<b>' + текстом(ответ.category) + '</b>\n' +
+            '<span class="t">' + сек.toFixed(1) + ' с кругом · модель ' +
+            текстом(ответ.model || 'локальная') + ' · бесплатно · текст не покинул компьютер</span>';
+        } else {
+          вывод.className = 'scene-out';
+          вывод.textContent = (ответ && ответ.message) ? ответ.message : 'Модель не дала ответа.';
+        }
+      }).catch(function(e){
+        вывод.className = 'scene-out';
+        вывод.textContent = e.message || String(e);
+      }).then(function(){ кнопка.disabled = false; });
+    });
+
+    // Сцена 2 и 3: цепочка через агента. Отдельный эксперт-звонарь, а не
+    // расширение белого списка установщика: у показа свой узкий контракт.
+    function цепочка(идКнопки, идВывода, вопрос, подпись){
+      var к = document.getElementById(идКнопки), в = document.getElementById(идВывода);
+      if (!к || !в) return;
+      к.addEventListener('click', function(){
+        к.disabled = true;
+        в.className = 'scene-out';
+        в.textContent = 'Иду по цепочке: страница → эксперт → агент…';
+        var старт = (window.performance && performance.now) ? performance.now() : Date.now();
+        зовСценария('journey_ask_agent', {
+          agent_id: 'agent_8LlxoJMZsU0ka4zAPdd5v', question: вопрос
+        }).then(function(о){
+          var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
+          if (о && о.status === 'success' && о.answer) {
+            в.className = 'scene-out ok';
+            в.innerHTML = '<b>' + текстом(о.answer) + '</b>\n' +
+              '<span class="t">' + сек.toFixed(1) + ' с кругом · из них агент ' +
+              текстом(String(о.seconds || '?')) + ' с · ' + текстом(подпись) + '</span>';
+          } else {
+            в.className = 'scene-out';
+            в.textContent = (о && о.message) ? о.message : 'Агент не дал ответа.';
+          }
+        }).catch(function(e){
+          в.className = 'scene-out';
+          // Отложенная задача — не поломка: этап дольше отсечки платформы.
+          в.textContent = e.отложено
+            ? 'Цепочка длиннее отсечки платформы и продолжается в фоне. Нажмите ещё раз через минуту.'
+            : (e.message || String(e));
+        }).then(function(){ к.disabled = false; });
+      });
+    }
+
+    цепочка('run-agent', 'out-agent',
+            'Ответь одним словом: столица Казахстана?',
+            'страница → эксперт → агент');
+
+    цепочка('run-loop', 'out-loop',
+            'Позови эксперта local_model_classify с global=true, параметры: ' +
+            "text='не приходит акт сверки за июль', " +
+            "categories='продажи, поддержка, бухгалтерия'. " +
+            'Верни ТОЛЬКО категорию одним словом.',
+            'страница → эксперт → агент → эксперт → локальная модель');
+  })();
 </script>
 </body>
 </html>
