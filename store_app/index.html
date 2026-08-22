@@ -187,7 +187,7 @@ button,input,select,textarea{font-family:inherit}
     <button class="вкладка" data-экран="ещё">Ещё</button>
   </nav>
 
-  <section class="экран" data-экран="начало">
+  <div class="экран" data-экран="начало">
   <div class="actions">
     <button class="btn main" id="промпт">Скопировать промпт для агента</button>
   </div>
@@ -196,9 +196,9 @@ button,input,select,textarea{font-family:inherit}
   там, где у агента нет доступа в сеть.</p>
   <div class="stale" id="устарело"></div>
   <div class="news" id="новости"></div>
-  </section>
+  </div>
 
-  <section class="экран" data-экран="агент">
+  <div class="экран" data-экран="агент">
 
   <p class="метка-раздела">ШАГ ПЕРВЫЙ</p>
   <h2>Свяжи своего агента с Extella</h2>
@@ -234,9 +234,9 @@ button,input,select,textarea{font-family:inherit}
     </div>
     <div class="codex-state" id="claude-state">Готов к проверке. Реальные запросы в Claude могут расходовать план или API.</div>
   </div>
-  </section>
+  </div>
 
-  <section class="экран" data-экран="модели">
+  <div class="экран" data-экран="модели">
 
   <p class="метка-раздела">ШАГ ВТОРОЙ</p>
   <h2>Поставь модель на этот компьютер</h2>
@@ -295,9 +295,9 @@ button,input,select,textarea{font-family:inherit}
   <!-- ПУТЕШЕСТВИЕ: кнопки, которые вправду зовут. Не рассказ о силе, а сама
        сила: живой вызов, секундомер и честная подпись, чего он стоил. Отказ
        тут ценнее украшения — он доказывает, что вызов был настоящий. -->
-  </section>
+  </div>
 
-  <section class="экран" data-экран="проба">
+  <div class="экран" data-экран="проба">
   <div class="journey" id="journey">
     <p class="label">ПОПРОБОВАТЬ · ЖИВЫЕ ВЫЗОВЫ</p>
     <h2>Не рассказ, а нажатие</h2>
@@ -411,9 +411,9 @@ button,input,select,textarea{font-family:inherit}
     </div>
   </details>
 
-  </section>
+  </div>
 
-  <section class="экран" data-экран="поиск">
+  <div class="экран" data-экран="поиск">
 
   <p class="метка-раздела">ПОИСК</p>
   <h2>Найди ответ по своему вопросу</h2>
@@ -426,9 +426,9 @@ button,input,select,textarea{font-family:inherit}
 
   <div id="разделы"></div>
 
-  </section>
+  </div>
 
-  <section class="экран" data-экран="ещё">
+  <div class="экран" data-экран="ещё">
 
   <p class="метка-раздела">ОБСЛУЖИВАНИЕ</p>
   <div class="actions">
@@ -446,7 +446,7 @@ button,input,select,textarea{font-family:inherit}
     Проверки там же: они и есть спецификация, а не текст рядом с ней.</p>
     <div class="status" id="статус"></div>
   </footer>
-  </section>
+  </div>
 
 </div>
 
@@ -731,8 +731,12 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   }
 
   function привязать(){
-    [].slice.call(document.querySelectorAll('section')).forEach(function(s){
-      s.querySelector('.head').onclick = function(){ s.classList.toggle('open'); };
+    // Только карточки внутри списка разделов. Прежде обходились ВСЕ section
+    // страницы, и первый же чужой валил отрисовку: у него нет заголовка-
+    // открывашки, обход падал, и страница оставалась пустой без единого слова.
+    [].slice.call(document.querySelectorAll('#разделы section')).forEach(function(s){
+      var г = s.querySelector('.head');
+      if (г) г.onclick = function(){ s.classList.toggle('open'); };
     });
   }
 
