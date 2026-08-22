@@ -39,7 +39,19 @@ from probe_window import видимый_текст  # noqa: E402
 
 ОС = "https://os.extella.ai"
 ТОКЕН_ФАЙЛ = pathlib.Path.home() / "extella-bench" / "bench_token.txt"
-ХРОМ = "/snap/bin/chromium"
+
+
+def _браузер() -> str:
+    # Снап-chromium не запускается из systemd-сервиса («not a snap cgroup»),
+    # поэтому предпочитаем настоящий бинарь Chrome, если он есть.
+    for p in ("/usr/bin/google-chrome-stable", "/usr/bin/google-chrome",
+              "/usr/bin/chromium-browser", "/snap/bin/chromium"):
+        if pathlib.Path(p).exists():
+            return p
+    return "/snap/bin/chromium"
+
+
+ХРОМ = _браузер()
 ПОРТ = 34983
 ЦЕРТ = pathlib.Path.home() / "extella-bench" / "os_selfsigned.pem"
 
