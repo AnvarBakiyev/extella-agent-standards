@@ -108,6 +108,11 @@ run check_self_check
 # существовала (build.py --check), но её никто не звал.
 run maintainers
 run_command "снимок страницы гида" python3 "$ROOT/store_app/build.py" --check
+# Бренд и ожидание проверялись только самопроверками, а к самой странице продукта
+# не применялись — и она годами несла «ассистента» и немую кнопку. Проверка, ни к
+# чему не применённая, ничего не охраняет.
+run_command "бренд страницы продукта" python3 "$ROOT/tools/check_brand_copy.py" "$ROOT/store_app/index.html"
+run_command "ожидание на странице продукта" python3 "$ROOT/tools/check_waiting_state.py" "$ROOT/store_app/index.html"
 run check_canon_numbers
 run_command "правило по дизайну" python3 "$ROOT/tools/check_design_rule.py"
 run_command "единственный источник" python3 "$ROOT/tools/check_single_source.py"

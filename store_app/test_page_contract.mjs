@@ -214,11 +214,11 @@ test('главное действие — промпт со ссылкой на 
   const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
   // Правило раздела 10: «источник правил один… не копируй текст гида». Кнопка,
   // копирующая весь текст, ему противоречила: снимок устаревает в тот же день,
-  // а ассистент не знает, что читает снимок.
+  // а агент не знает, что читает снимок.
   const действия = page.slice(page.indexOf('<div class="actions">'), page.indexOf('</div>', page.indexOf('<div class="actions">')));
   const главная = действия.slice(действия.indexOf('class="btn main"'), действия.indexOf('</button>'));
   assert.ok(главная.includes('промпт'), 'главная кнопка — промпт, а не копия текста');
-  const промпт = page.slice(page.indexOf('var ПРОМПТ_АССИСТЕНТУ'), page.indexOf("].join('\\n')"));
+  const промпт = page.slice(page.indexOf('var ПРОМПТ_АГЕНТУ'), page.indexOf("].join('\\n')"));
   // Ссылка на живой источник и вход обязаны быть в промпте.
   assert.ok(промпт.includes('github.com/AnvarBakiyev/extella-agent-standards'), 'адрес источника есть');
   // Вход — README.md. START_HERE.md сам объявляет себя историей: «вход один и
