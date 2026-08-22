@@ -40,6 +40,9 @@ $SUDO rm -f /etc/apt/apt.conf.d/99needrestart \
 
 log "зависимости: python3, curl, библиотеки браузера…"
 apt_get update -q >/dev/null
+# man-db-триггер пересобирает индекс man-страниц и надолго виснет в контейнере
+# (состояние D). Стенду man-страницы не нужны — сносим триггер целиком.
+apt_get purge -y man-db >/dev/null 2>&1 || true
 # Chrome — как standalone «Chrome for Testing» (без .deb: postinst .deb виснет в
 # контейнере). Ставим только его рантайм-библиотеки, сам браузер — распаковкой.
 # дождаться освобождения apt-замка (на свежей машине cloud-init/автообновления)
