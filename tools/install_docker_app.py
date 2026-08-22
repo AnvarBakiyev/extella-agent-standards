@@ -37,6 +37,8 @@ import urllib.request
 
 СЮДА = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(СЮДА))
+import автозапуск as АЗ  # noqa: E402
+sys.path.insert(0, str(СЮДА))
 from install_github_app import (Отказ, КОРЕНЬ, шаг, свободный_порт,  # noqa: E402
                                 взять_лицензию, прогнать)
 
@@ -45,7 +47,8 @@ from install_github_app import (Отказ, КОРЕНЬ, шаг, свободн
 ГНЕЗДО = КАБИНЕТ / "docker"
 
 
-def plist_прокси(slug: str, порт: int, внутренний: int) -> str:
+def plist_прокси(slug: str, порт: int, внутренний: int) -> str:   # noqa: F811
+    """Оставлено для чтения истории; автозапуск делает tools/автозапуск.py."""
     """Автозапуск прокси-раздачи. Окно ОС — песочница: страницы контейнера без
     шима умирают о запертое хранилище (белый Сторож, 20.08.2026), а «отдельное
     окно» Электрона наследует ту же песочницу. Поэтому наружу смотрит НАШ
@@ -182,13 +185,20 @@ def работа(образ: str, slug: str, имя: str, порт_внутри:
         shutil.copy(СЮДА / "cabinet_server.py", КАБИНЕТ / "cabinet_server.py")
         shutil.copy(СЮДА.parent / "templates" / "storage_shim.html",
                     КАБИНЕТ / "storage_shim.html")
-        plist = ДОМ / "Library" / "LaunchAgents" / f"ai.extella.{slug}.plist"
-        plist.write_text(plist_прокси(slug, порт, внутренний))
-        subprocess.run(["launchctl", "unload", str(plist)], capture_output=True)
-        итог = subprocess.run(["launchctl", "load", str(plist)],
-                              capture_output=True, text=True)
-        if итог.returncode != 0:
-            raise Отказ(f"прокси не поднялся: {итог.stderr[:200]}")
+        # Автозапуск — общий для трёх систем (tools/автозапуск.py). Раньше
+        # здесь лежал свой plist, и это было ЕДИНСТВЕННОЕ место, которым
+        # установка приложений прибивалась к macOS: на чужой машине окно молча
+        # не поднималось бы вовсе.
+        try:
+            где = АЗ.поставить(slug, [АЗ.питон(), str(КАБИНЕТ / "cabinet_server.py"),
+                                      "--папка", str(ГНЕЗДО / slug), "--порт", str(порт),
+                                      "--имя", slug, "--данные", str(КАБИНЕТ / "данные"),
+                                      "--прокси-на", str(внутренний),
+                                      "--шим", str(КАБИНЕТ / "storage_shim.html")],
+                               журнал=КАБИНЕТ / f"{slug}.log")
+        except RuntimeError as е:
+            raise Отказ(f"прокси не поднялся: {е}") from е
+        print(f"  ✓ служба прописана ({АЗ.система()}): {где}")
         сек = ждать_порт(порт)
         print(f"  ✓ прокси {порт} → {внутренний} жив, шим вшивается в HTML")
 

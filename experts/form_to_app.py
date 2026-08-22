@@ -54,8 +54,24 @@ else:
         врем.close()
         py = "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3"
         if not os.path.exists(py):
-            py = "python3"
-        инстр = os.path.expanduser("~/Documents/Extella/extella-agent-standards/tools/" + СКРИПТЫ[куда])
+            import shutil
+            py = shutil.which("python3") or shutil.which("python") or "python3"
+        # Путь к инструментам ищем, а не знаем: вшитый верен только на машине
+        # автора, у коллеги репозиторий лежит иначе.
+        корень = os.environ.get("EXTELLA_TOOLS") or ""
+        if not корень:
+            for где in ("~/Documents/Extella/extella-agent-standards/tools/",
+                        "~/extella-agent-standards/tools/",
+                        "~/Documents/extella-agent-standards/tools/",
+                        "~/extella-cabinet/tools/"):
+                если = os.path.expanduser(где)
+                if os.path.isdir(если):
+                    корень = если
+                    break
+        if not корень:
+            raise RuntimeError("не нашёл папку инструментов Extella; "
+                               "укажите её переменной среды EXTELLA_TOOLS")
+        инстр = корень + СКРИПТЫ[куда]
         итог = subprocess.run([py, инстр, "--файл", врем.name, "--источник", ист],
                               capture_output=True, text=True, timeout=90)
         os.unlink(врем.name)
