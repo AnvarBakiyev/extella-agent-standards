@@ -45,7 +45,7 @@ li{margin-bottom:6px}
 .search::placeholder{color:var(--tx3)}
 .count{font-family:var(--mono);font-size:11px;color:var(--tx3);min-height:16px;margin-bottom:14px}
 
-section{background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin-bottom:10px;overflow:hidden}
+section{background:var(--s1);border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden}
 .head{display:flex;align-items:baseline;gap:10px;padding:14px 16px;cursor:pointer;user-select:none}
 .head:hover{background:var(--s2)}
 .num{font-family:var(--mono);font-size:11px;color:var(--tx3);min-width:16px}
@@ -59,13 +59,13 @@ section.open .chev{transform:rotate(-135deg)}
   padding:34px 12px 11px;margin:8px 0 14px}
 .cmd code{font-family:var(--mono);font-size:12px;color:var(--tx);white-space:pre-wrap;word-break:break-word;display:block}
 .copy{position:absolute;top:8px;right:8px;font-family:var(--sans);font-size:12px;
-  color:var(--tx2);background:transparent;border:1px solid var(--bd2);border-radius:4px;
+  color:var(--tx2);background:transparent;border:1px solid var(--bd2);border-radius:8px;
   padding:4px 9px;cursor:pointer}
 .copy:hover{color:var(--tx);border-color:var(--a)}
 .copy[data-done="1"]{color:var(--petrol);border-color:var(--petrol)}
 .copy-note{font-size:12px;color:var(--tx3);margin:-8px 0 12px}
 
-code.inl{font-family:var(--mono);font-size:12px;background:var(--s3);border-radius:4px;padding:1px 5px;color:var(--tx)}
+code.inl{font-family:var(--mono);font-size:12px;background:var(--s3);border-radius:8px;padding:1px 5px;color:var(--tx)}
 
 .note{border-left:2px solid var(--a);padding:2px 0 2px 12px;margin:12px 0;font-size:13px;color:var(--tx2)}
 .note strong{color:var(--tx)}
@@ -91,7 +91,7 @@ footer a{color:var(--a)}
 .btn[data-done="1"]{border-color:var(--petrol);color:var(--petrol)}
 .btn.main[data-done="1"]{background:transparent}
 
-.codex{background:var(--s2);border:1px solid var(--bd2);border-radius:6px;
+.codex{background:var(--s2);border:1px solid var(--bd2);border-radius:12px;
   padding:14px 16px;margin:14px 0 16px}
 .codex-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .codex h3{margin:0 0 3px;font-size:17px}
@@ -107,8 +107,8 @@ footer a{color:var(--a)}
 .lvl p{margin:0 0 6px;font-size:14px}
 .tasktypes{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}
 .tasktypes span{font-family:var(--mono);font-size:11px;color:var(--tx2);
-  background:var(--s3);border:1px solid var(--bd);border-radius:4px;padding:2px 8px}
-.compare{background:var(--s1);border:1px solid var(--bd);border-radius:6px;margin:6px 0 16px}
+  background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:2px 8px}
+.compare{background:var(--s1);border:1px solid var(--bd);border-radius:12px;margin:6px 0 16px}
 .compare>summary{cursor:pointer;list-style:none;padding:12px 16px;font:600 14px var(--sans);
   color:var(--tx);display:flex;align-items:center;gap:8px}
 .compare>summary::-webkit-details-marker{display:none}
@@ -122,7 +122,7 @@ footer a{color:var(--a)}
 .compare .ask b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);font-weight:400}
 .compare .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:520px){.compare .pair{grid-template-columns:1fr}}
-.compare .side{background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:9px 11px}
+.compare .side{background:var(--s3);border:1px solid var(--bd);border-radius:12px;padding:9px 11px}
 .compare .side .who{font-family:var(--mono);font-size:11px;color:var(--tx3);margin:0 0 4px}
 .compare .side .out{font-size:13px;color:var(--tx);margin:0 0 3px}
 .compare .side .t{font-family:var(--mono);font-size:11px;color:var(--petrol)}
@@ -130,7 +130,7 @@ footer a{color:var(--a)}
 .codex-state.ok{color:var(--petrol)}
 .codex-state.bad{color:var(--a)}
 
-.news{background:var(--s2);border:1px solid var(--bd);border-radius:6px;
+.news{background:var(--s2);border:1px solid var(--bd);border-radius:12px;
   padding:14px 16px;margin:12px 0 0;display:none}
 .news.open{display:block}
 .news h3{margin-top:0}
@@ -138,12 +138,12 @@ footer a{color:var(--a)}
 .stale{border-left:2px solid var(--a);padding:2px 0 2px 12px;margin:12px 0 0;
   font-size:13px;color:var(--tx2);display:none}
 .stale.open{display:block}
-mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0 2px}
+mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:8px;padding:0 2px}
 :root[data-lm="1"] mark{background:rgba(197,126,51,.2)}
 
 /* ── ПУТЕШЕСТВИЕ ─────────────────────────────────────────────────────────── */
 .journey{margin:28px 0 8px}
-.scene{border:1px solid var(--ln);border-radius:14px;padding:16px 18px;margin-top:14px}
+.scene{border:1px solid var(--ln);border-radius:12px;padding:16px 18px;margin-top:14px}
 .scene-head h3{margin:0 0 4px}
 .scene-head p{margin:0 0 12px;color:var(--tm)}
 .scene-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
@@ -166,6 +166,9 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
 .вкладка[aria-current="page"]{color:var(--tx);border-color:var(--ln);background:var(--bg2)}
 .экран{display:none}
 .экран.виден{display:block}
+.метка-раздела{font:400 11px/1.4 ui-monospace,Menlo,monospace;color:var(--tm);margin:24px 0 8px}
+.ведущая{color:var(--tm);margin:0 0 24px;max-width:64ch}
+button,input,select,textarea{font-family:inherit}
 </style>
 </head>
 <body>
@@ -178,6 +181,7 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   <nav class="меню" id="меню">
     <button class="вкладка" data-экран="начало">Начало</button>
     <button class="вкладка" data-экран="агент">Подключить агента</button>
+    <button class="вкладка" data-экран="модели">Локальные модели</button>
     <button class="вкладка" data-экран="проба">Попробовать</button>
     <button class="вкладка" data-экран="поиск">Найти ответ</button>
     <button class="вкладка" data-экран="ещё">Ещё</button>
@@ -186,10 +190,6 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   <section class="экран" data-экран="начало">
   <div class="actions">
     <button class="btn main" id="промпт">Скопировать промпт для агента</button>
-    <button class="btn" id="всё">Скопировать весь текст</button>
-    <button class="btn" id="новое">Что нового</button>
-    <button class="btn" id="обновить">Проверить обновление</button>
-    <button class="btn" id="язык" style="display:none">EN</button>
   </div>
   <p class="copy-note">Промпт — двенадцать строк со ссылкой на живой источник правил.
   Агент читает их сам и всегда получает свежую версию. Весь текст нужен только
@@ -199,6 +199,12 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   </section>
 
   <section class="экран" data-экран="агент">
+
+  <p class="метка-раздела">ШАГ ПЕРВЫЙ</p>
+  <h2>Свяжи своего агента с Extella</h2>
+  <p class="ведущая">Мост ставит на этот Mac отдельную службу: свой порт, свой секрет.
+  Начни с Codex — он ставится одной кнопкой. Claude рядом, если работаешь в нём.</p>
+
   <div class="lvl">
     <p class="label">УРОВЕНЬ 1 · РАЗРАБОТКА</p>
     <h2>Разработка агентов</h2>
@@ -223,11 +229,20 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
         <h3>Claude Code &#8596; Extella</h3>
         <p>Отдельная служба на этом Mac: свой порт и свой секрет, Codex не затрагивается.</p>
       </div>
-      <button class="btn main" id="claude-connect">Подключить Claude</button>
+      <button class="btn" id="claude-connect">Подключить Claude</button>
       <button class="btn" id="claude-reprovision">Обновить раздачу</button>
     </div>
     <div class="codex-state" id="claude-state">Готов к проверке. Реальные запросы в Claude могут расходовать план или API.</div>
   </div>
+  </section>
+
+  <section class="экран" data-экран="модели">
+
+  <p class="метка-раздела">ШАГ ВТОРОЙ</p>
+  <h2>Поставь модель на этот компьютер</h2>
+  <p class="ведущая">Дальше агент сможет звать её вместо облака: бесплатно и без выхода
+  данных наружу. Быстрая нужна для потока однотипных задач, вдумчивая — для разбора.
+  Начни с быстрой.</p>
 
   <div class="lvl">
     <p class="label">УРОВЕНЬ 2 · СЛОЖНЫЕ ЗАДАЧИ</p>
@@ -244,7 +259,7 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
         <p>Рассуждающая модель ~16 ГБ. Ставится и запускается одной кнопкой,
         как мосты. Установка модель не вызывает.</p>
       </div>
-      <button class="btn main" id="local-llm-quality">Подключить</button>
+      <button class="btn" id="local-llm-quality">Подключить</button>
     </div>
     <div class="codex-state" id="local-llm-state-quality">Готово к установке. Скачивание ~16 ГБ — прогресс будет виден здесь.</div>
   </div>
@@ -310,7 +325,7 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
         <p>Три слоя подряд: страница в окне зовёт эксперта на вашей машине, а он
         зовёт агента. Каждый слой настоящий, время каждого видно отдельно.</p>
       </div>
-      <button class="btn main" id="run-agent">Спросить агента</button>
+      <button class="btn" id="run-agent">Спросить агента</button>
       <div class="scene-out" id="out-agent">Замер на этой машине: около 17 секунд кругом.</div>
     </div>
 
@@ -399,6 +414,12 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   </section>
 
   <section class="экран" data-экран="поиск">
+
+  <p class="метка-раздела">ПОИСК</p>
+  <h2>Найди ответ по своему вопросу</h2>
+  <p class="ведущая">Набери, что случилось или что нужно сделать: токен, права, магазин,
+  белый экран. Ищет по всем разделам руководства.</p>
+
   <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
   <div class="count" id="count"></div>
   <div class="empty" id="empty" style="display:none">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
@@ -408,6 +429,17 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   </section>
 
   <section class="экран" data-экран="ещё">
+
+  <p class="метка-раздела">ОБСЛУЖИВАНИЕ</p>
+  <div class="actions">
+    <button class="btn" id="обновить">Проверить обновление</button>
+    <button class="btn" id="новое">Что нового</button>
+    <button class="btn" id="всё">Скопировать весь текст</button>
+    <button class="btn" id="язык" style="display:none">EN</button>
+  </div>
+  <p class="copy-note">Весь текст — снимок на сегодня, он устареет. Живой источник
+  отдаёт кнопка на экране «Начало».</p>
+
   <footer>
     <p>Полный канон, машинные проверки и разборы поломок —
     <a href="https://github.com/AnvarBakiyev/extella-agent-standards" target="_blank" rel="noopener">github.com/AnvarBakiyev/extella-agent-standards</a>.
