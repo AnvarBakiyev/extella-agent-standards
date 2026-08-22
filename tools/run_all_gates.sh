@@ -111,6 +111,8 @@ run_command "снимок страницы гида" python3 "$ROOT/store_app/bu
 # Бренд и ожидание проверялись только самопроверками, а к самой странице продукта
 # не применялись — и она годами несла «ассистента» и немую кнопку. Проверка, ни к
 # чему не применённая, ничего не охраняет.
+run check_screen_rules
+run_command "правила экранов продукта" python3 "$ROOT/tools/check_screen_rules.py" "$ROOT/store_app/index.html"
 run_command "бренд страницы продукта" python3 "$ROOT/tools/check_brand_copy.py" "$ROOT/store_app/index.html"
 run_command "ожидание на странице продукта" python3 "$ROOT/tools/check_waiting_state.py" "$ROOT/store_app/index.html"
 run check_canon_numbers
