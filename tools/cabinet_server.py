@@ -388,7 +388,8 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
                         and self._автовход()):
                     continue
                 break
-            if шим and "text/html" in (о.getheader("Content-Type") or ""):
+            это_html = "text/html" in (о.getheader("Content-Type") or "")
+            if шим and это_html:
                 данные = _вставить_шим(данные, шим)
             self.send_response(о.status)
             for к, з in о.getheaders():
@@ -430,6 +431,13 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
             # Свой допуск (ACAO) НЕ шлём здесь: его добавляет end_headers ко
             # всем ответам сервера — второй экземпляр даёт «multiple values»,
             # и браузер отвергает CORS целиком. Замер 21.08.2026, tududi.
+            if это_html:
+                # СТРАНИЦЫ ПРИЛОЖЕНИЯ НЕ КЭШИРУЕМ. В них вшит шим, и он
+                # меняется: окно ОС держало старую копию, правки «не работали»,
+                # а на деле не доезжали (замер 22.08.2026 — маячок показал
+                # отметки прежней версии шима после починки). Ассеты
+                # приложения кэшируются как обычно, они с хэшем в имени.
+                self.send_header("Cache-Control", "no-store, must-revalidate")
             self.send_header("Content-Length", str(len(данные)))
             self.end_headers()
             self.wfile.write(данные)
