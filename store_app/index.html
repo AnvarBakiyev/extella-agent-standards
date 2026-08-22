@@ -276,6 +276,28 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
       <button class="btn main" id="run-classify">Отнести к отделу</button>
       <div class="scene-out" id="out-classify">Выберите обращение и нажмите.</div>
     </div>
+
+    <div class="scene" id="scene-agent">
+      <div class="scene-head">
+        <h3>Страница будит агента аккаунта</h3>
+        <p>Три слоя подряд: страница в окне зовёт эксперта на вашей машине, а он
+        зовёт агента. Каждый слой настоящий, время каждого видно отдельно.</p>
+      </div>
+      <button class="btn main" id="run-agent">Спросить агента</button>
+      <div class="scene-out" id="out-agent">Замер на этой машине: около 17 секунд кругом.</div>
+    </div>
+
+    <div class="scene" id="scene-loop">
+      <div class="scene-head">
+        <h3>Кольцо: агент сам зовёт эксперта</h3>
+        <p>Страница → эксперт → агент → и агент со своей стороны зовёт эксперта с
+        локальной моделью. Отсюда растут длинные цепочки работы: каждый слой
+        умеет позвать следующий.</p>
+      </div>
+      <button class="btn" id="run-loop">Замкнуть кольцо</button>
+      <div class="scene-out" id="out-loop">Дольше остальных: около 50 секунд кругом,
+и это впритык к отсечке платформы — этап может уйти в фон.</div>
+    </div>
   </div>
 
   <details class="compare">
@@ -1249,6 +1271,50 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
         вывод.textContent = e.message || String(e);
       }).then(function(){ кнопка.disabled = false; });
     });
+
+    // Сцена 2 и 3: цепочка через агента. Отдельный эксперт-звонарь, а не
+    // расширение белого списка установщика: у показа свой узкий контракт.
+    function цепочка(идКнопки, идВывода, вопрос, подпись){
+      var к = document.getElementById(идКнопки), в = document.getElementById(идВывода);
+      if (!к || !в) return;
+      к.addEventListener('click', function(){
+        к.disabled = true;
+        в.className = 'scene-out';
+        в.textContent = 'Иду по цепочке: страница → эксперт → агент…';
+        var старт = (window.performance && performance.now) ? performance.now() : Date.now();
+        зовСценария('journey_ask_agent', {
+          agent_id: 'agent_8LlxoJMZsU0ka4zAPdd5v', question: вопрос
+        }).then(function(о){
+          var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
+          if (о && о.status === 'success' && о.answer) {
+            в.className = 'scene-out ok';
+            в.innerHTML = '<b>' + текстом(о.answer) + '</b>\n' +
+              '<span class="t">' + сек.toFixed(1) + ' с кругом · из них агент ' +
+              текстом(String(о.seconds || '?')) + ' с · ' + текстом(подпись) + '</span>';
+          } else {
+            в.className = 'scene-out';
+            в.textContent = (о && о.message) ? о.message : 'Агент не дал ответа.';
+          }
+        }).catch(function(e){
+          в.className = 'scene-out';
+          // Отложенная задача — не поломка: этап дольше отсечки платформы.
+          в.textContent = e.отложено
+            ? 'Цепочка длиннее отсечки платформы и продолжается в фоне. Нажмите ещё раз через минуту.'
+            : (e.message || String(e));
+        }).then(function(){ к.disabled = false; });
+      });
+    }
+
+    цепочка('run-agent', 'out-agent',
+            'Ответь одним словом: столица Казахстана?',
+            'страница → эксперт → агент');
+
+    цепочка('run-loop', 'out-loop',
+            'Позови эксперта local_model_classify с global=true, параметры: ' +
+            "text='не приходит акт сверки за июль', " +
+            "categories='продажи, поддержка, бухгалтерия'. " +
+            'Верни ТОЛЬКО категорию одним словом.',
+            'страница → эксперт → агент → эксперт → локальная модель');
   })();
 </script>
 </body>
