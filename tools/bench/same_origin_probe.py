@@ -109,10 +109,10 @@ def сделать_прокси(токен: str):
     return Прокси
 
 
-def хром(лид: str, врем: pathlib.Path, скрин: pathlib.Path | None) -> tuple:
+def хром(лид: str, врем: pathlib.Path, скрин: pathlib.Path | None, порт: int) -> tuple:
     команда = [ХРОМ, "--headless=new", f"--user-data-dir={врем}",
                "--no-sandbox", "--disable-gpu", "--window-size=1280,900",
-               f"--host-resolver-rules=MAP os.extella.ai 127.0.0.1:{ПОРТ}",
+               f"--host-resolver-rules=MAP os.extella.ai 127.0.0.1:{порт}",
                "--ignore-certificate-errors",
                "--enable-logging=stderr", "--v=0",
                "--virtual-time-budget=45000", "--timeout=70000"]
@@ -140,10 +140,16 @@ def собрать(лид: str) -> dict:
 
     ктх = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     ктх.load_cert_chain(str(ЦЕРТ))
-    сервер = http.server.ThreadingHTTPServer(("127.0.0.1", ПОРТ),
+    # Эфемерный порт: фиксированный не успевал освобождаться между прогонами
+    # подряд → новый прокси не поднимался, браузер получал пустоту (замер 22.08:
+    # 0-байтный DOM, скриншота нет, вердикт срывался в «не измерить»). Порт 0 —
+    # ОС сама выдаёт свободный, столкновений нет.
+    сервер = http.server.ThreadingHTTPServer(("127.0.0.1", 0),
                                              сделать_прокси(токен))
+    порт = сервер.server_address[1]
     сервер.socket = ктх.wrap_socket(сервер.socket, server_side=True)
     threading.Thread(target=сервер.serve_forever, daemon=True).start()
+    скрин = папка / "окно_на_домене.png"
     dom, конс = "", []
     try:
         import tempfile
@@ -151,13 +157,18 @@ def собрать(лид: str) -> dict:
             в = pathlib.Path(врем)
             # Панели рисуют UI в Shadow DOM — видимого текста в dump-dom не будет
             # никогда, поэтому дожимать нечем. Одна съёмка DOM (для проверки {{ }}
-            # в обычном DOM) + скриншот, по которому и судим. Повтор — только если
-            # DOM вышел пустым (холодный ответ платформы), это уже про транспорт.
-            dom, конс = хром(лид, в / "a", None)
+            # в обычном DOM) + скриншот, по которому и судим.
+            dom, конс = хром(лид, в / "a", None, порт)
             if len(dom) < 100:
                 time.sleep(3)
-                dom, конс = хром(лид, в / "a2", None)
-            хром(лид, в / "b", папка / "окно_на_домене.png")
+                dom, конс = хром(лид, в / "a2", None, порт)
+            # Скриншот — источник вердикта, поэтому дожимаем: до двух попыток,
+            # пока не появится непустой png.
+            for попытка in range(2):
+                хром(лид, в / f"b{попытка}", скрин, порт)
+                if скрин.exists() and скрин.stat().st_size > 0:
+                    break
+                time.sleep(2)
     finally:
         сервер.shutdown()
 
