@@ -94,7 +94,8 @@
 <script>
   // Этап 1: стенд задаётся адресом и ключом. На своём стенде — свой адрес; для
   // нашего демо — локальный туннель. Ключ закрывает стенд от улицы.
-  var BENCH = window.BENCH_URL || "http://localhost:8799";
+  // "" = тот же origin (стенд сам отдал панель); undefined = локальная разработка.
+  var BENCH = (typeof window.BENCH_URL === "string") ? window.BENCH_URL : "http://localhost:8799";
   var KEY   = window.BENCH_KEY || "";
 
   var CLS = {"зелёный":"g","жёлтый":"y","красный":"r","серый":"y"};
