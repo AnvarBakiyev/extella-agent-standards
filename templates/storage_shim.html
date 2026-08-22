@@ -26,7 +26,7 @@
   // пояснениях, но не в проводе (канон 4.5в).
   // Версию поднимать при каждой правке шима: по ней в журнале видно, какая
   // копия реально выполняется в окне (кэш браузера умеет показывать старую).
-  var ВЕРСИЯ_ШИМА = "2026-08-22-11";
+  var ВЕРСИЯ_ШИМА = "2026-08-22-13";
 
   // Сказать человеку ОДИН раз: почему часть приложения может не работать.
   var сказано_про_потоки = false;
@@ -48,6 +48,28 @@
   try {
     отметиться("старт", "шим=" + ВЕРСИЯ_ШИМА + " origin=" + location.origin +
                         " путь=" + location.pathname);
+  } catch (е) {}
+
+  // ── КОДИРОВКА ТЕКСТОВЫХ ФАЙЛОВ ───────────────────────────────────────────
+  // Приложение показывает html/txt/csv, отдавая файл во вложенную рамку как
+  // временный адрес. Если у файла не указана кодировка, браузер выбирает её
+  // сам — и для кириллицы выбирает НЕ ту: вместо «Журнал» человек видит
+  // «Ð–ÑƒÑ€Ð½Ð°Ð»» (замер 22.08.2026, предпросмотр HTML в PDF-инструментах).
+  // Дописываем кодировку сами: содержимое не трогаем, только помечаем.
+  try {
+    var родной_адрес = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = function (объект) {
+      try {
+        if (объект instanceof Blob) {
+          var тип = String(объект.type || "");
+          if (/^text\/|application\/(json|xml|xhtml)/.test(тип) &&
+              тип.indexOf("charset") < 0) {
+            объект = new Blob([объект], { type: тип + ";charset=utf-8" });
+          }
+        }
+      } catch (е) {}
+      return родной_адрес(объект);
+    };
   } catch (е) {}
 
   // ── РАБОЧИЕ ПОТОКИ (Worker) ──────────────────────────────────────────────
@@ -607,22 +629,65 @@
       рисовать();
     }
 
+    // Куда встраиваться. НЕ ПОВЕРХ ВСЕГО ОКНА: слой на весь экран закрывает
+    // само приложение — исчезают список файлов слева и все инструменты
+    // справа, и человек не может ни сжать, ни распознать, пока не закроет
+    // просмотр (замер 22.08.2026, справедливое замечание владельца: «ты
+    // посмотри, что произошло»). Встаём В ТУ ЖЕ ОБЛАСТЬ, где приложение
+    // показывало своё колесо, — панели остаются на месте.
+    function место_документа(){
+      var узлы = document.querySelectorAll("div, section, main");
+      var лучший = null;
+      for (var i = 0; i < узлы.length; i++) {
+        var э = узлы[i];
+        var т = (э.textContent || "");
+        if (!/Loading tool|Loading PDF Engine|Загрузка/i.test(т)) continue;
+        if (т.length > 400) continue;               // это уже кусок страницы, не область
+        var к = э.getBoundingClientRect();
+        if (к.width < 320 || к.height < 240) continue;
+        лучший = э;                                  // берём самый внутренний подходящий
+      }
+      return лучший;
+    }
+
     function собрать_слой(){
       if (СЛОЙ) return;
+      var место = место_документа();
       СЛОЙ = document.createElement("div");
       СЛОЙ.setAttribute("data-extella", "просмотр");
-      СЛОЙ.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:#0A0A0A;" +
-        "display:flex;flex-direction:column;font:400 13px/1.5 system-ui,sans-serif;color:#F5F3EE";
+      var светлая = (function(){
+        try {
+          var ц = getComputedStyle(document.body).backgroundColor || "";
+          var ч = ц.match(/\d+/g);
+          return !ч || (Number(ч[0]) + Number(ч[1]) + Number(ч[2])) / 3 > 140;
+        } catch (е) { return true; }
+      })();
+      var фон = светлая ? "#FFFFFF" : "#0A0A0A";
+      var текст = светлая ? "#0A0A0A" : "#F5F3EE";
+      var панель = светлая ? "#F5F3EC" : "#141414";
+      var гр = светлая ? "#D7E0DC" : "rgba(243,238,229,.09)";
+      СЛОЙ.__цвета = { фон: фон, текст: текст, панель: панель, гр: гр };
+      СЛОЙ.style.cssText = (место
+          ? "position:absolute;inset:0;z-index:50;"
+          : "position:fixed;inset:0;z-index:2147483000;") +
+        "background:" + фон + ";color:" + текст + ";" +
+        "display:flex;flex-direction:column;font:400 13px/1.5 system-ui,sans-serif";
+      if (место) {
+        try {
+          if (getComputedStyle(место).position === "static") место.style.position = "relative";
+        } catch (е) {}
+      }
       var шапка = document.createElement("div");
+      var ц = СЛОЙ.__цвета;
       шапка.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 16px;" +
-        "background:#141414;border-bottom:1px solid rgba(243,238,229,.09);flex:none";
+        "background:" + ц.панель + ";border-bottom:1px solid " + ц.гр + ";flex:none";
       шапка.innerHTML = '<span style="font:500 11px ui-monospace,monospace;color:#5FA8A0;' +
         'letter-spacing:.08em;text-transform:uppercase;margin-right:auto">Просмотр документа</span>';
       var кн = function (текст, дело){
         var b = document.createElement("button");
         b.textContent = текст;
-        b.style.cssText = "font:600 13px system-ui;color:#F5F3EE;background:#181818;" +
-          "border:1px solid rgba(243,238,229,.09);border-radius:8px;padding:6px 12px;cursor:pointer";
+        b.style.cssText = "font:600 13px system-ui;color:" + ц.текст + ";background:" + ц.фон + ";" +
+          "border:1px solid " + ц.гр + ";border-radius:8px;padding:6px 12px;cursor:pointer";
         b.onclick = дело; шапка.appendChild(b); return b;
       };
       var назад = кн("←", function(){ if (стр_ > 1) { стр_--; рисовать(); } });
@@ -638,7 +703,7 @@
       поле.id = "extella_поле";
       поле.style.cssText = "flex:1;overflow:auto;padding:20px;display:flex;justify-content:center";
       СЛОЙ.appendChild(шапка); СЛОЙ.appendChild(поле);
-      document.body.appendChild(СЛОЙ);
+      (место || document.body).appendChild(СЛОЙ);
     }
 
     async function рисовать(){
