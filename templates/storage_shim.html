@@ -26,7 +26,7 @@
   // пояснениях, но не в проводе (канон 4.5в).
   // Версию поднимать при каждой правке шима: по ней в журнале видно, какая
   // копия реально выполняется в окне (кэш браузера умеет показывать старую).
-  var ВЕРСИЯ_ШИМА = "2026-08-22-6";
+  var ВЕРСИЯ_ШИМА = "2026-08-22-9";
 
   // Сказать человеку ОДИН раз: почему часть приложения может не работать.
   var сказано_про_потоки = false;
@@ -519,6 +519,142 @@
     сбой((р && (р.message || р)) || "оборванное обещание");
   });
 
+
+  // ── СПАСАТЕЛЬНЫЙ ПРОСМОТР ДОКУМЕНТА ──────────────────────────────────────
+  // ЗАЧЕМ. Приложение показывает документ своим движком, а движок живёт в
+  // рабочем потоке — в окне ОС потоки мертвы, и человек видит вечное колесо
+  // «Loading tool…». Отдельное приложение для чтения владелец отверг
+  // справедливо: «зачем мне два инструмента». Поэтому чиним ЗДЕСЬ: если
+  // область просмотра висит дольше нескольких секунд, показываем документ
+  // сами — тем же pdf.js, только считаем в главном потоке.
+  //
+  // Документ берём из хранилища самого приложения (наша база-заглушка): он
+  // уже там, человек его открыл. Ничего не грузим со стороны.
+  (function спасательный_просмотр(){
+    var СЛОЙ = null, док = null, стр_ = 1, увел = 1.2, pdfjs = null;
+
+    function похоже_на_pdf(з){
+      try {
+        if (!з) return null;
+        if (з instanceof Blob) return з;
+        if (з instanceof ArrayBuffer) return new Uint8Array(з);
+        if (з && з.buffer instanceof ArrayBuffer) return new Uint8Array(з.buffer);
+        for (var к in з) {
+          if (з[к] instanceof Blob || з[к] instanceof ArrayBuffer ||
+              (з[к] && з[к].buffer instanceof ArrayBuffer)) {
+            return похоже_на_pdf(з[к]);
+          }
+        }
+      } catch (е) {}
+      return null;
+    }
+
+    function найти_документ(){
+      var базы = window.__extella_базы || {};
+      var найдено = null;
+      for (var имя in базы) {
+        var хранилища = базы[имя] || {};
+        for (var с in хранилища) {
+          var карта = хранилища[с] && хранилища[с].__карта;
+          if (!карта || !карта.forEach) continue;
+          карта.forEach(function (значение) {
+            var б = похоже_на_pdf(значение);
+            if (б) найдено = б;              // берём последний положенный
+          });
+        }
+      }
+      return найдено;
+    }
+
+    function висит_просмотр(){
+      var т = (document.body && document.body.innerText) || "";
+      return /Loading tool|Loading PDF Engine|Загрузка/i.test(т);
+    }
+
+    async function показать(данные){
+      if (!pdfjs) {
+        pdfjs = await import("/_extella_page/lib/pdf.min.mjs");
+        pdfjs.GlobalWorkerOptions.workerSrc = "/_extella_page/lib/pdf.worker.min.mjs";
+      }
+      var байты = данные instanceof Blob
+        ? new Uint8Array(await данные.arrayBuffer()) : данные;
+      док = await pdfjs.getDocument({ data: байты }).promise;
+      стр_ = 1;
+      собрать_слой();
+      рисовать();
+    }
+
+    function собрать_слой(){
+      if (СЛОЙ) return;
+      СЛОЙ = document.createElement("div");
+      СЛОЙ.setAttribute("data-extella", "просмотр");
+      СЛОЙ.style.cssText = "position:fixed;inset:0;z-index:2147483000;background:#0A0A0A;" +
+        "display:flex;flex-direction:column;font:400 13px/1.5 system-ui,sans-serif;color:#F5F3EE";
+      var шапка = document.createElement("div");
+      шапка.style.cssText = "display:flex;align-items:center;gap:10px;padding:10px 16px;" +
+        "background:#141414;border-bottom:1px solid rgba(243,238,229,.09);flex:none";
+      шапка.innerHTML = '<span style="font:500 11px ui-monospace,monospace;color:#5FA8A0;' +
+        'letter-spacing:.08em;text-transform:uppercase;margin-right:auto">Просмотр документа</span>';
+      var кн = function (текст, дело){
+        var b = document.createElement("button");
+        b.textContent = текст;
+        b.style.cssText = "font:600 13px system-ui;color:#F5F3EE;background:#181818;" +
+          "border:1px solid rgba(243,238,229,.09);border-radius:8px;padding:6px 12px;cursor:pointer";
+        b.onclick = дело; шапка.appendChild(b); return b;
+      };
+      var назад = кн("←", function(){ if (стр_ > 1) { стр_--; рисовать(); } });
+      var где = document.createElement("span");
+      где.id = "extella_где";
+      где.style.cssText = "font:500 12px ui-monospace,monospace;min-width:70px;text-align:center";
+      шапка.appendChild(где);
+      var вперёд = кн("→", function(){ if (док && стр_ < док.numPages) { стр_++; рисовать(); } });
+      кн("−", function(){ увел = Math.max(0.5, увел - 0.2); рисовать(); });
+      кн("+", function(){ увел = Math.min(4, увел + 0.2); рисовать(); });
+      кн("Закрыть", function(){ СЛОЙ.remove(); СЛОЙ = null; });
+      var поле = document.createElement("div");
+      поле.id = "extella_поле";
+      поле.style.cssText = "flex:1;overflow:auto;padding:20px;display:flex;justify-content:center";
+      СЛОЙ.appendChild(шапка); СЛОЙ.appendChild(поле);
+      document.body.appendChild(СЛОЙ);
+    }
+
+    async function рисовать(){
+      if (!док || !СЛОЙ) return;
+      var поле = СЛОЙ.querySelector("#extella_поле");
+      var где = СЛОЙ.querySelector("#extella_где");
+      где.textContent = стр_ + " / " + док.numPages;
+      поле.innerHTML = "";
+      var стр = await док.getPage(стр_);
+      var к = (window.devicePixelRatio || 1);
+      var вид = стр.getViewport({ scale: увел * к });
+      var кан = document.createElement("canvas");
+      кан.width = вид.width; кан.height = вид.height;
+      кан.style.cssText = "width:" + (вид.width / к) + "px;height:auto;background:#fff;" +
+                          "box-shadow:0 2px 16px rgba(0,0,0,.35);border-radius:4px";
+      поле.appendChild(кан);
+      // Обещание отрисовки без рабочего потока НЕ ЗАВЕРШАЕТСЯ — не ждём его,
+      // иначе следующая страница никогда не нарисуется (замер 22.08.2026).
+      стр.render({ canvasContext: кан.getContext("2d"), viewport: вид });
+    }
+
+    var ждём = 0;
+    setInterval(function(){
+      var песочница = (typeof ВОРКЕРЫ_МЕРТВЫ !== "undefined" && ВОРКЕРЫ_МЕРТВЫ) ||
+                      (typeof ФЛАГ_БЕЗ_ВОРКЕРОВ !== "undefined" && ФЛАГ_БЕЗ_ВОРКЕРОВ);
+      if (СЛОЙ || !песочница) return;
+      if (!висит_просмотр()) { ждём = 0; return; }
+      ждём++;
+      if (ждём < 4) return;                 // держим паузу: вдруг догрузится
+      var данные = найти_документ();
+      if (!данные) return;
+      ждём = 0;
+      показать(данные).catch(function(е){
+        отметиться("rescue-fail", е && е.message);
+      });
+      отметиться("rescue-open", "показываю документ сами");
+    }, 1000);
+  })();
+
   // ── ЗАМКИ МЕЖДУ ВКЛАДКАМИ (Web Locks) ────────────────────────────────────
   // Песочница запрещает navigator.locks.request: «Access to the Locks API is
   // denied in this context». Приложения берут замок, чтобы две вкладки не
@@ -699,6 +835,9 @@
       return с;
     }
     var базы = {};
+    // Содержимое базы видно и снаружи шима: спасательный просмотр (ниже)
+    // ищет в ней открытый документ. Наружу отдаём только чтение.
+    try { window.__extella_базы = базы; } catch (е) {}
     function база(имя, версия) {
       var хранилища = базы[имя] || (базы[имя] = {});
       var б = {
@@ -755,7 +894,18 @@
   }
 
   var базы_закрыты = false;
+  // Флаг проверки включает песочный режим целиком — иначе путь «мертвые
+  // потоки + база-заглушка + спасательный просмотр» нельзя пройти там, где
+  // видна консоль.
+  if (typeof ФЛАГ_БЕЗ_ВОРКЕРОВ !== "undefined" && ФЛАГ_БЕЗ_ВОРКЕРОВ) {
+    базы_закрыты = true;
+    try {
+      Object.defineProperty(window, "indexedDB",
+                            { configurable: true, value: сделать_базы() });
+    } catch (х) {}
+  }
   try {
+    if (базы_закрыты) throw new Error("песочный режим проверки");
     var прб = window.indexedDB.open("__extella_проба_баз");
     прб.onsuccess = function () {
       try { прб.result.close(); window.indexedDB.deleteDatabase("__extella_проба_баз"); } catch (e) {}
