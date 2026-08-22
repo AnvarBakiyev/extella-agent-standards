@@ -59,10 +59,10 @@ else:
                               or "сбор не дал ни одной строки"}, ensure_ascii=False), flush=True)
         else:
             д = json.load(open(врем.name, encoding="utf-8"))
-            строки = д.get("строки") or []
+            строки = д.get("rows") or []
             цены = [с.get("цена_тенге") for с in строки if с.get("цена_тенге")]
-            сводка = {"собрано": len(строки), "заголовок": д.get("заголовок"),
-                      "подпись": д.get("подпись")}
+            сводка = {"собрано": len(строки), "заголовок": д.get("title"),
+                      "подпись": д.get("caption")}
             if цены:
                 сводка["цена_мин"] = min(цены)
                 сводка["цена_макс"] = max(цены)
@@ -74,12 +74,12 @@ else:
             if куда:
                 # Доставку делает тот же form_to_app, что и всегда: один путь в
                 # приложения человека, а не второй такой же рядом.
-                форма = {"форма": "список", "заголовок": д.get("заголовок"),
-                         "подпись": д.get("подпись"),
-                         "строки": [{"имя": с.get("имя"),
-                                     "поля": {к: з for к, з in list(с.items())
-                                              if к != "имя" and к != "описание"}}
-                                    for с in строки]}
+                форма = {"form": "list", "title": д.get("title"),
+                         "caption": д.get("caption"),
+                         "rows": [{"name": с.get("name"),
+                                   "fields": {к: з for к, з in list(с.items())
+                                              if к not in ("name", "описание")}}
+                                  for с in строки]}
                 ф2 = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
                 json.dump(форма, ф2, ensure_ascii=False)
                 ф2.close()
