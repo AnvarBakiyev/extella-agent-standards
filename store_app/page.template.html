@@ -155,6 +155,17 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
 .scene-out.ok{color:var(--tx)}
 .scene-out b{font-size:16px}
 .scene-out .t{color:var(--tm)}
+
+/* ── МЕНЮ И ЭКРАНЫ ───────────────────────────────────────────────────────── */
+/* Отступы кратны четырём, радиусы по коду: пилюля у действия, 8 у контрола. */
+.меню{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 24px;
+      border-bottom:1px solid var(--ln);padding-bottom:12px}
+.вкладка{background:transparent;color:var(--tm);border:1px solid transparent;
+         border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer}
+.вкладка:hover{color:var(--tx)}
+.вкладка[aria-current="page"]{color:var(--tx);border-color:var(--ln);background:var(--bg2)}
+.экран{display:none}
+.экран.виден{display:block}
 </style>
 </head>
 <body>
@@ -162,19 +173,32 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
 
   <div id="шапка"></div>
 
+  <!-- Меню экранов. Одна задача на экран и одно бронзовое действие на экран:
+       прежде всё лежало одной простынёй, и человек не понимал, с чего начать. -->
+  <nav class="меню" id="меню">
+    <button class="вкладка" data-экран="начало">Начало</button>
+    <button class="вкладка" data-экран="агент">Подключить агента</button>
+    <button class="вкладка" data-экран="проба">Попробовать</button>
+    <button class="вкладка" data-экран="поиск">Найти ответ</button>
+    <button class="вкладка" data-экран="ещё">Ещё</button>
+  </nav>
+
+  <section class="экран" data-экран="начало">
   <div class="actions">
-    <button class="btn main" id="промпт">Скопировать промпт для ассистента</button>
+    <button class="btn main" id="промпт">Скопировать промпт для агента</button>
     <button class="btn" id="всё">Скопировать весь текст</button>
     <button class="btn" id="новое">Что нового</button>
     <button class="btn" id="обновить">Проверить обновление</button>
     <button class="btn" id="язык" style="display:none">EN</button>
   </div>
   <p class="copy-note">Промпт — двенадцать строк со ссылкой на живой источник правил.
-  Ассистент читает их сам и всегда получает свежую версию. Весь текст нужен только
-  там, где у ассистента нет доступа в сеть.</p>
+  Агент читает их сам и всегда получает свежую версию. Весь текст нужен только
+  там, где у агента нет доступа в сеть.</p>
   <div class="stale" id="устарело"></div>
   <div class="news" id="новости"></div>
+  </section>
 
+  <section class="экран" data-экран="агент">
   <div class="lvl">
     <p class="label">УРОВЕНЬ 1 · РАЗРАБОТКА</p>
     <h2>Разработка агентов</h2>
@@ -256,6 +280,9 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
   <!-- ПУТЕШЕСТВИЕ: кнопки, которые вправду зовут. Не рассказ о силе, а сама
        сила: живой вызов, секундомер и честная подпись, чего он стоил. Отказ
        тут ценнее украшения — он доказывает, что вызов был настоящий. -->
+  </section>
+
+  <section class="экран" data-экран="проба">
   <div class="journey" id="journey">
     <p class="label">ПОПРОБОВАТЬ · ЖИВЫЕ ВЫЗОВЫ</p>
     <h2>Не рассказ, а нажатие</h2>
@@ -369,18 +396,25 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:4px;padding:0
     </div>
   </details>
 
+  </section>
+
+  <section class="экран" data-экран="поиск">
   <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
   <div class="count" id="count"></div>
   <div class="empty" id="empty" style="display:none">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
 
   <div id="разделы"></div>
 
+  </section>
+
+  <section class="экран" data-экран="ещё">
   <footer>
     <p>Полный канон, машинные проверки и разборы поломок —
     <a href="https://github.com/AnvarBakiyev/extella-agent-standards" target="_blank" rel="noopener">github.com/AnvarBakiyev/extella-agent-standards</a>.
     Проверки там же: они и есть спецификация, а не текст рядом с ней.</p>
     <div class="status" id="статус"></div>
   </footer>
+  </section>
 
 </div>
 
@@ -392,6 +426,10 @@ var APP_TOKEN = /*APP_TOKEN*/"";
 var ИСТОЧНИК = "https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/store_app/content.json";
 var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняется сама страница, а не текст
 
+// Обёртка страницы: внутри фоновое перечитывание содержимого при открытии.
+// Человек его не запускает и повторно нажать не может — блокировать нечего.
+// У настоящих кнопок ниже ожидание своё, до вызова и со снятием в любом исходе.
+// ожидание: фоновая задача
 (function(){
   var текущее = СНИМОК;
 
@@ -588,7 +626,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
           // ядра. «Expert not found» значит, что установщик не разрешается в
           // области этого устройства (нужно переустановить продукт), а не что
           // ОС временно недоступна. Общее «повтори через минуту» на такой отказ
-          // не помогает никогда.
+          // такой ответ не спасает никогда.
           var деталь = '';
           try { деталь = String((JSON.parse(raw) || {}).detail || ''); } catch (_) {}
           if (/not found/i.test(деталь)) {
@@ -704,7 +742,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   }
 
   // Копия всего руководства простым текстом — ради главного сценария продукта:
-  // отдать канон своему ассистенту одной вставкой.
+  // отдать канон своему агенту одной вставкой.
   function руководство_текстом(содержимое){
     var ш = содержимое["шапка"] || {}, части = [];
     части.push(String(ш["заголовок"] || '').toUpperCase ? ш["заголовок"] : '');
@@ -868,9 +906,9 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   // Главное действие — промпт со ссылкой на живой источник, а не снимок текста.
   // Правило из раздела 10 гласит: «источник правил один… не копируй текст гида и
   // не создавай второй вход». Кнопка «скопировать всё» ему противоречила:
-  // скопированный текст устаревает в тот же день, а ассистент не знает, что читает
+  // скопированный текст устаревает в тот же день, а агент не знает, что читает
   // снимок. Промпт отправляет его к источнику, поэтому он всегда свежий.
-  var ПРОМПТ_АССИСТЕНТУ = [
+  var ПРОМПТ_АГЕНТУ = [
     'Настройся по стандартам Extella и построй мне агента.',
     '',
     'Источник правил один и живой: github.com/AnvarBakiyev/extella-agent-standards',
@@ -888,8 +926,8 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   ].join('\n');
 
   document.getElementById('промпт').onclick = function(){
-    скопировать(ПРОМПТ_АССИСТЕНТУ, this,
-                'Скопировать промпт для ассистента', 'Скопировано — вставляй ассистенту');
+    скопировать(ПРОМПТ_АГЕНТУ, this,
+                'Скопировать промпт для агента', 'Скопировано — вставляй агенту');
   };
 
   document.getElementById('всё').onclick = function(){
@@ -1315,6 +1353,42 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
             "categories='продажи, поддержка, бухгалтерия'. " +
             'Верни ТОЛЬКО категорию одним словом.',
             'страница → эксперт → агент → эксперт → локальная модель');
+  })();
+
+  // ── ЭКРАНЫ ────────────────────────────────────────────────────────────────
+  // Пять задач — пять экранов. Выбранный запоминается в адресе окна: человек
+  // возвращается туда, где был, а не в начало.
+  (function экраны(){
+    var меню = document.getElementById('меню');
+    if (!меню) return;
+    var вкладки = [].slice.call(меню.querySelectorAll('.вкладка'));
+    var панели = [].slice.call(document.querySelectorAll('.экран'));
+
+    function открыть(имя){
+      var есть = вкладки.some(function(в){ return в.getAttribute('data-экран') === имя; });
+      имя = есть ? имя : 'начало';
+      вкладки.forEach(function(в){
+        var своя = в.getAttribute('data-экран') === имя;
+        if (своя) { в.setAttribute('aria-current', 'page'); } else { в.removeAttribute('aria-current'); }
+      });
+      панели.forEach(function(п){
+        п.classList.toggle('виден', п.getAttribute('data-экран') === имя);
+      });
+      try { history.replaceState(null, '', '#' + encodeURIComponent(имя)); } catch (_) {}
+      window.scrollTo(0, 0);
+    }
+
+    меню.addEventListener('click', function(e){
+      var в = e.target.closest('.вкладка');
+      if (в) открыть(в.getAttribute('data-экран'));
+    });
+
+    // Поиск — это отдельный экран: набор в поле уводит туда, где виден результат.
+    var поле = document.getElementById('q');
+    if (поле) поле.addEventListener('focus', function(){ открыть('поиск'); });
+
+    открыть(decodeURIComponent((location.hash || '').replace('#', '')) || 'начало');
+    window.открытьЭкран = открыть;
   })();
 </script>
 </body>
