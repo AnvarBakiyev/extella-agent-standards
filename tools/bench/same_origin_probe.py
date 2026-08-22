@@ -43,8 +43,10 @@ from probe_window import видимый_текст  # noqa: E402
 
 def _браузер() -> str:
     # Снап-chromium не запускается из systemd-сервиса («not a snap cgroup»),
-    # поэтому предпочитаем настоящий бинарь Chrome, если он есть.
-    for p in ("/usr/bin/google-chrome-stable", "/usr/bin/google-chrome",
+    # поэтому предпочитаем настоящий бинарь Chrome. Локальный Chrome-for-Testing
+    # (рядом со скриптами, ставит установщик без dpkg) — первым.
+    свой = pathlib.Path(__file__).resolve().parent / "chrome" / "chrome"
+    for p in (str(свой), "/usr/bin/google-chrome-stable", "/usr/bin/google-chrome",
               "/usr/bin/chromium-browser", "/snap/bin/chromium"):
         if pathlib.Path(p).exists():
             return p
