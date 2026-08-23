@@ -31,6 +31,7 @@ import sys
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 ЗДЕСЬ = pathlib.Path(__file__).resolve().parent
@@ -69,7 +70,10 @@ def обеспечить_серт() -> None:
         check=True, capture_output=True)
 
 
-def сделать_прокси(токен: str):
+РОБОТ_ФАЙЛ = pathlib.Path(__file__).resolve().parent / "click_probe.js"
+
+
+def сделать_прокси(токен: str, копилка: dict):
     ПРОПУСК = {"host", "content-length", "connection", "accept-encoding"}
 
     class Прокси(http.server.BaseHTTPRequestHandler):
@@ -82,6 +86,28 @@ def сделать_прокси(токен: str):
             n = int(self.headers.get("Content-Length") or 0)
             return self.rfile.read(n) if n else None
 
+        def _отчёт(self, тело):
+            """Клик-робот отчитался: путь наш, наружу не пробрасываем."""
+            try:
+                копилка["отчёт"] = json.loads((тело or b"{}").decode("utf-8"))
+            except Exception:                              # noqa: BLE001
+                копилка["отчёт"] = {"стадия": "отчёт нечитаем"}
+            о = json.dumps({"принято": True}, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(о)))
+            self.end_headers()
+            self.wfile.write(о)
+
+        def _внедрить(self, данные: bytes) -> bytes:
+            """Вшить клик-робота в конец страницы приложения."""
+            if not РОБОТ_ФАЙЛ.exists():
+                return данные
+            робот = ("\n<script>\n" + РОБОТ_ФАЙЛ.read_text(encoding="utf-8")
+                     + "\n</script>\n").encode("utf-8")
+            низ = данные.rfind(b"</body>")
+            return (данные[:низ] + робот + данные[низ:]) if низ != -1 else данные + робот
+
         def _проброс(self, метод: str, тело):
             заг = {k: v for k, v in self.headers.items()
                    if k.lower() not in ПРОПУСК}
@@ -92,9 +118,11 @@ def сделать_прокси(токен: str):
             try:
                 with urllib.request.urlopen(з, timeout=90) as о:
                     данные = о.read()
+                    тип = о.headers.get("Content-Type", "text/html")
+                    if "text/html" in тип and b"</body>" in данные[-4000:]:
+                        данные = self._внедрить(данные)
                     self.send_response(о.status)
-                    self.send_header("Content-Type",
-                                     о.headers.get("Content-Type", "text/html"))
+                    self.send_header("Content-Type", тип)
                     self.send_header("Content-Length", str(len(данные)))
                     self.end_headers()
                     self.wfile.write(данные)
@@ -118,7 +146,10 @@ def сделать_прокси(токен: str):
             self._проброс("GET", None)
 
         def do_POST(self):
-            self._проброс("POST", self._тело())
+            тело = self._тело()
+            if urllib.parse.urlparse(self.path).path == "/probe-report":
+                return self._отчёт(тело)
+            self._проброс("POST", тело)
 
     return Прокси
 
@@ -161,8 +192,9 @@ def собрать(лид: str) -> dict:
     # подряд → новый прокси не поднимался, браузер получал пустоту (замер 22.08:
     # 0-байтный DOM, скриншота нет, вердикт срывался в «не измерить»). Порт 0 —
     # ОС сама выдаёт свободный, столкновений нет.
+    копилка: dict = {}
     сервер = http.server.ThreadingHTTPServer(("127.0.0.1", 0),
-                                             сделать_прокси(токен))
+                                             сделать_прокси(токен, копилка))
     порт = сервер.server_address[1]
     сервер.socket = ктх.wrap_socket(сервер.socket, server_side=True)
     threading.Thread(target=сервер.serve_forever, daemon=True).start()
@@ -191,7 +223,12 @@ def собрать(лид: str) -> dict:
 
     (папка / "dom.html").write_text(dom, encoding="utf-8")
     (папка / "консоль.txt").write_text("\n".join(конс), encoding="utf-8")
-    return {"dom": dom, "конс": конс, "папка": папка, "ошибка": None}
+    отчёт = копилка.get("отчёт")
+    if отчёт is not None:
+        (папка / "проклик.json").write_text(
+            json.dumps(отчёт, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {"dom": dom, "конс": конс, "папка": папка, "проклик": отчёт,
+            "ошибка": None}
 
 
 def прогнать(лид: str) -> int:
