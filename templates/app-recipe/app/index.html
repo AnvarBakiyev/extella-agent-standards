@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Название приложения</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div><p class="eyebrow">EXTELLA · APP TEMPLATE</p><h1>Сделай понятный следующий шаг</h1><p class="lead">Одна задача, одно действие и результат, который можно проверить.</p></div>
+      <span class="build">LOCAL BUILD</span>
+    </header>
+
+    <div class="notice" role="status">Демо-режим: данные остаются в этой вкладке, пока не подключён эксперт.</div>
+
+    <section class="layout">
+      <aside class="card">
+        <p class="mono">ВХОДНЫЕ ДАННЫЕ</p><h2>Что нужно сделать?</h2>
+        <p class="small">Опиши задачу простыми словами или используй пример.</p>
+        <label for="task">Задача</label>
+        <textarea id="task" data-testid="task-input" placeholder="Например: собери список рисков запуска"></textarea>
+        <div class="row"><button id="run" class="primary" type="button" data-testid="run-button">Сделать</button><button id="example" class="secondary" type="button">Подставить пример</button></div>
+        <p id="status" class="status" aria-live="polite" data-testid="status">Готов к работе.</p>
+      </aside>
+
+      <section class="stack">
+        <article class="card" aria-labelledby="result-title">
+          <div class="section-head"><div><p class="mono">РЕЗУЛЬТАТ</p><h2 id="result-title">Здесь появится ответ</h2></div><span id="mode" class="tag">локально</span></div>
+          <div id="empty" class="empty-state"><strong>Начни с короткой задачи</strong><span>Мы покажем результат, только когда есть что проверить.</span></div>
+          <div id="waiting" class="waiting-state hidden"><span class="spinner" aria-hidden="true"></span><div><strong>Считаю результат…</strong><span>Обычно это занимает несколько секунд. Последние верные данные останутся на экране.</span></div></div>
+          <div id="error" class="error-state hidden"><strong>Не удалось выполнить действие</strong><span id="error-text"></span><button id="retry" class="secondary" type="button">Повторить</button></div>
+          <div id="result" class="result hidden" data-testid="result"></div>
+        </article>
+
+        <article class="card">
+          <p class="mono">СЦЕНАРИИ</p><h2>Проверь крайние случаи</h2>
+          <div class="scenario-grid" id="scenarios"><button class="scenario active" data-scenario="base" type="button"><b>Базовый</b><span>Текущие допущения</span></button><button class="scenario" data-scenario="risk" type="button"><b>Риск</b><span>Слабее спрос, больше затрат</span></button><button class="scenario" data-scenario="upside" type="button"><b>Рост</b><span>Спрос выше ожиданий</span></button></div>
+          <div class="scroll"><table class="table" aria-label="Сценарии"><thead><tr><th>Сценарий</th><th class="num">Значение</th><th>Комментарий</th></tr></thead><tbody id="scenario-table"></tbody></table></div>
+        </article>
+      </section>
+    </section>
+  </main>
+  <script src="extella-bridge.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
