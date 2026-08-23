@@ -74,6 +74,7 @@ for f in probe_window.py same_origin_probe.py check_opens_elsewhere.py \
          priemka_service.py panel_priemka.html; do
   curl -fsSL -o "$DIR/$f" "$BASE/$f" || die "не скачался $f"
 done
+curl -fsSL -o "$DIR/priemka_icon.png" "$BASE/priemka_icon.png" 2>/dev/null || true  # bronze-иконка
 
 printf '%s' "$EXTELLA_TOKEN" > "$DIR/bench_token.txt"; chmod 600 "$DIR/bench_token.txt"
 [ -f "$DIR/bench_service_key.txt" ] || \

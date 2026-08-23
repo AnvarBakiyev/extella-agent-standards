@@ -38,6 +38,7 @@ from probe_window import видимый_текст                      # noqa: 
 КЛЮЧ_ФАЙЛ = БАЗА / "bench_service_key.txt"
 СЛАГ_ФАЙЛ = БАЗА / "bench_panel_slug.txt"         # секретный путь панели «для меня»
 ПАНЕЛЬ_ФАЙЛ = БАЗА / "panel_priemka.html"
+ИКОНКА_ФАЙЛ = БАЗА / "priemka_icon.png"           # bronze-фавикон для ярлыка OS
 ЗАМОК = threading.Lock()
 
 
@@ -126,6 +127,15 @@ class Сервис(http.server.BaseHTTPRequestHandler):
         разбор = urllib.parse.urlparse(self.path)
         if разбор.path == "/health":
             return self._json(200, {"стенд": "жив"})
+        if разбор.path in ("/favicon.ico", "/favicon.png") and ИКОНКА_ФАЙЛ.exists():
+            тело = ИКОНКА_ФАЙЛ.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "image/png")
+            self.send_header("Content-Length", str(len(тело)))
+            self.send_header("Cache-Control", "public, max-age=86400")
+            self._cors()
+            self.end_headers()
+            return self.wfile.write(тело)
         if разбор.path.rstrip("/") == "/u/" + слаг():
             if not ПАНЕЛЬ_ФАЙЛ.exists():
                 return self._json(404, {"ошибка": "панель не установлена на стенде"})
