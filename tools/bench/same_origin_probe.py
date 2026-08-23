@@ -87,11 +87,24 @@ def сделать_прокси(токен: str, копилка: dict):
             return self.rfile.read(n) if n else None
 
         def _отчёт(self, тело):
-            """Клик-робот отчитался: путь наш, наружу не пробрасываем."""
+            """Клик-робот отчитался: путь наш, наружу не пробрасываем.
+
+            Отчётов приходит несколько: верхний кадр видит пустую страницу-обёртку,
+            вложенная панель — настоящий интерфейс. Храним ЛУЧШИЙ (где больше
+            крючков и кнопок), иначе пустой отчёт обёртки затрёт настоящий.
+            """
             try:
-                копилка["отчёт"] = json.loads((тело or b"{}").decode("utf-8"))
+                новый = json.loads((тело or b"{}").decode("utf-8"))
             except Exception:                              # noqa: BLE001
-                копилка["отчёт"] = {"стадия": "отчёт нечитаем"}
+                новый = {"стадия": "отчёт нечитаем"}
+
+            def вес(о: dict):
+                return (о.get("крючков") or 0, о.get("кнопок") or 0,
+                        1 if о.get("стадия") == "прокликано" else 0)
+
+            старый = копилка.get("отчёт")
+            if старый is None or вес(новый) >= вес(старый):
+                копилка["отчёт"] = новый
             о = json.dumps({"принято": True}, ensure_ascii=False).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
@@ -100,7 +113,13 @@ def сделать_прокси(токен: str, копилка: dict):
             self.wfile.write(о)
 
         def _внедрить(self, данные: bytes) -> bytes:
-            """Вшить клик-робота в конец страницы приложения."""
+            """Вшить клик-робота в страницу приложения.
+
+            У живых панелей ОС в СЫРОМ html закрывающего </body> может не быть
+            вовсе (замер 23.08: страница обрывается на </style> — тег дорисовывает
+            уже браузер). Поэтому: есть </body> — вставляем перед ним, нет —
+            дописываем в конец.
+            """
             if not РОБОТ_ФАЙЛ.exists():
                 return данные
             робот = ("\n<script>\n" + РОБОТ_ФАЙЛ.read_text(encoding="utf-8")
@@ -119,7 +138,9 @@ def сделать_прокси(токен: str, копилка: dict):
                 with urllib.request.urlopen(з, timeout=90) as о:
                     данные = о.read()
                     тип = о.headers.get("Content-Type", "text/html")
-                    if "text/html" in тип and b"</body>" in данные[-4000:]:
+                    страница = urllib.parse.urlparse(self.path).path.startswith(
+                        "/app-page")
+                    if страница and "text/html" in тип:
                         данные = self._внедрить(данные)
                     self.send_response(о.status)
                     self.send_header("Content-Type", тип)
