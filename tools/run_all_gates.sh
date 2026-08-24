@@ -108,6 +108,13 @@ run check_self_check
 # существовала (build.py --check), но её никто не звал.
 run maintainers
 run_command "снимок страницы гида" python3 "$ROOT/store_app/build.py" --check
+# Бренд и ожидание проверялись только самопроверками, а к самой странице продукта
+# не применялись — и она годами несла «ассистента» и немую кнопку. Проверка, ни к
+# чему не применённая, ничего не охраняет.
+run check_screen_rules
+run_command "правила экранов продукта" python3 "$ROOT/tools/check_screen_rules.py" "$ROOT/store_app/index.html"
+run_command "бренд страницы продукта" python3 "$ROOT/tools/check_brand_copy.py" "$ROOT/store_app/index.html"
+run_command "ожидание на странице продукта" python3 "$ROOT/tools/check_waiting_state.py" "$ROOT/store_app/index.html"
 run check_canon_numbers
 run_command "правило по дизайну" python3 "$ROOT/tools/check_design_rule.py"
 run_command "единственный источник" python3 "$ROOT/tools/check_single_source.py"
@@ -121,11 +128,14 @@ run_command "язык текстов для покупателя" python3 "$ROOT
 run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
   --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md" \
   "$ROOT/INSTALLER_CANON.md" "$ROOT/docs/DOCKER_APP_TRACK.md" \
-  "$ROOT/docs/ICON_STYLE_BRONZE.md" "$ROOT/OS_CAPABILITIES.md"
+  "$ROOT/docs/ICON_STYLE_BRONZE.md" "$ROOT/OS_CAPABILITIES.md" \
+  "$ROOT/SYMPTOMS.md"
 run_command "латиница в проводе" python3 "$ROOT/tools/check_wire_ascii.py" \
   "$ROOT/templates/storage_shim.html" "$ROOT/store_app/page.template.html" \
   "$ROOT/store_app/index.html"
 run check_wire_ascii
+run check_symptom_index
+run_command "вход по симптому" python3 "$ROOT/tools/check_symptom_index.py"
 run_command "перевод не отстал" python3 "$ROOT/tools/check_translation.py" "$ROOT/store_app/content.json"
 run check_translation
 run check_design_rule
