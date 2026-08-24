@@ -1,5 +1,5 @@
 {
-  "имя": "Диаграммы",
+  "имя": "Diagrams",
   "порт": 34792,
   "путь": "/?embed=1&proto=json&ui=sketch&lang=ru&noSaveBtn=1&noExitBtn=1&saveAndExit=0&spin=1",
   "проба": "/",

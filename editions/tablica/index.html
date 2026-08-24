@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Таблица</title>
+<title>Table</title>
 <style>
 :root{--a:#D4944A;--petrol:#5FA8A0;--bg:#0A0A0A;--tx:#F5F3EE;--tx2:#C9C3B8;--tx3:#8C8C8C;
   --гр:rgba(243,238,229,.09)}
@@ -22,6 +22,10 @@ button,input,select,textarea{font-family:inherit}
 .строка input{flex:1;min-width:0;font-size:13px;color:var(--tx);
   background:transparent;border:1px solid var(--гр);border-radius:8px;
   padding:8px 12px}
+.язык_окна{background:transparent;border:1px solid var(--гр);border-radius:8px;
+  padding:7px 10px;font:600 11px/1 Nunito,system-ui,sans-serif;letter-spacing:.04em;
+  color:var(--tx3);cursor:pointer}
+.язык_окна:hover{color:var(--tx);border-color:var(--a)}
 .строка input::placeholder{color:var(--tx3)}
 .строка input:focus{outline:none;border-color:var(--a)}
 .сказать{font-size:13px;font-weight:600;color:#fff;background:var(--a);
@@ -58,20 +62,21 @@ p{color:var(--tx2);margin:0 0 16px}
 <body>
 <div class="строка" id="строка">
   <input id="фраза" type="text" autocomplete="off" spellcheck="false"
-         placeholder="Скажите агенту: возьми из астры первые 8 — положит сюда">
-  <button type="button" class="сказать" id="сказать">Сказать</button>
+         placeholder="Tell the agent: take the first 8 from astra — it will put them here" data-т="Tell the agent: take the first 8 from astra — it will put them here" data-т-поле="placeholder">
+  <button type="button" class="язык_окна" id="язык_окна" title="Русский / English">RU</button>
+  <button type="button" class="сказать" id="сказать" data-т="Send">Send</button>
 </div>
 <div class="ответ" id="ответ">
   <span id="ответ_текст"></span>
-  <button type="button" id="ответ_закрыть" title="Скрыть">×</button>
+  <button type="button" id="ответ_закрыть" title="Hide" data-т="Hide" data-т-поле="title">×</button>
 </div>
 
 <iframe id="окно" allow="clipboard-read; clipboard-write"></iframe>
 
 <div class="запасной" id="запасной">
   <div class="карточка">
-    <h1>Таблица</h1>
-    <p id="сообщение">Открываю…</p>
+    <h1>Table</h1>
+    <p id="сообщение" data-т="Opening…">Opening…</p>
     <div class="тихо" id="тихо"></div>
   </div>
 </div>
@@ -79,10 +84,49 @@ p{color:var(--tx2);margin:0 0 16px}
 <div class="полоска" id="полоска">
   <span id="полоска_текст"></span>
   <button type="button" class="сказать" id="полоска_обновить"
-          style="display:none;padding:4px 12px">Обновить</button>
-  <button type="button" id="полоска_закрыть" title="Скрыть">×</button>
+          style="display:none;padding:4px 12px" data-т="Refresh">Refresh</button>
+  <button type="button" id="полоска_закрыть" title="Hide" data-т="Hide" data-т-поле="title">×</button>
 </div>
 
+<script>
+/* ── два языка строки агента ─────────────────────────────────────────────
+   Эта полоска стоит В КАЖДОМ окне, поэтому её перевод — единственное место,
+   где английский появляется сразу везде. Решение владельца 23.08.2026:
+   английский оригинал, русский переключателем.
+
+   Ключи английские (канон), русский лежит переводом. Нет перевода — вернётся
+   английский ключ: лучше английское слово в русском окне, чем пустое место. */
+window.__СЛОВАРЬ_ОКНА = {
+  ru: {
+    "Tell the agent: take the first 8 from astra — it will put them here":
+      "Скажите агенту: возьми из астры первые 8 — положит сюда",
+    "Send": "Сказать",
+    "Hide": "Скрыть",
+    "Opening…": "Открываю…",
+    "Refresh": "Обновить",
+    "Something changed — from the agent, for example. Refresh now, or finish your work and press later.":
+      "Появились изменения — например, от агента. Обновить сейчас или доработайте и нажмите позже.",
+    "The app inside is not responding. Refresh the window once more; if it is still empty — tell the chat.":
+      "Приложение внутри не отвечает. Обновите окно ещё раз; если снова пусто — скажите чату.",
+    "The app could not start:": "Приложение не смогло запуститься:",
+    "error": "ошибка",
+    ". Refresh the window; if that does not help — tell the chat.":
+      ". Обновите окно; если не поможет — скажите чату.",
+    "The browser did not let the app into this window. This is fixed on our side — tell the chat.":
+      "Браузер не пустил приложение внутрь этого окна. Это чинится на нашей стороне — скажите чату.",
+    "closed in the sandbox: cookies, browser databases — work is kept on disk":
+      "в песочнице закрыто: cookie, базы браузера — работа хранится на диске",
+  },
+};
+window.__ЯЗЫК_ОКНА = (function(){
+  try { const с = localStorage.getItem("extella-язык"); if (с) return с; } catch (e) {}
+  return (navigator.language || "en").toLowerCase().startsWith("ru") ? "ru" : "en";
+})();
+window.т = function(ключ){
+  const с = window.__СЛОВАРЬ_ОКНА[window.__ЯЗЫК_ОКНА];
+  return (с && с[ключ]) || ключ;
+};
+</script>
 <script>
 // ОБЩИЙ КАРКАС ОКНА ДЛЯ МЕСТНОГО ПРИЛОЖЕНИЯ. Собирается из этого шаблона
 // инструментом tools/make_local_app_page.py — руками не правится, иначе три
@@ -196,6 +240,93 @@ window.addEventListener('message', function(e){
   if (d.type === 'extella_перечитать') перечитать_окно();
 });
 
+// ── МОСТ С ЧЕРТЁЖНЫМ ПРИЛОЖЕНИЕМ (draw.io) ──────────────────────────────────
+// ЗАЧЕМ. Чертёжник в окне ОС не сохранял ничего: в шапке висело «Изменения не
+// сохранены», и работа жила только в памяти окна (замер 21.08.2026). Своего
+// хранилища у него в этом режиме нет — зато есть родной разговор по
+// сообщениям. Обёртка на нём и держит две вещи разом: отдаёт чертёж при
+// открытии (в том числе нарисованный агентом) и забирает каждую правку
+// человека обратно в файл на диске.
+var МОСТ = АДРЕС.indexOf('embed=1') >= 0;
+if (МОСТ) {
+  var ХРАНИЛИЩЕ = new URL('/_extella_storage', АДРЕС).href;
+  var КЛЮЧ_ЧЕРТЕЖА = 'extella_диаграмма';
+  var последний_чертёж = null;
+
+  function прочитать_чертёж(готово){
+    fetch(ХРАНИЛИЩЕ, {cache: 'no-store'})
+      .then(function(о){ return о.json(); })
+      .then(function(д){ готово((д && д[КЛЮЧ_ЧЕРТЕЖА]) || ''); })
+      .catch(function(){ готово(''); });
+  }
+  function записать_чертёж(xml){
+    if (xml === последний_чертёж) return;      // без правки не пишем
+    последний_чертёж = xml;
+    var т = {}; т[КЛЮЧ_ЧЕРТЕЖА] = xml;
+    fetch(ХРАНИЛИЩЕ, {method: 'POST', headers: {'Content-Type': 'application/json'},
+                      body: JSON.stringify(т)}).catch(function(){});
+  }
+  // НЕ ЖДЁМ ЕДИНСТВЕННОГО СИГНАЛА. Чертёжник объявляет о готовности один раз;
+  // если это мгновение прошло мимо (страница ещё ставила обработчики, рамка
+  // взялась из кэша), чертёж не загрузится никогда — окно останется пустым при
+  // живом рисунке. Замер 21.08.2026. Поэтому просим загрузиться настойчиво:
+  // несколько попыток, пока чертёжник не подтвердит.
+  var чертёж_принят = false;
+  function просить_загрузку(попытка){
+    if (чертёж_принят || попытка > 6) return;
+    прочитать_чертёж(function(xml){
+      последний_чертёж = xml;
+      try {
+        окно_.contentWindow.postMessage(JSON.stringify({
+          action: 'load', autosave: 1, xml: xml || ''
+        }), '*');
+        if (xml) {
+          setTimeout(function(){
+            окно_.contentWindow.postMessage(JSON.stringify({
+              action: 'fit', maxScale: 1.2, border: 20
+            }), '*');
+          }, 400);
+        }
+      } catch (х) {}
+    });
+    setTimeout(function(){ просить_загрузку(попытка + 1); }, 1200);
+  }
+  окно_.addEventListener('load', function(){
+    чертёж_принят = false;
+    setTimeout(function(){ просить_загрузку(1); }, 600);
+  });
+
+  window.addEventListener('message', function(e){
+    if (!e.data || typeof e.data !== 'string') return;
+    var д;
+    try { д = JSON.parse(e.data); } catch (х) { return; }
+    if (!д || !д.event) return;
+    if (д.event === 'load') { чертёж_принят = true; return; }
+    if (д.event === 'init') {
+      прочитать_чертёж(function(xml){
+        последний_чертёж = xml;
+        окно_.contentWindow.postMessage(JSON.stringify({
+          action: 'load', autosave: 1, xml: xml || ''
+        }), '*');
+        // Подогнать по окну: без этого чертёж открывается на 1% масштаба —
+        // холст выглядит пустым при живом рисунке (замер 21.08.2026).
+        if (xml) {
+          setTimeout(function(){
+            окно_.contentWindow.postMessage(JSON.stringify({
+              action: 'fit', maxScale: 1.2, border: 20
+            }), '*');
+          }, 400);
+        }
+      });
+    } else if (д.event === 'autosave' || д.event === 'save') {
+      if (д.xml) записать_чертёж(д.xml);
+    } else if (д.event === 'exit') {
+      // Выход из чертёжника в окне ОС некуда — остаёмся и просто сохраняемся.
+      if (д.xml) записать_чертёж(д.xml);
+    }
+  });
+}
+
 // Обновление — КНОПКОЙ, не насилием. Слово Анвара 21.08.2026: перезагрузка
 // посреди набора съедала ввод и сбрасывала ячейку. Пока человек работает,
 // чужая правка ждёт его решения; обновляется само только при долгом простое
@@ -210,7 +341,7 @@ window.addEventListener('message', function(e){
   var d = e.data || {};
   if (d.type !== 'extella_обновление_ждёт') return;
   кнопка_обновить.style.display = '';
-  полоской('Появились изменения — например, от агента. Обновить сейчас или доработайте и нажмите позже.');
+  полоской(т('Something changed — from the agent, for example. Refresh now, or finish your work and press later.'));
 });
 
 window.addEventListener('message', function(e){
@@ -218,8 +349,8 @@ window.addEventListener('message', function(e){
   if (d.type !== 'extella_сбой') return;
   // «Откройте отдельным окном» здесь не советуем: отдельное окно Электрона
   // наследует ту же песочницу, совет был легендой. Замер 20.08.2026, Сторож.
-  полоской('Приложение не смогло запуститься: ' + (d.причина || 'ошибка') +
-           '. Обновите окно; если не поможет — скажите чату.');
+  полоской(т('The app could not start:') + ' ' + (d.причина || т('error')) +
+           т('. Refresh the window; if that does not help — tell the chat.'));
 });
 
 window.addEventListener('message', function(e){
@@ -252,11 +383,9 @@ setTimeout(function(){
       if (!загрузилась || не_пустили()) {
         // Приложение отвечает, а внутрь его не пустили. Так бывает, когда окно
         // защищённое, а адрес приложения — обычный: браузер их не смешивает.
-        полоской('Браузер не пустил приложение внутрь этого окна. ' +
-                 'Это чинится на нашей стороне — скажите чату.');
+        полоской(т('The browser did not let the app into this window. This is fixed on our side — tell the chat.'));
       } else {
-        полоской('Приложение внутри не отвечает. Обновите окно ещё раз; ' +
-                 'если снова пусто — скажите чату.');
+        полоской(т('The app inside is not responding. Refresh the window once more; if it is still empty — tell the chat.'));
       }
     })
     .catch(function(){
@@ -273,7 +402,7 @@ setTimeout(function(){
 // Фраза уезжает местному серверу этого же приложения (действие «скажи»), и
 // вместе с ней едет имя окна: «возьми из астры первые 8» без названного
 // получателя кладёт данные СЮДА. Пульт-посредник этим и заменён (20.08.2026).
-var ОКНО_ИМЯ = 'Таблица';
+var ОКНО_ИМЯ = 'Table';
 var ДЕЙСТВИЕ = new URL('/_extella_action', АДРЕС).href;
 var фраза_ = document.getElementById('фраза');
 var сказать_ = document.getElementById('сказать');
@@ -326,6 +455,26 @@ function сказать(){
 фраза_.addEventListener('keydown', function(e){
   if (e.key === 'Enter') сказать();
 });
+
+/* Перевод по меткам: разметка держит английский канон, метка называет ключ.
+   getAttribute, а не dataset: кириллические имена атрибутов браузер к
+   camelCase не приводит, и «тПоле» тихо оказывается undefined. */
+function применитьЯзыкОкна(){
+  document.querySelectorAll("[data-т]").forEach(function(э){
+    var ключ = э.getAttribute("data-т"), поле = э.getAttribute("data-т-поле");
+    if (поле) э.setAttribute(поле, т(ключ)); else э.textContent = т(ключ);
+  });
+  var к = document.getElementById("язык_окна");
+  if (к) к.textContent = window.__ЯЗЫК_ОКНА === "ru" ? "EN" : "RU";
+  document.documentElement.lang = window.__ЯЗЫК_ОКНА;
+}
+var кнЯзык = document.getElementById("язык_окна");
+if (кнЯзык) кнЯзык.addEventListener("click", function(){
+  window.__ЯЗЫК_ОКНА = window.__ЯЗЫК_ОКНА === "ru" ? "en" : "ru";
+  try { localStorage.setItem("extella-язык", window.__ЯЗЫК_ОКНА); } catch (e) {}
+  применитьЯзыкОкна();
+});
+применитьЯзыкОкна();
 </script>
 </body>
 </html>
