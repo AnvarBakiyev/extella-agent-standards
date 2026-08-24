@@ -23,9 +23,9 @@ case "$HOST" in
 esac
 
 IP="$(curl -fsSL --max-time 10 https://api.ipify.org)"
-РЕАЛ="$(dig +short "$HOST" | tail -1)"
-if [ "$РЕАЛ" != "$IP" ]; then
-  echo "СТОП: $HOST указывает на «$РЕАЛ», а стенд живёт на $IP."
+RESOLVED="$(dig +short "$HOST" | tail -1)"
+if [ "$RESOLVED" != "$IP" ]; then
+  echo "СТОП: $HOST указывает на «$RESOLVED», а стенд живёт на $IP."
   echo "Заведи запись A: $HOST → $IP и подожди распространения DNS."
   exit 1
 fi
@@ -38,11 +38,11 @@ $HOST {
 CADDY
 sudo systemctl reload caddy
 sleep 3
-код="$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "https://$HOST/health" || true)"
-echo "проверка https://$HOST/health → $код (первый заход ждёт выдачи сертификата)"
+CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "https://$HOST/health" || true)"
+echo "проверка https://$HOST/health → $CODE (первый заход ждёт выдачи сертификата)"
 
-СЛАГ="$(cat "$HOME/extella-bench/bench_panel_slug.txt")"
+SLUG="$(cat "$HOME/extella-bench/bench_panel_slug.txt")"
 echo
 echo "Новый адрес кнопки приёмки:"
-echo "  https://$HOST/u/$СЛАГ/"
+echo "  https://$HOST/u/$SLUG/"
 echo "Старый ярлык на *.sslip.io нужно заменить: ОС такие хосты больше не пускает."
