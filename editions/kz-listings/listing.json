@@ -1,7 +1,7 @@
 {
-  "name": "Сборщик объявлений",
+  "name": "Listings Collector",
   "kind": "source",
-  "описание": "Собирает объявления с Krisha.kz и Kolesa.kz по вашей ссылке с фильтрами: цена, площадь, цена за метр, район, год, пробег. Кладёт в Таблицу — сортируйте и считайте сами.",
+  "описание": "Collects classified ads from Krisha.kz and Kolesa.kz by your filtered link: price, area, price per m², district, year, mileage. Delivers to the Table — sort and count yourself.",
   "теги": [
     "source",
     "способность",
@@ -11,7 +11,10 @@
   "цена": 0,
   "состояние": "предрелиз",
   "права": [],
-  "границы": "Знает только две площадки — Krisha и Kolesa: разбор написан под их разметку, на чужом сайте честно откажет. Ссылку берите из браузера вместе со своими фильтрами. За раз до 20 страниц, примерно по 20 объявлений на странице.",
+  "границы": "Knows two marketplaces only — Krisha and Kolesa: the parser is written for their markup and will honestly refuse any other site. Copy the link from your browser with your filters applied. Up to 20 pages per run, about 20 ads per page.",
   "эксперт": "collect_kz_listings",
-  "инструмент": "источник_объявлений.py"
+  "инструмент": "источник_объявлений.py",
+  "name_ru": "Сборщик объявлений",
+  "описание_ru": "Собирает объявления с Krisha.kz и Kolesa.kz по вашей ссылке с фильтрами: цена, площадь, цена за метр, район, год, пробег. Кладёт в Таблицу — сортируйте и считайте сами.",
+  "границы_ru": "Знает только две площадки — Krisha и Kolesa: разбор написан под их разметку, на чужом сайте честно откажет. Ссылку берите из браузера вместе со своими фильтрами. За раз до 20 страниц, примерно по 20 объявлений на странице."
 }
