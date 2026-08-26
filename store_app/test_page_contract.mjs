@@ -20,6 +20,117 @@ test("page unwraps both Extella result envelopes", () => {
   );
 });
 
+test("отказ платформы переводится словами в ОБОИХ путях вызова", () => {
+  // Копий обработки отказов было две; расходясь, витрина показала
+  // покупательнице сырой ответ ядра (замер 23.08.2026). Контракт держит
+  // единственность: одна функция, оба пути зовут её, сырого текста нет.
+  const источник = template.match(
+    /function отказПлатформы\(статус, сырое, роль\)\{([\s\S]*?)\n  \}/);
+  assert.ok(источник, "функция отказов обязана быть одна и с этим именем");
+  assert.equal((template.match(/function отказПлатформы/g) || []).length, 1,
+    "вторая копия обработки отказов запрещена");
+  const зовы = template.match(/отказПлатформы\(r\.status, raw, '(установщик|витрина)'\)/g) || [];
+  assert.equal(зовы.length, 2, "оба пути вызова обязаны звать общую функцию");
+  assert.ok(!template.includes("'ОС ответила '"),
+    "сырой ответ платформы человеку не показывается");
+
+  const отказ = new Function(`${источник[0]}; return отказПлатформы;`)();
+  const недоступно = JSON.stringify({detail:
+    "core /api/expert/run failed: HTTP 500: {'status': 'error', 'message': " +
+    "'Target 00000000-0000-0000-0000-000000000000 is unavailable'}"});
+  for (const роль of ["установщик", "витрина"]) {
+    const слова = отказ(502, недоступно, роль);
+    assert.match(слова, /Extella на этом компьютере не отвечает/,
+      `${роль}: «устройство недоступно» обязано переводиться`);
+    assert.ok(!/HTTP 500|'status'|Target /.test(слова),
+      `${роль}: сырой ответ платформы не показывается`);
+  }
+  // Незнакомая причина тоже говорит словами и даёт следующий шаг.
+  const чужое = отказ(500, JSON.stringify({detail: "kaboom {'x': 1}"}), "витрина");
+  assert.ok(!чужое.includes("kaboom"), "незнакомая деталь не идёт в лицо");
+  assert.match(чужое, /повтори/i, "у отказа обязан быть следующий шаг");
+});
+
+test("промпт кнопки и промпт руководства не расходятся в правиле про ключ", async () => {
+  // Промпт живёт в ДВУХ местах: массив ПРОМПТ_АГЕНТУ (его копирует кнопка) и
+  // раздел «Готовый промпт для агента» в content.json (его читают на экране
+  // «Найти ответ»). Копии уже разошлись однажды: README велел просить ключ в
+  // чате, а промпт это запрещал, и человек упирался в тупик (H81, 26.08.2026).
+  // Договор держит согласие по самому опасному пункту — что делать с ключом.
+  const содержимое = JSON.parse(
+    await readFile(new URL("./content.json", import.meta.url), "utf8"));
+  const раздел = (содержимое["разделы"] || []).find(
+    (р) => String(р["заголовок"] || "").includes("промпт для агента"));
+  assert.ok(раздел, "раздел с промптом обязан существовать");
+
+  for (const [где, текст] of [["кнопка", template], ["руководство", раздел["тело"]]]) {
+    assert.ok(!/Токен я дам сам|пришлёт строку тебе|Сгенерируй мне API-токен/.test(текст),
+      `${где}: просить ключ у человека больше нельзя — он уже на машине`);
+    assert.match(текст, /не создавай своих/,
+      `${где}: запрет заводить свои токены обязан остаться`);
+    assert.match(текст, /Ключ Extella уже на этой машине/,
+      `${где}: обязано быть сказано, что ключ уже есть`);
+  }
+});
+
+test("H72: доменная проверка не слепнет на конвертах покупательского пути", () => {
+  // Дословная форма ответа /api/app-agent/run от 22.08.2026: транспортный
+  // конверт несёт status:"ok", конверт исполнения — status:"success" вместе
+  // с expert_name, а сам ответ лежит в нём СТРОКОЙ. Парсер, который считает
+  // доменом первый же строковый status, возвращает конверт — и у покупателя
+  // молча мертвеют все кнопки при зелёных проверках на локальном мосте.
+  const parse = parser();
+  assert.deepEqual(
+    parse({ status: "ok", agent_id: "agent_x", result: {
+      status: "success", expert_name: "journey_capabilities",
+      result: JSON.stringify({ status: "success", code: "ready" }) } }),
+    { status: "success", code: "ready" },
+  );
+  // Доменный ответ с собственным полем result снимать по-прежнему нельзя.
+  assert.deepEqual(
+    parse({ status: "error", code: "boom", result: "подробности" }),
+    { status: "error", code: "boom", result: "подробности" },
+  );
+});
+
+test("каждый самоповтор страницы конечен, а дозор умирает с запасным выходом", () => {
+  // Замер 22.08.2026: бессмертный дозор поставил 78 задач за 232 минуты при
+  // трёх нажатиях. Пределы и смерть дозора при передаче работы прямому
+  // пути — не стиль, а контракт.
+  assert.match(template, /дозор\(10\);/);
+  const дозор = template.slice(template.indexOf("function дозор"), template.indexOf("дозор(10);"));
+  assert.ok(дозор.includes("осталось <= 0"), "у дозора обязан быть предел");
+  const долгий = template.slice(template.indexOf("function опроситьДолгий"),
+                                template.indexOf("function подключить"));
+  assert.ok(долгий.includes("осталось <= 0"), "у долгого опроса обязан быть предел");
+  const запасной = template.slice(template.indexOf("подождать(8000)"),
+                                  template.indexOf("function дозор"));
+  assert.ok(запасной.includes("завершено = true"),
+    "запасной выход обязан убивать дозор, иначе он бессмертен");
+  const раздача = template.slice(template.indexOf("function раздать"),
+                                 template.indexOf("function вызватьSetup"));
+  assert.match(раздача, /порция\(0, \d+\)/, "у раздачи обязан быть предел порций");
+  assert.ok(раздача.includes("дальше <= offset"),
+    "застывший offset обязан останавливать раздачу");
+  // Полоса-маршрут вместо холста (решение владельца 22.08.2026): вечного
+  // requestAnimationFrame больше нет, а завершение акта не двигает экран —
+  // прокрутка только от руки («Дальше» или станция полосы).
+  assert.ok(!template.includes("requestAnimationFrame(кадр"),
+    "вечный цикл отрисовки холста убран");
+  const открыть = template.slice(template.indexOf("function открыть(н"),
+                                 template.indexOf("document.getElementById('дп-старт')"));
+  assert.ok(!открыть.includes("scrollIntoView"),
+    "завершение акта не прокручивает экран само");
+  assert.match(template, /дп-полоса\{position:sticky/,
+    "полоса-маршрут липнет к верху окна");
+  const канал = template.slice(template.indexOf("function установитьЧерезКанал"),
+                               template.indexOf("function опроситьДолгий"));
+  assert.ok(канал.includes("снять_обёртки(m.result)"),
+    "канальный результат обязан сниматься той же функцией, что прямой (H72)");
+  assert.ok(канал.includes("e.source !== window.parent"),
+    "приёмник результата обязан принимать сообщения только от родителя");
+});
+
 test("page rejects Python repr and an unexpected result shape", () => {
   const parse = parser();
   assert.throws(() => parse({ result: { result: "{'status': 'success'}" } }), /H17/);
@@ -58,23 +169,27 @@ test('раздача идёт порциями и складывает числ�
   assert.ok(helper.includes('paid !== false'));
 });
 
-test('кнопка пересверки раздачи гоняет только этап agents и не скрывает числа', async () => {
-  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
-  assert.ok(page.includes('id="claude-reprovision"'), 'кнопка пересверки отсутствует');
-  // Срез до следующего обработчика, а не до codex-connect: между ними теперь
-  // живёт карточка локальной модели со своими этапами.
-  const handler = page.slice(
-    page.indexOf("getElementById('claude-reprovision')"),
-    page.indexOf("function подключитьЛокальную"),
-  );
-  // Полная переустановка ради нового агента — лишние минуты и лишний риск.
-  for (const шаг of ['preflight', 'install', 'credentials', 'bridge', 'verify']) {
-    assert.equal(handler.includes(`'${шаг}'`), false, `пересверка не должна гонять ${шаг}`);
+test('кнопки установки на паузе: экранов нет, машинерия цела, висячих привязок нет', () => {
+  // Владелец 23.08.2026 снял с продукта установку агентов и локальных
+  // моделей: обе связки работали ненадёжно и держали выход. Контракт держит
+  // ровно это состояние — не «кнопок нет никогда», а «кнопок нет, а код,
+  // который их вернёт, на месте и не разложился».
+  for (const экран of ['агент', 'модели']) {
+    assert.ok(!template.includes(`data-экран="${экран}"`),
+      `экран «${экран}» снят с продукта`);
   }
-  assert.ok(handler.includes('раздать('), 'пересверка обязана идти порциями');
-  // Зелёным только когда без моста никого не осталось.
-  assert.ok(handler.includes('r.not_runnable'));
-  assert.ok(handler.includes("Number(r.not_runnable) > 0 ? 'bad' : 'ok'"));
+  for (const id of ['codex-connect', 'claude-connect', 'claude-reprovision',
+                    'local-llm-quality', 'local-llm-fast']) {
+    assert.ok(!template.includes(`getElementById('${id}')`),
+      `привязка к ${id} обязана уйти вместе с разметкой: иначе скрипт падает на null`);
+  }
+  // Машинерия установки остаётся: возврат кнопок — это разметка, а не переписывание.
+  for (const кусок of ['function подключить(', 'function установитьЧерезКанал(',
+                       'function раздать(', 'function вызватьSetup(']) {
+    assert.ok(template.includes(кусок), `${кусок} обязана пережить паузу`);
+  }
+  // Знание про мосты и модели не пропало — оно ищется на экране «Найти ответ».
+  assert.ok(template.includes('data-экран="поиск"'), 'экран поиска на месте');
 });
 
 test('в установщик проходят только action, два числа порции и профиль из белого списка', async () => {
@@ -141,73 +256,18 @@ test('канал приложения кормит этапы, а тишина �
   assert.ok(page.includes("'Этап ' + (номер + 1)"), 'виден номер этапа');
 });
 
-test('три уровня разработки идут по порядку с заголовками', async () => {
-  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
-  const i1 = page.indexOf('УРОВЕНЬ 1');
-  const i2 = page.indexOf('УРОВЕНЬ 2');
-  const i3 = page.indexOf('УРОВЕНЬ 3');
-  assert.ok(i1 > 0 && i2 > i1 && i3 > i2, 'уровни идут 1→2→3 по порядку');
-  // Уровень 1 — разработка (мосты) прежде запуска: пока агента нет, запускать нечего.
-  assert.ok(page.slice(i1, i2).includes('codex-connect') &&
-            page.slice(i1, i2).includes('claude-connect'), 'уровень 1 держит оба моста');
-  // Уровень 2 — сложные задачи (качество), уровень 3 — ежедневные (поток).
-  assert.ok(page.slice(i2, i3).includes('local-llm-quality'), 'уровень 2 — кнопка качества');
-  assert.ok(page.slice(i3).includes('local-llm-fast'), 'уровень 3 — кнопка потока');
-  // Уровень 3 называет типы задач: пользователь должен видеть, что запускать.
-  for (const t of ['классификация', 'извлечение', 'маршрутизация']) {
-    assert.ok(page.slice(i3).includes(t), `уровень 3 называет тип задачи: ${t}`);
-  }
-});
 
-test('локальная модель: два профиля, свой список этапов, скачивание опросом', async () => {
-  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
-  // Два профиля — две разные экономики (качество медленное, поток быстрый).
-  assert.ok(page.includes('id="local-llm-quality"'), 'кнопка качества есть');
-  assert.ok(page.includes('id="local-llm-fast"'), 'кнопка потока есть');
-  // Своя строка состояния на профиль: прогресс качества и потока не смешивается.
-  assert.ok(page.includes('id="local-llm-state-quality"') && page.includes('id="local-llm-state-fast"'),
-    'у каждого профиля своя строка состояния');
-  assert.ok(page.includes("'local-llm-state-' + профиль"), 'строка выбирается по профилю');
-  const маршрут = page.slice(page.indexOf('function подключитьЛокальную'),
-                             page.indexOf("getElementById('codex-connect')"));
-  assert.ok(маршрут.includes("подключитьЛокальную('quality'") ||
-            page.includes("подключитьЛокальную('quality'"), 'профиль quality передаётся');
-  assert.ok(page.includes("подключитьЛокальную('fast'"), 'профиль fast передаётся');
-  // Мостовые этапы сюда не относятся: у продукта свой список.
-  for (const чужой of ['credentials', 'РАЗДАЧА', 'bridge']) {
-    assert.equal(маршрут.includes(`'${чужой}'`), false, `этап ${чужой} чужой для локальной модели`);
-  }
-  assert.ok(маршрут.includes("'ОПРОС:model'"), 'скачивание идёт опросом');
-  // profile проходит в установщик белым списком: ровно два значения, не строка.
-  const тело = page.slice(page.indexOf('params: (function()'), page.indexOf('}).then(function(r){'));
-  assert.ok(тело.includes("ещё.profile === 'quality'") && тело.includes("ещё.profile === 'fast'"),
-    'профиль ограничен двумя значениями');
-  assert.equal(/p\.profile = ещё\.profile\b(?![^]*['"]quality)/.test(тело), true, 'профиль присваивается только после проверки');
-  // Опрос долгого этапа: мгновенные ответы с finished/прогрессом, пауза между
-  // опросами, и тот же контракт расхода — иначе долгий этап уходит в
-  // отложенную задачу (~51 с), дождаться которую страница не может.
-  const опрос = page.slice(page.indexOf('function опроситьДолгий'), page.indexOf('function подключить'));
-  assert.ok(опрос.includes('r.finished === true'));
-  assert.ok(опрос.includes('подождать(20000)'));
-  assert.ok(опрос.includes('model_called !== false'));
-  assert.ok(опрос.includes('paid !== false'));
-});
 
-test('раскрывающееся сравнение моделей показывает живые замеры и правило выбора', async () => {
-  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
-  const cmp = page.slice(page.indexOf('<details class="compare"'), page.indexOf('</details>'));
-  assert.ok(cmp.length > 0, 'блок сравнения есть');
-  // Обе модели названы и обе цифры замера на месте — иначе «быстрота» это слово,
-  // а не факт.
-  assert.ok(cmp.includes('Qwen 27B') && cmp.includes('быстрая 9B'), 'обе модели названы');
-  assert.ok(cmp.includes('47 секунд') && cmp.includes('1.2 секунды'), 'оба замера тональности видны');
-  // Все три типа задач из уровня 3 показаны на примере.
-  for (const t of ['ТОНАЛЬНОСТЬ', 'ИЗВЛЕЧЕНИЕ', 'МАРШРУТИЗАЦИЯ']) {
-    assert.ok(cmp.includes(t), `пример задачи ${t} есть`);
+test('хвостов от убранных экранов не осталось', () => {
+  // Сравнение локальной и облачной модели объясняло выбор на экране
+  // «Локальные модели». Экран сняли 23.08.2026, а блок остался висеть под
+  // «Днём первым», где ему нечего объяснять (замер владельца). Вместе с ним
+  // ушёл и его CSS: мёртвые правила в выложенном продукте вводят в
+  // заблуждение того, кто будет читать страницу следующим.
+  for (const след of ['class="compare"', 'class="cbody"', 'class="tasktypes"',
+                      'Когда вдумчивость', '.compare{', '.tasktypes{']) {
+    assert.ok(!template.includes(след), `хвост «${след}» обязан уйти`);
   }
-  // Правило выбора названо словами: вдумчивость против быстроты.
-  assert.ok(cmp.includes('вдумчивость') || cmp.includes('Вдумчивость'));
-  assert.ok(cmp.includes('поток') || cmp.includes('Поток'));
 });
 
 test('главное действие — промпт со ссылкой на источник, а не снимок текста', async () => {
