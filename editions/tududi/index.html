@@ -114,6 +114,11 @@ window.__СЛОВАРЬ_ОКНА = {
       ". Обновите окно; если не поможет — скажите чату.",
     "The browser did not let the app into this window. This is fixed on our side — tell the chat.":
       "Браузер не пустил приложение внутрь этого окна. Это чинится на нашей стороне — скажите чату.",
+    "This app runs on the computer where it is installed, and here it does not answer.":
+      "Это приложение работает на том компьютере, где оно установлено, — здесь оно не отвечает.",
+    "If it is your app — restart Extella. If someone shared this window with you — install the app from the store first: it does not run on their machine for you.":
+      "Если приложение ваше — перезапустите Extella. Если окно вам прислали — приложение нужно поставить себе из магазина: на чужом компьютере оно для вас не работает.",
+    "not responding": "не отвечает",
     "closed in the sandbox: cookies, browser databases — work is kept on disk":
       "в песочнице закрыто: cookie, базы браузера — работа хранится на диске",
   },
@@ -391,9 +396,14 @@ setTimeout(function(){
     .catch(function(){
       // Не отвечает вовсе: в рамке будет страница ошибки браузера, и честнее
       // сказать прямо, чем оставить человека смотреть в белое.
-      карточкой('Приложение на этом компьютере сейчас не запущено: его служба ' +
-                'остановлена. Перезапустите Extella или скажите чату.',
-                'адрес: localhost:34789 · серверное приложение в контейнере на вашем компьютере, данные — файлами в томе · не отвечает');
+      // ДВА РАЗНЫХ СЛУЧАЯ, ОДИН ВИД СНАРУЖИ. Порт не отвечает и когда служба
+      // остановлена, и когда приложения на этой машине нет вовсе. Прежний текст
+      // знал только первый случай и советовал «перезапустите Extella» — совет,
+      // который человеку со второй машины не помогает никак: у него ставить
+      // нечего (замер 25.08.2026 — окно у коллеги владельца). Называем оба.
+      карточкой(т('This app runs on the computer where it is installed, and here it does not answer.') + ' ' +
+                т('If it is your app — restart Extella. If someone shared this window with you — install the app from the store first: it does not run on their machine for you.'),
+                'адрес: localhost:34789 · серверное приложение в контейнере на вашем компьютере, данные — файлами в томе · ' + т('not responding'));
     });
 }, 6000);
 
