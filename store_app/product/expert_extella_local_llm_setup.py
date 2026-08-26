@@ -22,7 +22,7 @@ def extella_local_llm_product_setup(action: str = "preflight",
     """
     import json, os, platform, shutil, subprocess, urllib.request
 
-    SETUP_VERSION = "3.6.1"
+    SETUP_VERSION = "3.7.3"
     HOME = os.path.expanduser("~")
     APP = "/Applications/LM Studio.app"
     BUNDLED_LMS = APP + "/Contents/Resources/app/.webpack/lms"
