@@ -27,7 +27,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
 body{font-family:var(--sans);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6}
-.wrap{max-width:760px;margin:0 auto;padding:28px 22px 64px}
+.wrap{max-width:760px;margin:0 auto;padding:32px 24px 64px}
 
 h1{font-family:var(--serif);font-weight:600;font-size:26px;line-height:1.2;letter-spacing:0;margin:0 0 10px}
 h2{font-family:var(--serif);font-weight:600;font-size:20px;line-height:1.25;letter-spacing:0;margin:0}
@@ -63,7 +63,7 @@ section.open .chev{transform:rotate(-135deg)}
   padding:4px 9px;cursor:pointer}
 .copy:hover{color:var(--tx);border-color:var(--a)}
 .copy[data-done="1"]{color:var(--petrol);border-color:var(--petrol)}
-.copy-note{font-size:12px;color:var(--tx3);margin:-8px 0 12px}
+.copy-note{font-size:13px;color:var(--tx3);margin:0 0 16px} /* без отрицательного отступа: он утаскивал подпись под кнопку (замер в настоящем окне приложения 22.08.2026) */
 
 code.inl{font-family:var(--mono);font-size:12px;background:var(--s3);border-radius:8px;padding:1px 5px;color:var(--tx)}
 
@@ -82,7 +82,7 @@ footer a{color:var(--a)}
 .status{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:10px}
 .status b{color:var(--petrol);font-weight:500}
 
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px}
 .btn{font:600 14px var(--sans);color:var(--tx);background:transparent;
   border:1px solid var(--bd2);border-radius:var(--r);padding:8px 14px;cursor:pointer}
 .btn:hover{border-color:var(--a)}
@@ -92,41 +92,19 @@ footer a{color:var(--a)}
 .btn.main[data-done="1"]{background:transparent}
 
 .codex{background:var(--s2);border:1px solid var(--bd2);border-radius:12px;
-  padding:14px 16px;margin:14px 0 16px}
+  padding:16px;margin:16px 0}
 .codex-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.codex h3{margin:0 0 3px;font-size:17px}
+/* Кнопки карточки переносятся вместе, а не по одной к левому краю. */
+.codex-кнопки{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.codex h3{margin:0 0 4px;font-size:15px}
 .codex p{margin:0;font-size:13px}
-.codex-state{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:9px;min-height:18px}
+.codex-state{font-family:var(--mono);font-size:11px;color:var(--tx3);margin-top:12px;min-height:18px}
 .тема{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--tx3);margin:22px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--bd)}
 .тема:first-of-type{margin-top:6px}
-.lvl{margin:26px 0 4px}
 .lvl:first-of-type{margin-top:14px}
-.lvl .label{margin:0 0 4px}
 .lvl h2{margin:0 0 4px}
 .lvl p{margin:0 0 6px;font-size:14px}
-.tasktypes{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}
-.tasktypes span{font-family:var(--mono);font-size:11px;color:var(--tx2);
-  background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:2px 8px}
-.compare{background:var(--s1);border:1px solid var(--bd);border-radius:12px;margin:6px 0 16px}
-.compare>summary{cursor:pointer;list-style:none;padding:12px 16px;font:600 14px var(--sans);
-  color:var(--tx);display:flex;align-items:center;gap:8px}
-.compare>summary::-webkit-details-marker{display:none}
-.compare>summary::before{content:"";width:8px;height:8px;border-right:1px solid var(--tx3);
-  border-bottom:1px solid var(--tx3);transform:rotate(-45deg);transition:transform .15s;flex:none}
-.compare[open]>summary::before{transform:rotate(45deg)}
-.compare>summary:hover{background:var(--s2)}
-.compare .cbody{padding:0 16px 14px}
-.compare .task{border-top:1px solid var(--bd);padding:12px 0 4px}
-.compare .ask{font-size:13px;color:var(--tx);margin:0 0 8px}
-.compare .ask b{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--tx3);font-weight:400}
-.compare .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:520px){.compare .pair{grid-template-columns:1fr}}
-.compare .side{background:var(--s3);border:1px solid var(--bd);border-radius:12px;padding:9px 11px}
-.compare .side .who{font-family:var(--mono);font-size:11px;color:var(--tx3);margin:0 0 4px}
-.compare .side .out{font-size:13px;color:var(--tx);margin:0 0 3px}
-.compare .side .t{font-family:var(--mono);font-size:11px;color:var(--petrol)}
-.compare .lead2{font-size:13px;color:var(--tx2);margin:12px 0 2px}
 .codex-state.ok{color:var(--petrol)}
 .codex-state.bad{color:var(--a)}
 
@@ -142,13 +120,9 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:8px;padding:0
 :root[data-lm="1"] mark{background:rgba(197,126,51,.2)}
 
 /* ── ПУТЕШЕСТВИЕ ─────────────────────────────────────────────────────────── */
-.journey{margin:28px 0 8px}
-.scene{border:1px solid var(--ln);border-radius:12px;padding:16px 18px;margin-top:14px}
 .scene-head h3{margin:0 0 4px}
 .scene-head p{margin:0 0 12px;color:var(--tm)}
 .scene-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.chip{border:1px solid var(--ln);background:transparent;color:var(--tx);
-      border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
 .chip.on{border-color:var(--acc);color:var(--acc)}
 .scene-out{margin-top:12px;font-family:ui-monospace,Menlo,monospace;font-size:13px;
            color:var(--tm);line-height:1.55;white-space:pre-wrap}
@@ -169,6 +143,111 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:8px;padding:0
 .метка-раздела{font:400 11px/1.4 ui-monospace,Menlo,monospace;color:var(--tm);margin:24px 0 8px}
 .ведущая{color:var(--tm);margin:0 0 24px;max-width:64ch}
 button,input,select,textarea{font-family:inherit}
+
+/* ── ДЕНЬ ПЕРВЫЙ ──────────────────────────────────────────────────────── */
+  /* .wrap держит 760px — для рассказа этого мало. Блок выходит на всю
+     ширину окна и сам центрует содержимое до 1120: внутри .wrap его
+     max-width:1120 не работал никогда, колонка заголовка сжималась до
+     ~330px — слово на строку, слипшиеся метки холста (замер в настоящем
+     окне приложения 22.08.2026). */
+  .дп{margin-inline:calc(50% - 50vw);padding-inline:max(24px,calc(50vw - 560px))}
+  /* body без overflow-x:clip. Перебор от 50vw возможен только там, где
+     скроллбар занимает место; в окне приложения он наложенный, и перебора
+     нет — приёмка сверяет это числом (scrollWidth == clientWidth), а не
+     стилем. Первое подозрение на clip как убийцу плавной прокрутки не
+     подтвердилось: прокрутку глушил встроенный просмотрщик стенда. */
+
+  .дп-шапка{min-height:52vh;display:flex;align-items:center;justify-content:center;
+         text-align:center;padding:48px 0}
+  .дп-шапка-текст{max-width:56ch}
+  .дп-шапка .дп-запас{justify-content:center}
+  .дп-метка{font:400 11px/1.4 var(--mono);color:var(--petrol);letter-spacing:.1em;margin:0}
+  h1{font:400 clamp(38px,4.6vw,60px)/1.08 var(--serif);margin:14px 0 18px}
+  .дп-шапка p{color:var(--tx2);margin:0 0 26px;font-size:17px}
+  .дп-низ{color:var(--tx3);font-size:11px;margin-top:26px;letter-spacing:.04em}
+
+  .дп-полоса{position:sticky;top:0;z-index:20;display:flex;gap:8px;flex-wrap:wrap;
+          padding:12px 0;background:var(--bg);border-bottom:1px solid var(--bd)}
+  .дп-станция{background:none;border:1px solid var(--bd);border-radius:999px;
+           padding:5px 13px;font:400 11px/1.4 var(--mono);color:var(--tx3);cursor:pointer}
+  .дп-станция[disabled]{opacity:.45;cursor:default}
+  .дп-станция.идёт{color:var(--petrol);border-color:var(--petrol);
+                   animation:дп-пульс 1.1s ease-in-out infinite}
+  .дп-станция.готово{color:var(--petrol);border-color:var(--petrol);animation:none}
+  @keyframes дп-пульс{50%{opacity:.4}}
+  .дп-дальше{margin:12px 0 0}
+  .дп-дальше-ход{background:none;border:0;padding:0;color:var(--petrol);cursor:pointer;
+              font-size:13px;text-decoration:underline;text-underline-offset:3px}
+
+  /* Что у человека есть — говорится сразу, чтобы дальше не обещать лишнего. */
+  .дп-запас{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .дп-пункт{border:1px solid var(--bd);border-radius:999px;padding:5px 13px;
+         font:400 11px/1.4 var(--mono);color:var(--tx3)}
+  .дп-пункт.есть{color:var(--petrol);border-color:var(--petrol)}
+  .дп-пункт.нет{opacity:.6}
+
+  .дп-акт{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;
+       border-top:1px solid var(--bd);padding:60px 0;min-height:56vh;
+       opacity:.2;transform:translateY(20px);transition:opacity .55s,transform .55s}
+  .дп-акт.виден{opacity:1;transform:none}
+  .дп-акт-текст{max-width:38ch}
+  .дп-акт h2{font:400 clamp(24px,2.7vw,34px)/1.2 var(--serif);margin:12px 0 14px}
+  .дп-акт p{color:var(--tx2);margin:0 0 14px}
+  .дп-акт p.тихо{color:var(--tx3);font-size:14px}
+  .дп-номер{font:400 clamp(60px,6.5vw,100px)/1 var(--serif);color:var(--bd);
+         opacity:.6;margin:0 0 -16px}
+
+  .дп-главное{background:var(--a);color:#fff;border:0;border-radius:999px;
+           padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer}
+  .дп-главное[disabled]{opacity:.5;cursor:default}
+  .дп-обычная{background:transparent;color:var(--tx);border:1px solid var(--bd);
+           border-radius:8px;padding:11px 20px;cursor:pointer;font-size:14px}
+  .верх{position:fixed;top:16px;right:24px;z-index:9;display:flex;gap:8px}
+
+  .дп-исход{border-left:2px solid var(--bd);padding-left:20px;min-height:110px}
+  /* Пустой исход не рисует ни линии, ни высоты: пустая полоса читается как
+     сломанная вёрстка, а не как «тут пока ничего». */
+  .дп-исход:empty{border:0;padding:0;min-height:0}
+  .дп-финал{grid-template-columns:1fr}
+  /* Абзацы держат читаемую меру, органы управления — нет: 64ch ставили
+     шесть кубиков в три ряда по два и ломали кнопку на две строки. */
+  .дп-финал .дп-акт-текст{max-width:none}
+  .дп-финал .дп-акт-текст > p{max-width:64ch}
+  .дп-финал .дп-исход{max-width:64ch}
+  .дп-финал .дп-исход{margin-top:24px}
+  .дп-что-будет{border-left:2px solid var(--petrol);padding-left:16px;
+             color:var(--tx2);font-size:14px}
+  .дп-подпись-поля{display:block;font:400 11px/1.4 var(--mono);color:var(--tx3);
+                letter-spacing:.06em;margin:0 0 8px}
+  .дп-исход.готов{border-left-color:var(--a)}
+  .дп-цифры{font:400 clamp(28px,3.2vw,42px)/1.15 var(--serif);color:var(--tx);
+         margin:0 0 10px;display:block}
+  .дп-строки{color:var(--tx2);font-size:15px;margin:0 0 10px}
+  .дп-цена{color:var(--tx3);font:400 12px/1.6 var(--mono);margin:0}
+  .дп-идёт{color:var(--tx2);font-size:15px;display:flex;align-items:center;gap:10px;margin:0}
+  .дп-точка{width:8px;height:8px;border-radius:50%;background:var(--a);flex:none;
+         animation:дппульс 1.1s infinite}
+  @keyframes дппульс{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
+  .дп-часы{font:400 12px/1.6 var(--mono);color:var(--tx3);margin:6px 0 0}
+  .дп-цитата{font:400 17px/1.5 var(--serif);color:var(--tx);border-left:2px solid var(--petrol);
+          padding-left:16px;margin:0 0 12px}
+
+  .дп-правило{border:1px solid var(--petrol);border-radius:12px;padding:18px 22px;margin:16px 0}
+  .дп-правило .кто{font:400 11px/1.4 var(--mono);color:var(--petrol);margin:0 0 8px}
+  .дп-правило .текст{font:400 18px/1.5 var(--serif);margin:0 0 16px}
+  .дп-кубики{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+  .дп-кубик{border:1px solid var(--bd);border-radius:8px;padding:10px 14px;background:var(--s2);
+         color:var(--tx);cursor:pointer;font-size:14px}
+  .дп-кубик.взят{border-color:var(--a);color:var(--a)}
+  .дп-сборка{min-height:52px;border:1px dashed var(--bd);border-radius:8px;padding:14px;
+          color:var(--tx3);font-size:14px;margin-bottom:14px}
+  .дп-имя{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:11px 15px;
+       color:var(--tx);font-size:14px;margin:0 8px 14px 0;min-width:240px}
+
+  @media (max-width:900px){
+    .дп-шапка,.дп-акт{grid-template-columns:1fr;gap:28px}
+    .дп{padding:0 24px}
+  }
 </style>
 </head>
 <body>
@@ -180,8 +259,6 @@ button,input,select,textarea{font-family:inherit}
        прежде всё лежало одной простынёй, и человек не понимал, с чего начать. -->
   <nav class="меню" id="меню">
     <button class="вкладка" data-экран="начало">Начало</button>
-    <button class="вкладка" data-экран="агент">Подключить агента</button>
-    <button class="вкладка" data-экран="модели">Локальные модели</button>
     <button class="вкладка" data-экран="проба">Попробовать</button>
     <button class="вкладка" data-экран="поиск">Найти ответ</button>
     <button class="вкладка" data-экран="ещё">Ещё</button>
@@ -198,218 +275,162 @@ button,input,select,textarea{font-family:inherit}
   <div class="news" id="новости"></div>
   </div>
 
-  <div class="экран" data-экран="агент">
-
-  <p class="метка-раздела">ШАГ ПЕРВЫЙ</p>
-  <h2>Свяжи своего агента с Extella</h2>
-  <p class="ведущая">Мост ставит на этот Mac отдельную службу: свой порт, свой секрет.
-  Начни с Codex — он ставится одной кнопкой. Claude рядом, если работаешь в нём.</p>
-
-  <div class="lvl">
-    <p class="label">УРОВЕНЬ 1 · РАЗРАБОТКА</p>
-    <h2>Разработка агентов</h2>
-    <p>Писать экспертов, страницы и правила — сильными облачными моделями по
-    кнопке. С этого начинают: пока агента нет, запускать нечего.</p>
-  </div>
-
-  <div class="codex" id="codex-card">
-    <div class="codex-row">
-      <div>
-        <h3>Codex ↔ Extella</h3>
-        <p>Одна установка на этом Mac. Проверки и подключение не запускают модель.</p>
-      </div>
-      <button class="btn main" id="codex-connect">Подключить Codex</button>
-    </div>
-    <div class="codex-state" id="codex-state">Готов к проверке. Реальные запросы в Codex могут расходовать план или API.</div>
-  </div>
-
-  <div class="codex" id="claude-card">
-    <div class="codex-row">
-      <div>
-        <h3>Claude Code &#8596; Extella</h3>
-        <p>Отдельная служба на этом Mac: свой порт и свой секрет, Codex не затрагивается.</p>
-      </div>
-      <button class="btn" id="claude-connect">Подключить Claude</button>
-      <button class="btn" id="claude-reprovision">Обновить раздачу</button>
-    </div>
-    <div class="codex-state" id="claude-state">Готов к проверке. Реальные запросы в Claude могут расходовать план или API.</div>
-  </div>
-  </div>
-
-  <div class="экран" data-экран="модели">
-
-  <p class="метка-раздела">ШАГ ВТОРОЙ</p>
-  <h2>Поставь модель на этот компьютер</h2>
-  <p class="ведущая">Дальше агент сможет звать её вместо облака: бесплатно и без выхода
-  данных наружу. Быстрая нужна для потока однотипных задач, вдумчивая — для разбора.
-  Начни с быстрой.</p>
-
-  <div class="lvl">
-    <p class="label">УРОВЕНЬ 2 · СЛОЖНЫЕ ЗАДАЧИ</p>
-    <h2>Сложные задачи — локально</h2>
-    <p>Агент готов, а задача трудная и приватная: анализ, рассуждение, разбор
-    документа. Сильная модель на этом Mac — бесплатно, данные не покидают
-    компьютер. Медленно и вдумчиво.</p>
-  </div>
-
-  <div class="codex" id="local-quality-card">
-    <div class="codex-row">
-      <div>
-        <h3>Qwen 27B на этом Mac</h3>
-        <p>Рассуждающая модель ~16 ГБ. Ставится и запускается одной кнопкой,
-        как мосты. Установка модель не вызывает.</p>
-      </div>
-      <button class="btn" id="local-llm-quality">Подключить</button>
-    </div>
-    <div class="codex-state" id="local-llm-state-quality">Готово к установке. Скачивание ~16 ГБ — прогресс будет виден здесь.</div>
-  </div>
-
-  <div class="lvl">
-    <p class="label">УРОВЕНЬ 3 · ЕЖЕДНЕВНЫЕ ЗАДАЧИ</p>
-    <h2>Ежедневные задачи — локально</h2>
-    <p>Поток: тысячи дешёвых вызовов каждый день. Быстрая модель на этом Mac —
-    ноль за токен, ответ за 1–2 секунды (замер на 32 ГБ Mac), данные не
-    покидают компьютер.</p>
-    <div class="tasktypes">
-      <span>классификация</span>
-      <span>извлечение полей</span>
-      <span>теги и рубрики</span>
-      <span>маршрутизация обращений</span>
-      <span>короткие ответы</span>
-      <span>дедупликация</span>
-    </div>
-  </div>
-
-  <div class="codex" id="local-fast-card">
-    <div class="codex-row">
-      <div>
-        <h3>Быстрая 9B на этом Mac</h3>
-        <p>Нерассуждающая модель ~6 ГБ. Ответ за секунды. Ставится одной
-        кнопкой; установка модель не вызывает.</p>
-      </div>
-      <button class="btn main" id="local-llm-fast">Подключить</button>
-    </div>
-    <div class="codex-state" id="local-llm-state-fast">Готово к установке. Скачивание ~6 ГБ — прогресс будет виден здесь.</div>
-  </div>
-
-  <!-- ПУТЕШЕСТВИЕ: кнопки, которые вправду зовут. Не рассказ о силе, а сама
-       сила: живой вызов, секундомер и честная подпись, чего он стоил. Отказ
-       тут ценнее украшения — он доказывает, что вызов был настоящий. -->
-  </div>
-
   <div class="экран" data-экран="проба">
-  <div class="journey" id="journey">
-    <p class="label">ПОПРОБОВАТЬ · ЖИВЫЕ ВЫЗОВЫ</p>
-    <h2>Не рассказ, а нажатие</h2>
-    <p>Кнопки ниже вправду зовут эксперта на вашей машине. Секундомер настоящий,
-    ответ настоящий. Если что-то не готово — страница скажет, что именно.</p>
-
-    <div class="scene" id="scene-classify">
-      <div class="scene-head">
-        <h3>Обращение уходит в нужный отдел</h3>
-        <p>Локальная модель на этом компьютере относит текст к отделу. Бесплатно,
-        и текст не покидает компьютер.</p>
-      </div>
-      <div class="scene-pick" id="pick-classify">
-        <button class="chip on" data-t="не приходит акт сверки за июль">не приходит акт сверки</button>
-        <button class="chip" data-t="хочу узнать цены на годовой тариф">цены на тариф</button>
-        <button class="chip" data-t="приложение падает при входе">приложение падает</button>
-      </div>
-      <button class="btn main" id="run-classify">Отнести к отделу</button>
-      <div class="scene-out" id="out-classify">Выберите обращение и нажмите.</div>
+  <div class="дп">
+  <div class="дп-шапка">
+    <div class="дп-шапка-текст">
+      <p class="дп-метка">EXTELLA&nbsp;·&nbsp;ДЕНЬ&nbsp;ПЕРВЫЙ</p>
+      <h1>У тебя в&nbsp;Загрузках беспорядок</h1>
+      <p>Extella разберёт его прямо сейчас: на этом компьютере, ничего не отправляя
+      наружу. Файлы не покидают папку — порядок наводится подпапками внутри, и у
+      каждого шага есть откат.</p>
+      <button class="дп-главное" id="дп-старт">Показать, какой</button>
+      <div class="дп-запас" id="дп-запас"></div>
+      <p class="дп-низ">ДАЛЬШЕ — ВНИЗ</p>
     </div>
 
-    <div class="scene" id="scene-agent">
-      <div class="scene-head">
-        <h3>Страница будит агента аккаунта</h3>
-        <p>Три слоя подряд: страница в окне зовёт эксперта на вашей машине, а он
-        зовёт агента. Каждый слой настоящий, время каждого видно отдельно.</p>
-      </div>
-      <button class="btn" id="run-agent">Спросить агента</button>
-      <div class="scene-out" id="out-agent">Замер на этой машине: около 17 секунд кругом.</div>
-    </div>
+  </div>
 
-    <div class="scene" id="scene-loop">
-      <div class="scene-head">
-        <h3>Кольцо: агент сам зовёт эксперта</h3>
-        <p>Страница → эксперт → агент → и агент со своей стороны зовёт эксперта с
-        локальной моделью. Отсюда растут длинные цепочки работы: каждый слой
-        умеет позвать следующий.</p>
+  <!-- Полоса-маршрут: тонкая, липкая, едет со скроллом. Большая «живая
+       карта» в шапке была украшением, которое притворялось схемой, и жила
+       вне поля зрения, когда акты работали (решение владельца 22.08.2026).
+       Станция пульсирует во время вызова, загорается насовсем после,
+       нажатие ведёт к её акту. -->
+  <nav class="дп-полоса" id="дп-полоса">
+    <button type="button" class="дп-станция" data-акт="1" disabled>I · Загрузки</button>
+    <button type="button" class="дп-станция" data-акт="2" disabled>II · память</button>
+    <button type="button" class="дп-станция" data-акт="3" disabled>III · кто отвечает</button>
+    <button type="button" class="дп-станция" data-акт="4" disabled>IV · правило</button>
+    <button type="button" class="дп-станция" data-акт="5" disabled>V · раскладка</button>
+    <button type="button" class="дп-станция" data-акт="6" disabled>VI · Доска схем</button>
+    <button type="button" class="дп-станция" data-акт="7" disabled>VII · черновик</button>
+  </nav>
+
+  <div class="дп-акт виден" id="акт1">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">I</p>
+      <p class="дп-метка">ЭКСПЕРТ</p>
+      <h2>Работу делает эксперт — код на твоём компьютере</h2>
+      <p>Ни модели, ни интернета, ни оплаты это не потребовало. Эксперт —
+      исполняемый код с параметрами; машина, где он исполняется, зовётся
+      устройством и выбирается при запуске.</p>
+    </div>
+    <div class="дп-исход" id="дп-и1"><p class="дп-цена">Нажми кнопку наверху — цифры появятся здесь.</p></div>
+  </div>
+
+  <div class="дп-акт" id="акт2">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">II</p>
+      <p class="дп-метка">КОНЦЕПТ</p>
+      <h2>У Extella есть память, и она ищет по смыслу</h2>
+      <p>Концепт — запись знания, которую агент находит <b>по смыслу</b>, а не по
+      совпадению слов. Спросим память обычной фразой и посмотрим, сколько слов из
+      вопроса встретилось в найденной записи.</p>
+      <p class="тихо">Правило и концепт — разное. Правило действует всегда, концепт
+      находится, когда подходит. Поэтому в правило кладут запреты, в концепт — знание.</p>
+      <button class="дп-главное" id="дп-ш2" disabled>Спросить память о порядке в файлах</button>
+    </div>
+    <div class="дп-исход" id="дп-и2"></div>
+  </div>
+
+  <div class="дп-акт" id="акт3">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">III</p>
+      <p class="дп-метка">КТО ОТВЕЧАЕТ</p>
+      <h2>Отвечает тот, кто у тебя есть</h2>
+      <p id="дп-лестница">Сначала агент Extella, если на аккаунте есть кредиты. Нет
+      кредитов — модель на твоём диске: бесплатно и без выхода наружу. Нет и её —
+      скажем прямо и пойдём дальше: остальные шаги работают без модели.</p>
+      <button class="дп-главное" id="дп-ш3" disabled>Назвать темы моих файлов</button>
+    </div>
+    <div class="дп-исход" id="дп-и3"></div>
+  </div>
+
+  <div class="дп-акт" id="акт4">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">IV</p>
+      <p class="дп-метка">ПРАВИЛО</p>
+      <h2>Сейчас Extella откажется делать то, что ты просишь</h2>
+      <p>Попроси навести порядок — раскладка не начнётся. Эксперта остановит
+      правило, и ты прочтёшь его дословно. Правило читается всегда и имеет высший
+      приоритет: даже твоя кнопка ему не указ.</p>
+      <button class="дп-главное" id="дп-ш4" disabled>Навести порядок</button>
+    </div>
+    <div>
+      <div class="дп-исход" id="дп-и4"></div>
+      <div class="дп-правило" id="дп-правило" style="display:none">
+        <p class="кто">ПРАВИЛО ОСТАНОВИЛО РАБОТУ</p>
+        <p class="текст" id="дп-текст-правила"></p>
+        <button class="дп-главное" id="дп-разрешаю">Разрешаю</button>
       </div>
-      <button class="btn" id="run-loop">Замкнуть кольцо</button>
-      <div class="scene-out" id="out-loop">Дольше остальных: около 50 секунд кругом,
-и это впритык к отсечке платформы — этап может уйти в фон.</div>
     </div>
   </div>
 
-  <details class="compare">
-    <summary>Когда вдумчивость, а когда быстрота — на живых замерах</summary>
-    <div class="cbody">
-      <p class="lead2"><b>Вдумчивость</b> — модель рассуждает шаг за шагом перед
-      ответом: дольше, но глубже. <b>Быстрота</b> — отвечает сразу, за секунды.
-      Ниже один и тот же вопрос обеим моделям, замер на этом типе Mac
-      (32 ГБ памяти).</p>
-
-      <div class="task">
-        <p class="ask"><b>ТОНАЛЬНОСТЬ</b> · «Доставка опоздала на три дня, но
-        деньги вернули» — позитив, негатив или нейтрально?</p>
-        <div class="pair">
-          <div class="side">
-            <p class="who">Качество · Qwen 27B</p>
-            <p class="out">«нейтрально» — сначала разобрала, что задержка это
-            минус, а возврат плюс</p>
-            <p class="t">≈ 47 секунд, 333 токена</p>
-          </div>
-          <div class="side">
-            <p class="who">Поток · быстрая 9B</p>
-            <p class="out">«Нейтрально»</p>
-            <p class="t">≈ 1.2 секунды, 7 токенов</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="task">
-        <p class="ask"><b>ИЗВЛЕЧЕНИЕ</b> · вытащить телефон из «звоните на
-        +7 708 605 4107 после обеда»</p>
-        <div class="pair">
-          <div class="side">
-            <p class="who">Качество · Qwen 27B</p>
-            <p class="out">Справится, но здесь его глубина не нужна и только
-            замедляет</p>
-            <p class="t">десятки секунд</p>
-          </div>
-          <div class="side">
-            <p class="who">Поток · быстрая 9B</p>
-            <p class="out">«+7 708 605 4107»</p>
-            <p class="t">≈ 1.6 секунды</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="task">
-        <p class="ask"><b>МАРШРУТИЗАЦИЯ</b> · в какой отдел «не приходит акт
-        сверки за июль»?</p>
-        <div class="pair">
-          <div class="side">
-            <p class="who">Качество · Qwen 27B</p>
-            <p class="out">Разберёт спорные случаи глубже — полезно, когда
-            граница между отделами тонкая</p>
-            <p class="t">десятки секунд</p>
-          </div>
-          <div class="side">
-            <p class="who">Поток · быстрая 9B</p>
-            <p class="out">«Поддержка»</p>
-            <p class="t">≈ 0.7 секунды</p>
-          </div>
-        </div>
-      </div>
-
-      <p class="lead2">Правило простое: <b>поток</b> — тысячи одинаковых
-      несложных вызовов в день, где важна скорость и цена (ноль за токен).
-      <b>Вдумчивость</b> — редкая трудная задача, где важнее качество разбора,
-      чем секунды: анализ длинного документа, спорное решение, рассуждение.</p>
+  <div class="дп-акт" id="акт5">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">V</p>
+      <p class="дп-метка">РАБОТА СДЕЛАНА</p>
+      <h2>Открой Finder — там уже порядок</h2>
+      <p>Раскладка выполнена внутри Загрузок, папка открылась сама. Рядом лёг файл
+      отката: одно нажатие — и всё как было. Работа без отката здесь считается
+      дефектом.</p>
+      <button class="дп-обычная" id="дп-откат" disabled>Вернуть как было</button>
     </div>
-  </details>
+    <div class="дп-исход" id="дп-и5"></div>
+  </div>
+
+  <div class="дп-акт" id="акт6">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">VI</p>
+      <p class="дп-метка">ВТОРОЕ ПРИЛОЖЕНИЕ</p>
+      <h2>Одно приложение зовёт другое</h2>
+      <p>Эксперт нарисует карту твоих Загрузок прямо в «Доске схем» — соседнем
+      приложении на этом столе. Твоих рисунков он не касается: пишет только своё,
+      со своей меткой.</p>
+      <button class="дп-главное" id="дп-ш6" disabled>Нарисовать карту в Доске схем</button>
+    </div>
+    <div class="дп-исход" id="дп-и6"></div>
+  </div>
+
+  <!-- Финал идёт одной широкой колонкой: в узкой части кубики вставали
+       столбиком, кнопка ломалась на две строки, а пустой исход рисовался
+       полосой в 110 пикселей — концовка выглядела смазанной (замер
+       владельца 23.08.2026). -->
+  <div class="дп-акт дп-финал" id="акт7">
+    <div class="дп-акт-текст">
+      <p class="дп-номер">VII</p>
+      <p class="дп-метка">ТВОЁ ПРИЛОЖЕНИЕ</p>
+      <h2>Всё, что ты прошёл, — уже приложение</h2>
+      <p>Шесть шагов выше ты сделал вживую, на своих файлах. Extella умеет
+      собрать их в приложение — не рассказ о нём, а рабочую страницу, которая
+      встанет рядом с остальными на твоём рабочем столе.</p>
+      <p class="дп-что-будет"><b>Что произойдёт, когда нажмёшь.</b> В магазине
+      Extella появится <b>черновик приложения</b>, и он сам встанет плиткой на
+      твой рабочий стол — жать «Buy &amp; Deploy» руками не нужно. Внутри страницы: твои сегодняшние цифры, чек-лист порядка с
+      отметками и правило дома дословно. Черновик <b>не опубликован</b> — его
+      видишь только ты, никто в магазине его не найдёт. Кредиты за это не
+      тратятся. Убрать потом — плитку в корзину рабочего стола, черновик в
+      магазине: это две разные вещи, и одна без другой оставляет след.</p>
+      <div class="дп-кубики" id="дп-кубики">
+        <button class="дп-кубик">Осмотреть папку</button>
+        <button class="дп-кубик">Спросить память</button>
+        <button class="дп-кубик">Разобрать по смыслу</button>
+        <button class="дп-кубик">Спросить разрешение</button>
+        <button class="дп-кубик">Разложить с откатом</button>
+        <button class="дп-кубик">Нарисовать карту</button>
+      </div>
+      <div class="дп-сборка" id="дп-сборка">Нажимай части — встанут по порядку работы.</div>
+      <label class="дп-подпись-поля" for="дп-имя">Как назвать приложение</label>
+      <input class="дп-имя" id="дп-имя" value="Порядок в Загрузках" maxlength="60">
+      <button class="дп-главное" id="дп-ш7" disabled>Создать черновик приложения</button>
+      <!-- Исход здесь, а не во второй колонке: человек стоит у кнопки внизу
+           длинного акта, и карточка во второй колонке оказывалась выше
+           экрана — звук есть, вывода не видно. -->
+      <div class="дп-исход" id="дп-и7"><p class="дп-цена">Собери хотя бы две части — и кнопка оживёт. Здесь появится имя приложения и путь к нему.</p></div>
+    </div>
+  </div>
+</div>
+
 
   </div>
 
@@ -499,8 +520,21 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     // Глубина десять — ПРЕДОХРАНИТЕЛЬ, а не замер: точного числа обёрток
     // платформа не обещает, живым вызовом подтверждено лишь несколько.
     for (var depth = 0; depth < 10; depth++) {
-      // Доменный ответ снимать нельзя: у него бывает своё поле result.
-      if (value && typeof value === 'object' && typeof value.status === 'string') break;
+      // Доменный ответ снимать нельзя: у него бывает своё поле result. Но
+      // строковый status есть И у транспорта: /api/app-agent/run отвечает
+      // {"status":"ok", "result":{…}}. Останавливаться на нём — значит вернуть
+      // конверт вместо ответа, и вызов молча «не удался» (H56: снятие
+      // транспорта отделяем от доменной проверки). Признак транспорта —
+      // 'ok' вместе с полем result — И конверт исполнения, который несёт
+      // status:'success' вместе с expert_name, а сам ответ держит строкой
+      // внутри result. Оба признака ставит платформа; ни один наш эксперт
+      // не возвращает ни 'ok', ни expert_name, поэтому доменный ответ под
+      // них не подпадает.
+      var транспорт = value && typeof value === 'object' &&
+                      value.result !== undefined &&
+                      (value.status === 'ok' || value.expert_name !== undefined);
+      if (!транспорт && value && typeof value === 'object' &&
+          typeof value.status === 'string') break;
       if (value && typeof value === 'object' && value.result !== undefined) {
         if (value.task_id && typeof value.result === 'string' &&
             value.result.indexOf('deferred') === 0) {
@@ -540,6 +574,56 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     return ответ;
   }
   // END_H17_PARSER
+
+  // Отказ платформы → слова, за которыми есть следующий шаг. Функция ОДНА
+  // на оба пути вызова намеренно: копий было две, они разошлись, и путь
+  // витрины выбросил покупательнице в лицо сырой ответ ядра —
+  // «core /api/expert/run failed: HTTP 500: {'status': 'error', …}» —
+  // тогда как путь установки ту же причину переводил словами (замер
+  // 23.08.2026). Сырой текст платформы человеку не показываем никогда: он
+  // уходит в журнал окна, человеку остаются слова и следующий шаг.
+  function отказПлатформы(статус, сырое, роль){
+    if (статус === 403) {
+      return 'Разреши приложению запуск Expert на устройстве и повтори. ' +
+             'Право выдаётся в карточке приложения в магазине.';
+    }
+    var деталь = '';
+    try { деталь = String((JSON.parse(сырое) || {}).detail || ''); } catch (_) {}
+    try { console.log('Extella · отказ ' + статус + ': ' + деталь); } catch (_) {}
+
+    // Порядок важен: причина из тела точнее кода ответа. 502 здесь —
+    // обёртка над ответом ядра, и общее «повтори позже» на неё врёт.
+    if (/unavailable|target/i.test(деталь)) {
+      return 'Extella на этом компьютере не отвечает — работать некому. ' +
+             'Полностью закрой Extella (⌘Q), открой снова и подожди, пока ' +
+             'внизу окна загорится «Running». Потом повтори.';
+    }
+    if (/not found/i.test(деталь)) {
+      return роль === 'витрина'
+        ? 'Этот шаг не найден на твоём устройстве. Нажми кнопку обновления ' +
+          'в шапке окна: продукт обновился, а окно осталось на старой версии.'
+        : 'Установщик не найден на этом устройстве. Удали продукт с рабочего ' +
+          'стола и добавь заново из магазина — это переустановит установщик. ' +
+          'Обновления страницы для этого недостаточно.';
+    }
+    if (статус === 401) {
+      return 'Продукт обновился, а окно открыто со старой страницей. Нажми ' +
+             'кнопку обновления в шапке окна и повтори — ничего ' +
+             'переустанавливать не нужно.';
+    }
+    if (статус === 429) {
+      return 'Слишком много запросов подряд. Подожди минуту и повтори — ' +
+             'это не поломка, предел снимается сам.';
+    }
+    if (статус >= 500) {
+      return 'Extella не смогла выполнить шаг и не назвала причину, которую ' +
+             'можно исправить отсюда. Подожди минуту и повтори. Если ' +
+             'повторится — пришли в поддержку снимок этого экрана.';
+    }
+    return 'Шаг не выполнен: Extella отклонила запрос. Нажми кнопку ' +
+           'обновления в шапке окна и повтори.';
+  }
+
 
   // Право на запуск эксперта приходит вместе с подставленным токеном
   // приложения. Отказ обязан назвать причину: «обнови приложение» там, где
@@ -588,7 +672,17 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   // платформа откладывает в задачу и отвечает ссылкой на неё вместо результата.
   function раздать(expertName, показать){
     var итог = {written:0, runnable:0, not_runnable:0, skipped_public:0, total:0};
-    function порция(offset){
+    // Порций не больше шестидесяти (480 агентов — больше, чем видел любой
+    // аккаунт), и каждая обязана продвигать offset: рекурсия без предела с
+    // застывшим offset — тот же бессмертный конвейер задач, что дозор (H74),
+    // только без пауз — по задаче каждые несколько секунд.
+    function порция(offset, осталось){
+      if (осталось <= 0) {
+        throw new Error('Раздача не дошла до конца за шестьдесят порций — ' +
+          'повторы остановлены, чтобы не плодить задачи. Роздано ' + итог.written +
+          ' из ' + итог.total + '. Нажми кнопку ещё раз: уже розданные агенты ' +
+          'пройдут быстро.');
+      }
       return вызватьSetup(expertName, 'agents', {offset: offset, limit: 8})
         .then(function(r){
           if (r.status !== 'success' || r.model_called !== false ||
@@ -607,10 +701,15 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
           // Признак конца берётся у установщика, а не считается здесь: список
           // агентов может измениться между порциями.
           if (r.finished === true) return итог;
-          return порция(Number(r.next_offset) || 0);
+          var дальше = Number(r.next_offset) || 0;
+          if (дальше <= offset) {
+            throw new Error('Установщик не продвинул раздачу (порция ' + offset +
+              ' не сдвинулась) — останавливаюсь, чтобы не плодить задачи.');
+          }
+          return порция(дальше, осталось - 1);
         });
     }
-    return порция(0);
+    return порция(0, 60);
   }
 
   function вызватьSetup(expertName, action, ещё){
@@ -650,28 +749,8 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       })
     }).then(function(r){
       return r.text().then(function(raw){
-        if (r.status === 403) {
-          throw new Error('Разреши приложению запуск Expert на устройстве и повтори.');
-        }
-        if (!r.ok) {
-          // Достаём настоящую причину из тела: 502 — это обёртка над ответом
-          // ядра. «Expert not found» значит, что установщик не разрешается в
-          // области этого устройства (нужно переустановить продукт), а не что
-          // ОС временно недоступна. Общее «повтори через минуту» на такой отказ
-          // такой ответ не спасает никогда.
-          var деталь = '';
-          try { деталь = String((JSON.parse(raw) || {}).detail || ''); } catch (_) {}
-          if (/not found/i.test(деталь)) {
-            throw new Error('Установщик не найден на этом устройстве. Удали продукт ' +
-              'с рабочего стола и добавь заново из магазина — это переустановит ' +
-              'установщик. Обновления страницы для этого недостаточно.');
-          }
-          if (/unavailable|target/i.test(деталь)) {
-            throw new Error('Устройство недоступно. Полностью закрой Extella (⌘Q) ' +
-              'и открой снова, затем повтори.');
-          }
-          throw new Error('ОС ответила ' + r.status +
-            (деталь ? ' · ' + деталь.slice(0, 120) : '') + '. Повтори через минуту.');
+        if (r.status === 403 || !r.ok) {
+          throw new Error(отказПлатформы(r.status, raw, 'установщик'));
         }
         var outer;
         try { outer = JSON.parse(raw); }
@@ -951,7 +1030,9 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     'Прочитай README.md целиком — это единственный вход, дальше он назовёт нужное.',
     'Не копируй правила к себе и не создавай второй вход: читай источник.',
     '',
-    'Токен я дам сам. Не проси переслать его в чат и не создавай своих.',
+    'Ключ Extella уже на этой машине — он появляется сам при первом запуске',
+    'приложения. Найди его и подключись сам. Не проси присылать ключ в чат',
+    'и не создавай своих токенов.',
     'Объём проверок берёт машина: python3 tools/stage_gates.py --stage build --json',
     'Строй способность через агента и его экспертов, докажи живым прогоном.',
     'Останавливайся перед публичным действием — решение принимаю я.',
@@ -1048,6 +1129,9 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       var былПрогресс = false;
       function убрать(){ window.removeEventListener('message', приём); }
       function приём(e){
+        // Только родительская рамка: случайный reqId — не граница, сообщение
+        // с результатом установки обязано приходить от того, кому мы писали.
+        if (e.source !== window.parent) return;
         var m = e && e.data;
         if (!m || m.reqId !== reqId) return;
         if (m.type === 'etb_claude_install_progress') {
@@ -1058,7 +1142,15 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
         }
         if (m.type === 'etb_claude_install_result') {
           завершено = true; убрать();
-          if (m.ok) { готово(m.result); return; }
+          if (m.ok) {
+            // Приёмная хоста может отдать результат в платформенных конвертах.
+            // Снимаем их той же функцией, что и на прямом пути, иначе доменная
+            // проверка ниже читает конверт и объявляет успешную установку
+            // неподтверждённой (класс H72) — человек жмёт снова и снова.
+            try { готово(снять_обёртки(m.result)); }
+            catch (e) { отказ(e); }
+            return;
+          }
           if (m.code === 'installer_unavailable') { готово(null); return; }
           отказ(new Error(m.error || 'Не удалось подключить Claude.'));
         }
@@ -1069,12 +1161,30 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       // Ни одного события за 8 секунд — приёмной в родителе нет: идём прямым
       // путём. Настоящая приёмная отвечает мгновенно даже отказом.
       подождать(8000).then(function(){
-        if (!завершено && !былПрогресс) { убрать(); готово(null); }
+        // завершено = true здесь обязательно: без него дозор переживает
+        // передачу работы прямому пути и живёт, пока открыто окно. Замер
+        // 22.08.2026 у покупательницы: 78 задач устройства за 232 минуты
+        // (~3 мин на цикл дозора) при трёх нажатиях кнопки — задачи плодил
+        // бессмертный дозор, а не человек.
+        if (!завершено && !былПрогресс) { завершено = true; убрать(); готово(null); }
       });
       // Страховка от переинъекции рамки: событий давно нет — перечитываем
       // статус, а не ждём сообщение, которое уже некому доставить.
-      function дозор(){
+      // Дозор КОНЕЧЕН: каждый его опрос — настоящая задача на устройстве,
+      // и бесконечный дозор превращает застрявшую установку в вечный
+      // конвейер задач при кнопке «Подключаю…». Десять опросов по 90 с —
+      // около пятнадцати минут: дольше не идёт ни один этап установки.
+      function дозор(осталось){
         if (завершено) return;
+        if (осталось <= 0) {
+          завершено = true; убрать();
+          отказ(new Error('За пятнадцать минут установка не подтвердилась. ' +
+            'Дальше сам не повторяю: каждый повтор ставит новую задачу на ' +
+            'устройстве. Закрой и открой окно приложения — установка, ' +
+            'дошедшая в фоне, покажет «Готово». Если и после этого нет — ' +
+            'пришли в поддержку эту надпись и время.'));
+          return;
+        }
         подождать(90000).then(function(){
           if (завершено) return;
           вызватьSetup(маршрут.эксперт, 'status').then(function(s){
@@ -1083,27 +1193,36 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
               завершено = true; убрать();
               готово({status: 'success', code: 'ready', model_called: false,
                       agent_called: false, paid: false, восстановлено: true});
-            } else { дозор(); }
-          }).catch(function(){ дозор(); });
+            } else { дозор(осталось - 1); }
+          }).catch(function(){ дозор(осталось - 1); });
         });
       }
-      дозор();
+      дозор(10);
     });
   }
 
   // Долгий этап опрашивается, а не ждётся: шаг возвращается мгновенно с
   // прогрессом, пока фоновая загрузка идёт. Иначе любой этап длиннее ~51 с
   // уходит в отложенную задачу, дождаться которую страница не может.
-  function опроситьДолгий(эксперт, шаг, ещё, показать){
+  function опроситьДолгий(эксперт, шаг, ещё, показать, осталось){
+    // Предел — полчаса (90 опросов по 20 с): столько живёт самое долгое
+    // скачивание модели. Опрос без предела при неснимаемом finished=false
+    // держал бы кнопку вечно и плодил бы задачи, как бесконечный дозор.
+    if (осталось === undefined) осталось = 90;
     return вызватьSetup(эксперт, шаг, ещё).then(function(r){
       if (r.status !== 'success' || r.model_called !== false ||
           r.agent_called !== false || r.paid !== false) {
         throw new Error(r.message || ('Этап ' + шаг + ' завершился ошибкой.'));
       }
       if (r.finished === true || r.finished === undefined) return r;
+      if (осталось <= 0) {
+        throw new Error('Этап «' + (ИМЕНА_ЭТАПОВ[шаг] || шаг) + '» не дошёл за ' +
+          'полчаса опроса. Повторы остановлены. Проверь место на диске и сеть, ' +
+          'потом нажми кнопку ещё раз — этап продолжится с места остановки.');
+      }
       if (показать) показать(r.message || 'выполняется…');
       return подождать(20000).then(function(){
-        return опроситьДолгий(эксперт, шаг, ещё, показать);
+        return опроситьДолгий(эксперт, шаг, ещё, показать, осталось - 1);
       });
     });
   }
@@ -1179,85 +1298,13 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     });
   }
 
-  // Раздача моста — снимок на момент установки: агент, созданный позже, моста
-  // не получит и узнает об этом только отказом в чате. Этап agents идемпотентен
-  // и сверяет каждую копию запуском, поэтому повтор безопасен и есть чем
-  // ответить на «у нового агента не работает».
-  document.getElementById('claude-reprovision').onclick = function(){
-    var кнопка = this;
-    var было = кнопка.textContent;
-    кнопка.disabled = true;
-    кнопка.textContent = 'Сверяю…';
-    состояние('claude-state', 'Сверяю раздачу моста по агентам. Модель не запускается.');
-    раздать('extella_claude_product_setup', function(текст){
-      состояние('claude-state', текст);
-    }).then(function(r){
-      // Числа показываются целиком: «готово» без них скрывает, что часть
-      // агентов осталась без моста.
-      состояние('claude-state', 'Мост запускается у ' + String(r.runnable) +
-        ' агентов из ' + String(r.total) + '. Без моста: ' + String(r.not_runnable) +
-        ', публичных пропущено: ' + String(r.skipped_public) + '.',
-        Number(r.not_runnable) > 0 ? 'bad' : 'ok');
-    }).catch(function(error){
-      состояние('claude-state', (error && error.message) || 'Не удалось обновить раздачу.', 'bad');
-    }).then(function(){
-      кнопка.disabled = false;
-      кнопка.textContent = было;
-    });
-  };
-
-  // Обе кнопки — один установщик, разные профили. Изоляция параллельных
-  // загрузок сделана в установщике (свои pid/лог/счётчик на профиль), поэтому
-  // страница вторую кнопку не блокирует и не усложняет обработку ошибок.
-  function подключитьЛокальную(профиль, кнопкаId){
-    подключить({
-      кнопка: кнопкаId, строка: 'local-llm-state-' + профиль, профиль: профиль,
-      эксперт: 'extella_local_llm_product_setup', готово: 'Модель подключена',
-      // Свой список этапов: раздачи и моста здесь нет, скачивание — опросом.
-      шаги: ['preflight', 'install', 'ОПРОС:model', 'server', 'configure', 'verify'],
-      начало: (профиль === 'fast'
-        ? 'Ставлю быструю модель для потока (~6 ГБ). '
-        : 'Ставлю сильную модель для качества (~16 ГБ). ') +
-        'Можно оставить страницу открытой и вернуться позже.',
-      успех: function(r){
-        return 'Готово: ' + String(r.model || 'модель') +
-          ' работает локально. Токены бесплатны, данные не покидают компьютер.';
-      }
-    });
-  }
-  document.getElementById('local-llm-quality').onclick = function(){
-    подключитьЛокальную('quality', 'local-llm-quality');
-  };
-  document.getElementById('local-llm-fast').onclick = function(){
-    подключитьЛокальную('fast', 'local-llm-fast');
-  };
-
-  document.getElementById('codex-connect').onclick = function(){
-    подключить({
-      кнопка: 'codex-connect', строка: 'codex-state',
-      эксперт: 'extella_codex_product_setup', готово: 'Codex подключён',
-      начало: 'Проверяю Codex, ставлю подписанный мост и связываю аккаунт. Это может занять несколько минут.',
-      успех: function(r){
-        return 'Готово: мост ' + String(r.plugin_version || '') +
-          ' проверен без запуска модели. Теперь Codex вызывается только по явной просьбе.';
-      }
-    });
-  };
-
-  document.getElementById('claude-connect').onclick = function(){
-    подключить({
-      кнопка: 'claude-connect', строка: 'claude-state', канал: true,
-      эксперт: 'extella_claude_product_setup', готово: 'Claude подключён',
-      начало: 'Проверяю Claude Code, ставлю отдельную подписанную службу и связываю аккаунт. Это может занять несколько минут.',
-      успех: function(r){
-        // Привязку доказывает проверка токена, соединение — реальный вызов
-        // инструмента. «Подключено» в списке серверов не доказывает ничего.
-        return 'Готово: порт ' + String(r.bridge_port || '') +
-          ', привязка и авторизация подтверждены без запуска модели. ' +
-          'Теперь Claude вызывается только по явной просьбе.';
-      }
-    });
-  };
+  // Кнопки установки Codex, Claude и локальных моделей ОТКЛЮЧЕНЫ 23.08.2026
+  // решением владельца: обе связки работали ненадёжно и держали выход
+  // продукта. Машинерия установки (подключить, установитьЧерезКанал, дозор,
+  // раздать) намеренно оставлена и покрыта контрактом — вернуть кнопки значит
+  // вернуть разметку экранов и эти четыре привязки, а не писать заново.
+  // Экранов «Подключить агента» и «Локальные модели» в меню нет; текст канона
+  // про мосты и модели никуда не делся — он ищется на экране «Найти ответ».
 
   // Клавиатура: «/» — в поиск, Esc — сбросить. Мелочь, но руководство листают часто.
   document.addEventListener('keydown', function(e){
@@ -1271,12 +1318,6 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   проверить_оболочку(текущее);
   статус((СНИМОК && СНИМОК["версия_содержимого"]) || 'встроенное');
   подтянуть(false);
-})();
-
-  // ── ПУТЕШЕСТВИЕ: живой вызов эксперта ─────────────────────────────────────
-  // Отдельный от установщика путь вызова, со СВОИМ узким белым списком полей.
-  // Расширять общий список ради витрины нельзя: он охраняет то, что страница
-  // вообще способна передать на устройство.
   function зовСценария(имяЭксперта, поля){
     var причина = причинаБезТокена();
     if (причина) return Promise.reject(new Error(причина));
@@ -1285,17 +1326,8 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       body: JSON.stringify({app_token: APP_TOKEN, expert_name: имяЭксперта, params: поля})
     }).then(function(r){
       return r.text().then(function(raw){
-        if (r.status === 403) {
-          throw new Error('Разрешите приложению запуск Expert на устройстве и повторите.');
-        }
-        if (!r.ok) {
-          var деталь = '';
-          try { деталь = String((JSON.parse(raw) || {}).detail || ''); } catch (_) {}
-          if (/not found/i.test(деталь)) {
-            throw new Error('Эксперт не найден в области этого устройства. ' +
-              'Переустановите продукт с рабочего стола.');
-          }
-          throw new Error('ОС ответила ' + r.status + (деталь ? ' · ' + деталь.slice(0,120) : ''));
+        if (r.status === 403 || !r.ok) {
+          throw new Error(отказПлатформы(r.status, raw, 'витрина'));
         }
         var внешнее;
         try { внешнее = JSON.parse(raw); } catch (_) { throw new Error('ОС вернула не JSON.'); }
@@ -1304,91 +1336,346 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     });
   }
 
-  (function путешествие(){
-    var набор = document.getElementById('pick-classify');
-    var кнопка = document.getElementById('run-classify');
-    var вывод = document.getElementById('out-classify');
-    if (!набор || !кнопка || !вывод) return;
-    var выбран = набор.querySelector('.chip.on');
+  (function деньПервый(){
 
-    набор.addEventListener('click', function(e){
-      var c = e.target.closest('.chip'); if (!c) return;
-      набор.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('on'); });
-      c.classList.add('on'); выбран = c;
-      вывод.className = 'scene-out'; вывод.textContent = 'Готово к запуску.';
-    });
+var ПАПКА = new URLSearchParams(location.search).get('folder') || '~/Downloads';
+var ЗАПАС = {credits: 0, local_model: '', board: false};
 
-    кнопка.addEventListener('click', function(){
-      if (!выбран) { вывод.textContent = 'Сначала выберите обращение.'; return; }
-      кнопка.disabled = true;
-      вывод.className = 'scene-out';
-      вывод.textContent = 'Зову локальную модель на этом компьютере…';
-      // Секундомер честный: меряем круг целиком, как его чувствует человек,
-      // и рядом называем время самой модели — это разные величины.
-      var старт = (window.performance && performance.now) ? performance.now() : Date.now();
-      зовСценария('local_model_classify', {
-        text: выбран.getAttribute('data-t'),
-        categories: 'продажи, поддержка, бухгалтерия'
-      }).then(function(ответ){
-        var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
-        if (ответ && ответ.status === 'success' && ответ.category) {
-          вывод.className = 'scene-out ok';
-          вывод.innerHTML = '<b>' + текстом(ответ.category) + '</b>\n' +
-            '<span class="t">' + сек.toFixed(1) + ' с кругом · модель ' +
-            текстом(ответ.model || 'локальная') + ' · бесплатно · текст не покинул компьютер</span>';
-        } else {
-          вывод.className = 'scene-out';
-          вывод.textContent = (ответ && ответ.message) ? ответ.message : 'Модель не дала ответа.';
-        }
-      }).catch(function(e){
-        вывод.className = 'scene-out';
-        вывод.textContent = e.message || String(e);
-      }).then(function(){ кнопка.disabled = false; });
-    });
+var звукВкл = true, ктх = null;
+function тон(ч, д, з){
+  if (!звукВкл) return;
+  try {
+    ктх = ктх || new (window.AudioContext || window.webkitAudioContext)();
+    var о = ктх.createOscillator(), г = ктх.createGain();
+    о.type = 'sine'; о.frequency.value = ч;
+    var т0 = ктх.currentTime + (з || 0);
+    г.gain.setValueAtTime(0.0001, т0);
+    г.gain.exponentialRampToValueAtTime(0.12, т0 + 0.01);
+    г.gain.exponentialRampToValueAtTime(0.0001, т0 + д);
+    о.connect(г); г.connect(ктх.destination); о.start(т0); о.stop(т0 + д + 0.02);
+  } catch (e) {}
+}
+function аккорд(){ тон(523,.3); тон(659,.3,.07); тон(784,.4,.14); }
 
-    // Сцена 2 и 3: цепочка через агента. Отдельный эксперт-звонарь, а не
-    // расширение белого списка установщика: у показа свой узкий контракт.
-    function цепочка(идКнопки, идВывода, вопрос, подпись){
-      var к = document.getElementById(идКнопки), в = document.getElementById(идВывода);
-      if (!к || !в) return;
-      к.addEventListener('click', function(){
-        к.disabled = true;
-        в.className = 'scene-out';
-        в.textContent = 'Иду по цепочке: страница → эксперт → агент…';
-        var старт = (window.performance && performance.now) ? performance.now() : Date.now();
-        зовСценария('journey_ask_agent', {
-          agent_id: 'agent_8LlxoJMZsU0ka4zAPdd5v', question: вопрос
-        }).then(function(о){
-          var сек = (((window.performance && performance.now) ? performance.now() : Date.now()) - старт) / 1000;
-          if (о && о.status === 'success' && о.answer) {
-            в.className = 'scene-out ok';
-            в.innerHTML = '<b>' + текстом(о.answer) + '</b>\n' +
-              '<span class="t">' + сек.toFixed(1) + ' с кругом · из них агент ' +
-              текстом(String(о.seconds || '?')) + ' с · ' + текстом(подпись) + '</span>';
-          } else {
-            в.className = 'scene-out';
-            в.textContent = (о && о.message) ? о.message : 'Агент не дал ответа.';
-          }
-        }).catch(function(e){
-          в.className = 'scene-out';
-          // Отложенная задача — не поломка: этап дольше отсечки платформы.
-          в.textContent = e.отложено
-            ? 'Цепочка длиннее отсечки платформы и продолжается в фоне. Нажмите ещё раз через минуту.'
-            : (e.message || String(e));
-        }).then(function(){ к.disabled = false; });
-      });
+// Полоса-маршрут вместо холста. Холст был украшением вне поля зрения:
+// анимация играла в шапке, пока человек работал в актах ниже, а вечный
+// requestAnimationFrame жёг батарею даже на чужих экранах.
+var РИМ = ['','I','II','III','IV','V','VI','VII'];
+function станция(н){ return document.querySelector('.дп-станция[data-акт="'+н+'"]'); }
+function полоса_идёт(н){
+  var с = станция(н); if (!с) return;
+  с.disabled = false; с.classList.add('идёт');
+}
+function полоса_готово(н, ч){
+  var с = станция(н); if (!с) return;
+  с.classList.remove('идёт'); с.classList.add('готово');
+  if (ч) тон(ч,.18);
+}
+function прокрутить(н){
+  var а = document.getElementById('акт'+н);
+  if (!а) return;
+  а.classList.add('виден');
+  var было = window.scrollY;
+  а.scrollIntoView({behavior:'smooth', block:'start'});
+  // Плавность бывает выключена средой (замер 22.08.2026: встроенный
+  // просмотр не двигал экран вовсе). «Дальше» обязано вести всегда:
+  // через полсекунды доводим мгновенно, если экран не поехал.
+  setTimeout(function(){
+    if (Math.abs(window.scrollY - было) < 40) а.scrollIntoView({block:'start'});
+  }, 500);
+}
+document.getElementById('дп-полоса').addEventListener('click', function(e){
+  var с = e.target.closest('.дп-станция');
+  if (с && !с.disabled) прокрутить(Number(с.getAttribute('data-акт')));
+});
+
+var наблюдатель = new IntersectionObserver(function(з){
+  з.forEach(function(x){ if (x.isIntersecting) x.target.classList.add('виден'); });
+}, {threshold:.3});
+document.querySelectorAll('.дп-акт').forEach(function(а){ наблюдатель.observe(а); });
+
+  // В продукте вызов идёт токеном приложения через шлюз ОС, а не через
+  // локальный мост пробы: путь тот же, которым пойдут кнопки покупателя.
+  function зов(имя, параметры){ return зовСценария(имя, параметры); }
+// Ожидание видно всегда: восемь секунд молчания читаются как зависание.
+function ждать(вывод, слова){
+  вывод.className = 'дп-исход';
+  вывод.innerHTML = '<p class="дп-идёт"><span class="дп-точка"></span><span>' + слова + '</span></p>' +
+                    '<p class="дп-часы">0 с</p>';
+  var т0 = Date.now();
+  var т = setInterval(function(){
+    var ч = вывод.querySelector('.дп-часы'); if (!ч) { clearInterval(т); return; }
+    var с = Math.round((Date.now()-т0)/1000);
+    ч.textContent = с + ' с' + (с > 12 ? ' · дольше обычного, но идёт' : '');
+  }, 250);
+  return function(){ clearInterval(т); return (Date.now()-т0)/1000; };
+}
+function занять(к, слова, работа){
+  var было = к.textContent;
+  к.disabled = true; к.textContent = слова;
+  return работа().catch(function(e){ return {status:'error', message: e.message || String(e)}; })
+    .then(function(о){ к.disabled = false; к.textContent = было; return о; });
+}
+function открыть(н, кнопка, из){
+  // Экран НЕ двигается сам: автопрокрутка воровала результат — акт
+  // завершался, цифры записывались, и в ту же секунду экран уезжал к
+  // следующему (решение владельца 22.08.2026). Следующий акт открывается,
+  // а движение — только от «Дальше» или руками.
+  var а = document.getElementById('акт'+н);
+  if (а) а.classList.add('виден');
+  if (кнопка) { var к = document.getElementById(кнопка); if (к) к.disabled = false; }
+  if (из && !из.querySelector('.дп-дальше')) {
+    var д = document.createElement('p'); д.className = 'дп-дальше';
+    var х = document.createElement('button'); х.type = 'button';
+    х.className = 'дп-дальше-ход';
+    х.textContent = 'Дальше — акт ' + РИМ[н] + ' ↓';
+    х.onclick = function(){ прокрутить(н); };
+    д.appendChild(х); из.appendChild(д);
+  }
+}
+function sec_line(сек, частей, наСтоле){
+  return сек + ' с · частей: ' + частей + ' · ' +
+         (наСтоле ? 'на рабочем столе · ' : '') +
+         'не опубликовано · кредиты не потрачены';
+}
+function щит(текст, есть){
+  return '<span class="дп-пункт ' + (есть ? 'есть' : 'нет') + '">' + текст + '</span>';
+}
+
+// Разведка при открытии: дальше обещаем только то, что у человека есть.
+зов('journey_capabilities', {}).then(function(о){
+  if (о.status !== 'success') return;
+  ЗАПАС = о;
+  document.getElementById('дп-запас').innerHTML =
+    щит(о.credits > 0 ? 'кредиты: ' + о.credits : 'кредитов нет', о.credits > 0) +
+    щит(о.local_model ? 'модель на диске' : 'модели на диске нет', !!о.local_model) +
+    щит(о.board ? 'Доска схем' : 'Доски схем нет', о.board);
+  var л = document.getElementById('дп-лестница');
+  if (о.credits > 0) л.textContent = 'У тебя есть кредиты — ответит агент Extella. ' +
+    'Не было бы их, спросили бы модель на твоём диске; не было бы и её — сказали бы прямо и пошли дальше.';
+  else if (о.local_model) л.textContent = 'Кредитов нет, зато есть модель на твоём диске: ' +
+    'ответит она — бесплатно и не выходя наружу.';
+  else л.textContent = 'Ни кредитов, ни модели на диске. Это не остановка: шаг пропустим, ' +
+    'а всё остальное работает и без модели.';
+});
+
+var сводка = null;
+
+document.getElementById('дп-старт').onclick = function(){
+  var в = document.getElementById('дп-и1'), стоп = ждать(в, 'Эксперт считает файлы на твоём компьютере…');
+  полоса_идёт(1); прокрутить(1);
+  занять(this, 'смотрю…', function(){ return зов('journey_scan', {folder: ПАПКА}); })
+  .then(function(о){
+    var сек = стоп().toFixed(1);
+    if (о.status !== 'success') { в.innerHTML = '<p class="дп-строки">' + о.message + '</p>'; return; }
+    сводка = о; полоса_готово(1,523);
+    var кат = Object.keys(о.categories||{}).slice(0,4).map(function(к){
+      return о.categories[к] + ' ' + к.toLowerCase(); }).join(' · ');
+    в.className = 'дп-исход готов';
+    в.innerHTML = '<span class="дп-цифры">' + о.total + ' файлов<br>' +
+      Math.round(о.size_mb/1024*10)/10 + ' ГБ</span><p class="дп-строки">' + кат +
+      '</p><p class="дп-цена">' + сек + ' с · на этом компьютере · бесплатно · наружу ничего не ушло</p>';
+    аккорд(); открыть(2,'дп-ш2',в);
+  });
+};
+
+document.getElementById('дп-ш2').onclick = function(){
+  var в = document.getElementById('дп-и2'), стоп = ждать(в, 'Ищу в памяти по смыслу…');
+  полоса_идёт(2);
+  var вопрос = 'как навести порядок в файлах';
+  занять(this, 'ищу…', function(){ return зов('journey_concept', {query: вопрос}); })
+  .then(function(о){
+    var сек = стоп().toFixed(1);
+    if (о.status === 'empty') {
+      в.innerHTML = '<p class="дп-строки">' + о.message + '</p><p class="дп-цена">' + сек + ' с</p>';
+      открыть(3,'дп-ш3',в); return;
     }
+    if (о.status !== 'success') {
+      в.innerHTML = '<p class="дп-строки">' + о.message + '</p>'; открыть(3,'дп-ш3',в); return;
+    }
+    полоса_готово(2,587);
+    в.className = 'дп-исход готов';
+    в.innerHTML = '<p class="дп-цена">спросили: «' + вопрос + '»</p>' +
+      '<p class="дп-цитата">' + о.title + '</p>' +
+      '<p class="дп-строки">' + (о.snippet || '') + '</p>' +
+      '<p class="дп-цена">' + сек + ' с · найдено записей: ' + о.found +
+      ' · слов из вопроса встретилось в записи: <b>' + о.literal_matches + '</b> из ' +
+      о.words_asked + ' — нашлось по смыслу, а не по совпадению</p>';
+    аккорд(); открыть(3,'дп-ш3',в);
+  });
+};
 
-    цепочка('run-agent', 'out-agent',
-            'Ответь одним словом: столица Казахстана?',
-            'страница → эксперт → агент');
+document.getElementById('дп-ш3').onclick = function(){
+  var в = document.getElementById('дп-и3');
+  var имена = [];
+  if (сводка && сводка.examples) Object.keys(сводка.examples).forEach(function(к){
+    сводка.examples[к].forEach(function(и){ if (имена.length < 8) имена.push(и); }); });
+  var вопрос = 'Вот имена файлов из одной папки: ' + имена.join('; ') +
+    '. Назови 3-4 темы, которыми занимается хозяин папки. Ответь ТОЛЬКО темами через запятую.';
 
-    цепочка('run-loop', 'out-loop',
-            'Позови эксперта local_model_classify с global=true, параметры: ' +
-            "text='не приходит акт сверки за июль', " +
-            "categories='продажи, поддержка, бухгалтерия'. " +
-            'Верни ТОЛЬКО категорию одним словом.',
-            'страница → эксперт → агент → эксперт → локальная модель');
+  // Лестница: агент → модель на диске → предупреждение. Предупреждение не
+  // останавливает историю, а пропускает один шаг.
+  if (!ЗАПАС.credits && !ЗАПАС.local_model) {
+    в.className = 'дп-исход';
+    в.innerHTML = '<p class="дп-строки">Ни кредитов, ни модели на диске — этот шаг пропускаем.</p>' +
+      '<p class="дп-цена">Это предупреждение, а не остановка: дальше всё работает без модели. ' +
+      'Модель ставится одной кнопкой на экране «Локальные модели».</p>';
+    открыть(4,'дп-ш4',в); return;
+  }
+
+  var черезАгента = ЗАПАС.credits > 0;
+  var стоп = ждать(в, черезАгента
+    ? 'Спрашиваю агента Extella…'
+    : 'Спрашиваю модель на твоём диске… первые разы она просыпается дольше.');
+  полоса_идёт(3);
+  занять(this, 'думает…', function(){
+    return черезАгента
+      ? зов('journey_ask_agent', {agent_id: 'agent_8LlxoJMZsU0ka4zAPdd5v', question: вопрос})
+      : зов('local_model_ask', {prompt: вопрос, max_tokens: '60'});
+  }).then(function(о){
+    var сек = стоп().toFixed(1);
+    var ответ = о.answer || '';
+    if (о.status !== 'success' || !ответ) {
+      в.className = 'дп-исход';
+      в.innerHTML = '<p class="дп-строки">' + (о.message || 'ответа не пришло') + '</p>' +
+        '<p class="дп-цена">Шаг пропущен, остальное работает. ' +
+        (черезАгента ? '' : 'Модель ставится на экране «Локальные модели».') + '</p>';
+      открыть(4,'дп-ш4',в); return;
+    }
+    полоса_готово(3,659);
+    в.className = 'дп-исход готов';
+    в.innerHTML = '<span class="дп-цифры">' + ответ + '</span><p class="дп-цена">' + сек + ' с · ' +
+      (черезАгента ? 'агент Extella · потрачены кредиты аккаунта'
+                   : 'модель на твоём диске · бесплатно · названия не покидали компьютер') + '</p>';
+    аккорд(); открыть(4,'дп-ш4',в);
+  });
+};
+
+document.getElementById('дп-ш4').onclick = function(){
+  var в = document.getElementById('дп-и4'), стоп = ждать(в, 'Прошу эксперта разложить…');
+  полоса_идёт(4);
+  занять(this, 'прошу…', function(){
+    return зов('journey_organize', {folder: ПАПКА, action: 'execute'}); })
+  .then(function(о){
+    стоп();
+    if (о.status === 'refused') {
+      полоса_готово(4,349);
+      document.getElementById('дп-текст-правила').textContent = '«' + о.rule + '»';
+      document.getElementById('дп-правило').style.display = 'block';
+      в.innerHTML = '<p class="дп-строки">Файлы не тронуты. Решение за тобой.</p>';
+    } else {
+      в.innerHTML = '<p class="дп-строки">' + (о.message || 'неожиданный ответ') + '</p>';
+    }
+  });
+};
+document.getElementById('дп-разрешаю').onclick = function(){
+  var в = document.getElementById('дп-и5'), стоп = ждать(в, 'Раскладываю внутри Загрузок…');
+  открыть(5); прокрутить(5); полоса_идёт(5);
+  занять(this, 'раскладываю…', function(){
+    return зов('journey_organize', {folder: ПАПКА, action: 'execute', confirm: 'да-перемещай'}); })
+  .then(function(о){
+    var сек = стоп().toFixed(1);
+    if (о.status !== 'success') { в.innerHTML = '<p class="дп-строки">' + о.message + '</p>'; return; }
+    в.className = 'дп-исход готов';
+    в.innerHTML = '<span class="дп-цифры">' + о.moved + ' файлов<br>разложено</span>' +
+      '<p class="дп-строки">внутри той же папки, наружу ничего не ушло</p>' +
+      '<p class="дп-цена">' + сек + ' с · Finder открылся сам · откат рядом с файлами</p>';
+    document.getElementById('дп-откат').disabled = false;
+    полоса_готово(5,740); аккорд(); открыть(6,'дп-ш6',в);
+  });
+};
+document.getElementById('дп-откат').onclick = function(){
+  var в = document.getElementById('дп-и5'), стоп = ждать(в, 'Возвращаю как было…');
+  занять(this, 'возвращаю…', function(){
+    return зов('journey_organize', {folder: ПАПКА, action: 'undo'}); })
+  .then(function(о){
+    стоп();
+    в.className = 'дп-исход';
+    в.innerHTML = '<p class="дп-строки">' + (о.status === 'success'
+      ? 'Возвращено файлов: ' + о.restored + '. Как будто ничего и не было.'
+      : о.message) + '</p>';
+  });
+};
+
+document.getElementById('дп-ш6').onclick = function(){
+  var в = document.getElementById('дп-и6');
+  if (!ЗАПАС.board) {
+    в.innerHTML = '<p class="дп-строки">«Доска схем» на этом устройстве не отвечает.</p>' +
+      '<p class="дп-цена">Поставь её из магазина и открой один раз — тогда карта ляжет сюда. ' +
+      'Это тоже не остановка: последний шаг работает и без неё.</p>';
+    открыть(7,null,в); return;
+  }
+  var стоп = ждать(в, 'Эксперт рисует в соседнем приложении…');
+  полоса_идёт(6);
+  занять(this, 'рисую…', function(){ return зов('journey_board_scheme', {folder: ПАПКА}); })
+  .then(function(о){
+    var сек = стоп().toFixed(1);
+    if (о.status !== 'success') {
+      в.innerHTML = '<p class="дп-строки">' + о.message + '</p>'; открыть(7,null,в); return;
+    }
+    полоса_готово(6,698);
+    в.className = 'дп-исход готов';
+    в.innerHTML = '<span class="дп-цифры">карта готова</span>' +
+      '<p class="дп-строки">нарисовано элементов: ' + о.drawn + ' · твои рисунки целы (' +
+      о.kept + ' на месте)</p><p class="дп-цена">' + сек + ' с · открой Доску схем заново</p>';
+    аккорд(); открыть(7,null,в);
+  });
+};
+
+var собрано = [];
+document.getElementById('дп-кубики').addEventListener('click', function(e){
+  var к = e.target.closest('.дп-кубик');
+  if (!к || к.classList.contains('взят')) return;
+  к.classList.add('взят'); собрано.push(к.textContent);
+  document.getElementById('дп-сборка').textContent = собрано.join('  →  ');
+  document.getElementById('дп-ш7').disabled = собрано.length < 2;
+  тон(640 + собрано.length*70, .09);
+});
+document.getElementById('дп-ш7').onclick = function(){
+  var имя = document.getElementById('дп-имя').value.trim() || 'Порядок в Загрузках';
+  var в = document.getElementById('дп-и7'), стоп = ждать(в, 'Создаю черновик в магазине…');
+  полоса_идёт(7);
+  // В приложение уходят цифры ИЗ ПРОГОНА этого человека и правило дома:
+  // страница с чужими примерами — записка, страница с твоими цифрами —
+  // твоя вещь.
+  var цифры = '';
+  if (сводка && сводка.total) {
+    цифры = JSON.stringify({files: сводка.total,
+      gb: Math.round((сводка.size_mb || 0) / 1024 * 10) / 10,
+      categories: сводка.categories || {}});
+  }
+  var дом = (document.getElementById('дп-текст-правила').textContent || '')
+    .replace(/^«|»$/g, '');
+  занять(this, 'создаю…', function(){
+    return зов('journey_publish', {name: имя, parts: собрано.join('|'),
+                                   stats: цифры, rule: дом}); })
+  .then(function(о){
+    var сек = стоп().toFixed(1);
+    if (о.status !== 'success') { в.innerHTML = '<p class="дп-строки">' + о.message + '</p>'; return; }
+    полоса_готово(7,880);
+    в.className = 'дп-исход готов';
+    // Слова зависят от того, ЧТО вышло: обещать плитку, которой нет, —
+    // ровно та ложь, из-за которой человек ищет её на столе и не находит.
+    var где = о.on_desktop
+      ? '<p class="дп-строки">Приложение создано и уже стоит на твоём рабочем ' +
+        'столе Extella — плитка с этим именем. Открой её: внутри страница с ' +
+        'твоими сегодняшними цифрами, чек-лист порядка и правило дома.</p>' +
+        '<p class="дп-строки">Оно только твоё: в магазине его никто не видит. ' +
+        'Захочешь убрать — снеси плитку в корзину рабочего стола, а сам ' +
+        'черновик удали в магазине: это две разные вещи, и одна без другой ' +
+        'оставляет след.</p>'
+      : '<p class="дп-строки">Черновик создан, но плитка на рабочий стол не ' +
+        'встала. Открой магазин Extella, найди эту карточку и нажми у неё ' +
+        '«Buy &amp; Deploy» — это бесплатно, приложение твоё.</p>' +
+        '<p class="дп-строки">' + (о.message || '') + '</p>';
+    в.innerHTML = '<span class="дп-цифры">' + имя + '</span>' + где +
+      '<p class="дп-цена">' + sec_line(сек, о.parts, о.on_desktop) + '</p>';
+    аккорд();
+  });
+};
+
+
+
   })();
 
   // ── ЭКРАНЫ ────────────────────────────────────────────────────────────────
@@ -1426,6 +1713,13 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     открыть(decodeURIComponent((location.hash || '').replace('#', '')) || 'начало');
     window.открытьЭкран = открыть;
   })();
+})();
+
+  // ── ПУТЕШЕСТВИЕ: живой вызов эксперта ─────────────────────────────────────
+  // Отдельный от установщика путь вызова, со СВОИМ узким белым списком полей.
+  // Расширять общий список ради витрины нельзя: он охраняет то, что страница
+  // вообще способна передать на устройство.
+
 </script>
 </body>
 </html>

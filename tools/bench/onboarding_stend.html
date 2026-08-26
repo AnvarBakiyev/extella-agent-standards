@@ -1,0 +1,156 @@
+<meta charset="utf-8">
+<title>Заведи свой стенд</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --paper:#FAF9F5; --ink:#17150F; --surf:#FFFFFF; --line:#E7E2D6; --line2:#EFEBE1;
+    --muted:#6E685C; --faint:#9A9384; --gold:#C57E33; --gold-deep:#A6641F;
+    --petrol:#2F6B66; --green:#2F6B66; --code-bg:#181510; --code-ink:#F3ECDD;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --mono:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#141310; --ink:#F4F1EA; --surf:#1C1A15; --line:#332F27; --line2:#262219;
+      --muted:#A79F92; --faint:#726A5C; --code-bg:#0D0B08; --code-ink:#EFE7D7;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#141310; --ink:#F4F1EA; --surf:#1C1A15; --line:#332F27; --line2:#262219;
+    --muted:#A79F92; --faint:#726A5C; --code-bg:#0D0B08; --code-ink:#EFE7D7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper); color:var(--ink); font:400 16px/1.6 var(--sans);
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px; margin:0 auto; padding:56px 24px 80px}
+  .eyebrow{font:400 12px/1 var(--mono); letter-spacing:.34em; text-transform:uppercase;
+    color:var(--petrol); margin-bottom:18px}
+  h1{font:400 clamp(34px,6.4vw,54px)/1.04 var(--serif); letter-spacing:-.02em; text-wrap:balance}
+  .lead{font-size:clamp(17px,2.4vw,20px); color:var(--muted); margin-top:20px; max-width:52ch; text-wrap:balance}
+  .why{margin-top:30px; padding:18px 20px; border-left:2px solid var(--gold);
+    background:var(--surf); border-radius:0 12px 12px 0; font-size:15px; color:var(--ink)}
+  .why b{color:var(--gold-deep)}
+
+  .steps{margin-top:52px; display:flex; flex-direction:column; gap:2px}
+  .step{display:grid; grid-template-columns:44px 1fr; gap:18px; padding:22px 0; border-top:1px solid var(--line)}
+  .num{font:400 22px/1 var(--serif); color:var(--gold); padding-top:2px}
+  .step h2{font:600 18px/1.3 var(--sans); letter-spacing:0; margin-bottom:6px}
+  .step p{color:var(--muted); font-size:15px}
+  .step p code{font:400 13px/1 var(--mono); background:var(--line2); padding:2px 6px; border-radius:5px; color:var(--ink)}
+
+  .builder{margin-top:14px}
+  label{display:block; font:600 13px/1 var(--sans); margin-bottom:8px; color:var(--ink)}
+  .hint{font:400 13px/1.5 var(--sans); color:var(--faint); margin-top:8px}
+  .hint a{color:var(--petrol)}
+  input{width:100%; font:400 14px/1 var(--mono); padding:14px 15px; border:1px solid var(--line);
+    border-radius:11px; background:var(--surf); color:var(--ink)}
+  input:focus{outline:2px solid var(--gold); outline-offset:1px}
+  .cmd{margin-top:16px; position:relative; background:var(--code-bg); border-radius:14px;
+    padding:18px 18px 18px; overflow-x:auto}
+  .cmd pre{font:400 13.5px/1.7 var(--mono); color:var(--code-ink); white-space:pre; margin:0}
+  .cmd .tok{color:#E9B872}
+  .copy{position:absolute; top:12px; right:12px; font:600 12px/1 var(--sans);
+    padding:8px 12px; border-radius:8px; border:1px solid rgba(243,236,221,.2);
+    background:rgba(243,236,221,.08); color:var(--code-ink); cursor:pointer}
+  .copy:hover{background:rgba(243,236,221,.16)}
+
+  .note{margin-top:56px; border-top:1px solid var(--line); padding-top:28px}
+  .note h3{font:600 15px/1.3 var(--sans); margin-bottom:12px}
+  .note ul{list-style:none; display:flex; flex-direction:column; gap:10px}
+  .note li{font-size:14.5px; color:var(--muted); padding-left:20px; position:relative}
+  .note li::before{content:"·"; position:absolute; left:6px; color:var(--gold); font-weight:700}
+  .note li b{color:var(--ink); font-weight:600}
+  .foot{margin-top:40px; font:400 13px/1.6 var(--mono); color:var(--faint)}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Extella · приёмка</p>
+  <h1>Заведи свой стенд</h1>
+  <p class="lead">Стенд — чистая машина, на которой кнопка открывает твоё приложение как посторонний покупатель и честно показывает: откроется у других или нет, со скриншотом.</p>
+
+  <div class="why">Установить приложение легко. Но <b>откроется ли оно на чужом компьютере</b> — вслепую не видно. Свой стенд закрывает ровно это: до выкладки ты сам проверяешь на чистой машине и получаешь зелёный или красный.</div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <h2>Возьми чистую Linux-машину</h2>
+        <p>Свой VPS или контейнер, Ubuntu. Хватает 2 ядра / 4 ГБ. Зайди по ssh.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <h2>Вставь токен — забери готовую команду</h2>
+        <p>Одна команда ставит браузер, службу и открывает стенд наружу. Токен нужен, чтобы стенд открывал <i>твои</i> приложения.</p>
+        <div class="builder">
+          <label for="tok">Твой токен Extella</label>
+          <input id="tok" placeholder="вставь сюда токен из панели Extella" spellcheck="false" autocomplete="off">
+          <div class="cmd">
+            <button class="copy" id="copy">Копировать</button>
+            <pre id="out"></pre>
+          </div>
+          <p class="hint">Где взять токен: в OS открой «Extella API token» (или спроси в панели). Команда собирается прямо здесь, в браузере — токен никуда не уходит.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <h2>Открой свою кнопку</h2>
+        <p>Установщик сам повесит на твой рабочий стол OS кнопку <code>Приёмка: откроется ли у других</code>. Кликаешь → вставляешь <code>listing_id</code> приложения → «Проверить».</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <h3>Что важно</h3>
+    <ul>
+      <li><b>Стенд твой.</b> Токен и код приложений остаются у тебя, к Extella не приезжают. Это не общий сервис.</li>
+      <li><b>Приложение должно быть в магазине</b> (можно приватно) — стенд открывает его страницу по <code>listing_id</code>.</li>
+      <li><b>Что проверяет.</b> Что окно рисуется у постороннего, а не белый экран. Что «все кнопки внутри работают» — отдельная, следующая проверка.</li>
+    </ul>
+  </div>
+
+  <p class="foot">Первый заход в кнопку после установки может подождать выдачу TLS-сертификата — до минуты.</p>
+</div>
+
+<script>
+  var БАЗА = "https://files.82-115-42-21.sslip.io/bench/install.sh";
+  var tok = document.getElementById('tok');
+  var out = document.getElementById('out');
+
+  function build(){
+    var t = tok.value.trim();
+    var shown = t || "<твой_токен>";
+    out.innerHTML =
+      'curl -fsSL ' + БАЗА + ' | \\\n' +
+      '  EXTELLA_TOKEN=<span class="tok">' + esc(shown) + '</span> bash';
+  }
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function plain(){
+    var t = tok.value.trim() || "<твой_токен>";
+    return "curl -fsSL " + БАЗА + " | EXTELLA_TOKEN=" + t + " bash";
+  }
+
+  tok.addEventListener('input', build);
+  document.getElementById('copy').onclick = function(){
+    var text = plain(), btn = this;
+    var done = function(){ btn.textContent = "Скопировано"; setTimeout(function(){ btn.textContent="Копировать"; }, 1600); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+    function fallback(){
+      var r=document.createRange(); r.selectNodeContents(out);
+      var s=getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = "Выдели и Cmd+C";
+      setTimeout(function(){ btn.textContent="Копировать"; }, 2200);
+    }
+  };
+  build();
+</script>
