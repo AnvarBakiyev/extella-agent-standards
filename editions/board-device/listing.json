@@ -1,0 +1,24 @@
+{
+  "name": "Schemes Board",
+  "описание": "A whiteboard for schemes and sketches that lives on your own computer. Drawings are kept as a file on disk — not in the browser, so they survive cache clearing and sandbox limits. Installs with everything it needs: no Docker, no network, no account.",
+  "теги": [
+    "приложение",
+    "схемы",
+    "рисование",
+    "локально"
+  ],
+  "иконка": "icon.png",
+  "версия": "0.1.0",
+  "цена": 0,
+  "состояние": "предрелиз",
+  "права": [],
+  "границы": "Runs on the computer where it is installed — the window will not work on someone else's machine until they install it too. About 22 MB. Drawings are kept in ~/extella-apps/schemes-board/рисунки and are never touched by reinstalls.",
+  "содержимое": "Excalidraw (MIT) + окно ОС со строкой агента; раздача cabinet_server на устройстве",
+  "name_ru": "Доска схем",
+  "описание_ru": "Доска для схем и набросков, которая живёт на вашем компьютере. Рисунки хранятся файлом на диске, а не в браузере, поэтому переживают чистку кэша и запреты песочницы. Ставится со всем необходимым: без Docker, без сети, без учётной записи.",
+  "границы_ru": "Работает на том компьютере, где установлена: у коллеги окно не заработает, пока она не поставит её себе. Около 22 МБ. Рисунки лежат в ~/extella-apps/schemes-board/рисунки и при переустановке не трогаются.",
+  "установщик": "board_install",
+  "агент": "agent_YbDQpKySopyi1ejHyQZuQ",
+  "listing_id": "d117273e-9f8a-46bd-9410-1e2c2f750a07",
+  "version_id": "115152d5-1194-4388-b062-c502d07a5c86"
+}

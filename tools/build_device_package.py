@@ -158,12 +158,30 @@ def собрать(slug: str, куда: pathlib.Path | None = None) -> pathlib.P
 
     куда = (куда or (КОРЕНЬ / "editions" / slug)).expanduser()
     куда.mkdir(parents=True, exist_ok=True)
-    архив = куда / f"{slug}-пакет.tar.gz"
-    итог = subprocess.run(["tar", "-czf", str(архив), "-C", str(корзина.parent), корзина.name],
-                          capture_output=True, text=True, timeout=1800)
+    # ZIP, А НЕ TAR. Установщик-эксперт на устройстве открывает архив как zip и
+    # на tar.gz отвечает «архив версии не является zip». Проверено чтением
+    # рабочего установщика Агента 1С 26.08.2026 — до этого Доска уехала
+    # покупателям в tar.gz и не поставилась.
+    #
+    # Содержимое кладём В КОРЕНЬ архива: install.py должен лежать именно там
+    # (правило B1), а не внутри лишней папки.
+    архив = куда / f"{slug}-пакет.zip"
+    if архив.exists():
+        архив.unlink()
+    итог = subprocess.run(["zip", "-qr", str(архив), "."],
+                          cwd=str(корзина), capture_output=True, text=True, timeout=1800)
     shutil.rmtree(корзина)
     if итог.returncode != 0:
         raise Отказ(f"архив не собрался: {(итог.stderr or '')[:200]}")
+    # Доказываем, что install.py лежит в корне: без него платформа не найдёт,
+    # что запускать, и установка тихо не произойдёт.
+    import zipfile
+    with zipfile.ZipFile(архив) as z:
+        внутри = z.namelist()
+    if "install.py" not in внутри:
+        архив.unlink()
+        raise Отказ(f"в корне архива нет install.py (есть: {внутри[:5]}). "
+                    f"Платформа не найдёт, что запускать")
     print(f"  пакет: {архив}")
     print(f"  вес: {архив.stat().st_size / 1048576:.2f} МБ · внутри: install.py + "
           f"{len(оп.get('файлы', []))} файлов приложения")

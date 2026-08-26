@@ -1,0 +1,36 @@
+{
+  "schema": "extella.selfcheck/v1",
+  "product": {
+    "name": "board-device",
+    "version": ""
+  },
+  "artifact": {
+    "kind": "page",
+    "name": "index.html",
+    "sha256": "9fbf7ee0e0df2ead4af31108b4e9d55af89d910aa3b1ea19bf1682dc4a138b44"
+  },
+  "ran_at": "2026-08-26T16:58:55Z",
+  "runner": {
+    "where": "author-device",
+    "runtime": "python3.12.9"
+  },
+  "command": "",
+  "result": "not_ready",
+  "checks": [
+    {
+      "name": "self_check_runs",
+      "status": "fail",
+      "detail": "самопроверка не дала отчёта"
+    },
+    {
+      "name": "gate_finding",
+      "status": "fail",
+      "detail": "самопроверки нет вовсе: объяви её в MANIFEST.yaml или положи app/main.py --selftest. Без неё продукт проверяет только человек"
+    }
+  ],
+  "negative_control": {
+    "ran": false,
+    "mutation": "",
+    "self_check_went_red": false
+  }
+}
