@@ -149,6 +149,7 @@ run check_app_scopes
 run check_listing_meta
 run platform_client
 run connect_mcp
+run check_toolkit
 # Инструменты чата Доски схем: самопроверки у них есть, а в общем прогоне их не было —
 # то есть на чистой машине их никто не охранял. Гейт защищает только то, что включено.
 run check_local_app
