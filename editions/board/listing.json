@@ -10,7 +10,7 @@
   "иконка": "icon.png",
   "версия": "0.1.1",
   "цена": 0,
-  "состояние": "предрелиз",
+  "состояние": "опубликован",
   "права": [],
   "границы": "Runs on the computer where it is installed — the window will not work on someone else's machine until they install it too. About 22 MB. Drawings are kept in ~/extella-apps/schemes-board/рисунки and are never touched by reinstalls.",
   "содержимое": "Excalidraw (MIT) + окно ОС со строкой агента; раздача cabinet_server на устройстве",
@@ -23,6 +23,7 @@
   "агент": "agent_YbDQpKySopyi1ejHyQZuQ",
   "прежняя_карточка": {
     "listing_id": "135bdecf-ed2c-4700-b00c-67d9fab07b9c",
-    "почему": "карточка «Web app» без установщика: ставила только окно, программу покупатель не получал. Снять с публикации, когда люди перейдут на устройственную"
+    "почему": "карточка «Web app» без установщика: ставила только окно, программу покупатель не получал. Снять с публикации, когда люди перейдут на устройственную",
+    "снята_с_витрины": "27.08.2026"
   }
 }
