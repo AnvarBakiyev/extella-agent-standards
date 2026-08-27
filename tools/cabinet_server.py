@@ -714,27 +714,32 @@ def сделать_обработчик(папка: pathlib.Path, файл_да�
 
 def main() -> int:
     р = argparse.ArgumentParser()
-    р.add_argument("--папка", required=True)
-    р.add_argument("--порт", required=True, type=int)
-    р.add_argument("--имя", required=True)
-    р.add_argument("--данные", required=True)
-    р.add_argument("--прокси-на", dest="прокси_на", type=int, default=None,
+    # ЛАТИНСКИЕ СИНОНИМЫ. Имена аргументов у нас русские, и это удобно читать.
+    # Но на Windows такая команда проходит через Планировщик заданий в кодировке
+    # консоли и доезжает до питона искажённой: служба создаётся, запуститься не
+    # может. Замер 27.08.2026 на Windows-машине владельца. Синонимы стоят ноль
+    # и снимают целый класс поломок — установщики зовут прокси латиницей.
+    р.add_argument("--папка", "--folder", dest="папка", required=True)
+    р.add_argument("--порт", "--port", dest="порт", required=True, type=int)
+    р.add_argument("--имя", "--name", dest="имя", required=True)
+    р.add_argument("--данные", "--data", dest="данные", required=True)
+    р.add_argument("--прокси-на", "--proxy-to", dest="прокси_на", type=int, default=None,
                    help="проксировать всё (кроме служебных путей) на этот локальный порт")
-    р.add_argument("--шим", default="", help="файл шима для вставки в проксируемый HTML")
-    р.add_argument("--вставка", default="",
+    р.add_argument("--шим", "--shim", dest="шим", default="", help="файл шима для вставки в проксируемый HTML")
+    р.add_argument("--вставка", "--inject", dest="вставка", default="",
                    help="дополнительный HTML-файл, вшиваемый в страницы вместе с шимом "
                         "(добавки конкретному приложению — например, кнопка Календаря)")
-    р.add_argument("--корень-на", dest="корень_на", default="",
+    р.add_argument("--корень-на", "--root-to", dest="корень_на", default="",
                    help="маршрут, куда уводить голый «/» (восьмая дверь окна ОС)")
-    р.add_argument("--глушить", action="append", default=[],
+    р.add_argument("--глушить", "--mute", dest="глушить", action="append", default=[],
                    help="путь, который не передавать в контейнер (вечные потоки)")
-    р.add_argument("--журнал", action="store_true",
+    р.add_argument("--журнал", "--log", dest="журнал", action="store_true",
                    help="печатать каждый запрос в лог службы (диагностика окна)")
-    р.add_argument("--живой-канал", dest="живой_канал", action="append",
+    р.add_argument("--живой-канал", "--live-channel", dest="живой_канал", action="append",
                    default=[], metavar="ПУТЬ=ПОРТ",
                    help="сквозной канал (WebSocket) с этого пути на этот порт; "
                         "без правила канал идёт на порт самого приложения")
-    р.add_argument("--автовход", default="",
+    р.add_argument("--автовход", "--autologin", dest="автовход", default="",
                    help="json-файл {путь, тело} — прокси входит в контейнер сам "
                         "(беспарольный локальный контур по решению владельца)")
     а = р.parse_args()
