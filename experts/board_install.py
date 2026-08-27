@@ -23,7 +23,41 @@ import json, os, subprocess, sys, tempfile, urllib.request, zipfile, shutil
 ВЕРСИЯ = """{{version}}""".strip()
 if not ВЕРСИЯ or ВЕРСИЯ.startswith("{{"):
     ВЕРСИЯ = (os.environ.get("EXTELLA_APP_VERSION") or "").strip()
-ТОКЕН = (os.environ.get("EXTELLA_AUTH_TOKEN") or "").strip()
+def _токен():
+    """Токен, которым магазин ОС отдаёт архив.
+
+    ЗАМЕР 27.08.2026, И ЭТО КОРЕНЬ ВСЕЙ БЕДЫ. У магазина (os.extella.ai) СВОЙ
+    токен, у ядра (api.extella.ai) — свой, и они разные: сверил отпечатками,
+    совпадения нет. Эксперт брал только тот, что платформа кладёт в среду —
+    ядровый, — и магазин отвечал отказом 401. Установка падала, а покупатель
+    видел «покупка прошла» и пустое окно.
+
+    Первым спрашиваем файл, который САМО приложение Extella заводит на каждой
+    машине: `~/.extella/os_token.txt`. Он есть у любого, кто хоть раз открыл
+    Extella, — то есть у каждого покупателя, на любой системе. Среда и конфиг
+    визарда остаются запасными путями.
+    """
+    дом = os.path.expanduser("~")
+    for путь in (os.path.join(дом, ".extella", "os_token.txt"),
+                 os.path.join(дом, ".extella", "api_token.txt")):
+        try:
+            з = open(путь, encoding="utf-8").read().strip()
+            if з:
+                return з
+        except OSError:
+            pass
+    из_среды = (os.environ.get("EXTELLA_AUTH_TOKEN") or "").strip()
+    if из_среды:
+        return из_среды
+    try:
+        с = json.load(open(os.path.join(дом, "extella_wizard", "app", "config.json"),
+                           encoding="utf-8"))
+        return str(с.get("auth_token") or "").strip()
+    except Exception:                                     # noqa: BLE001
+        return ""
+
+
+ТОКЕН = _токен()
 
 
 def отчёт(**поля):
@@ -41,11 +75,23 @@ def беда(почему, **ещё):
 if ВЕРСИЯ:
     адрес += "&version=" + urllib.request.quote(ВЕРСИЯ)
 
+if not ТОКЕН:
+    беда("не нашёл токен Extella на этом компьютере. Обычно он лежит в "
+         "~/.extella/os_token.txt и появляется сам после первого запуска "
+         "приложения Extella — откройте его один раз и повторите установку")
+
 временная = tempfile.mkdtemp(prefix="extella_board_")
 архив = os.path.join(временная, "пакет.zip")
 try:
     запрос = urllib.request.Request(адрес)
     if ТОКЕН:
+        # ДВА ЗАГОЛОВКА, И ЭТО НЕ ПЕРЕСТРАХОВКА. Магазин ОС принимает
+        # «X-Extella-Token»; на «X-Auth-Token» он отвечает отказом 401 —
+        # проверено живьём 27.08.2026 обоими способами подряд. Эксперт слал
+        # только второй: архив не скачивался, установка падала, а покупатель
+        # видел успешную покупку и пустое окно. Ядро (api.extella.ai) знает
+        # обратный заголовок, поэтому шлём оба — лишний никому не мешает.
+        запрос.add_header("X-Extella-Token", ТОКЕН)
         запрос.add_header("X-Auth-Token", ТОКЕН)
     with urllib.request.urlopen(запрос, timeout=600) as о, open(архив, "wb") as ф:
         shutil.copyfileobj(о, ф)
