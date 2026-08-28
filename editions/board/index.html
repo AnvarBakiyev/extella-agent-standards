@@ -77,6 +77,9 @@ p{color:var(--tx2);margin:0 0 16px}
   <div class="карточка">
     <h1>Schemes Board</h1>
     <p id="сообщение" data-т="Opening…">Opening…</p>
+    <button type="button" class="сказать" id="поставить"
+            style="display:none;margin:16px auto 0;padding:10px 22px"
+            data-т="Install on this computer">Install on this computer</button>
     <div class="тихо" id="тихо"></div>
   </div>
 </div>
@@ -119,6 +122,14 @@ window.__СЛОВАРЬ_ОКНА = {
     "If it is your app — restart Extella. If someone shared this window with you — install the app from the store first: it does not run on their machine for you.":
       "Если приложение ваше — перезапустите Extella. Если окно вам прислали — приложение нужно поставить себе из магазина: на чужом компьютере оно для вас не работает.",
     "not responding": "не отвечает",
+    "Install on this computer": "Установить на этот компьютер",
+    "Installing… this takes about half a minute": "Ставлю… это займёт около половины минуты",
+    "Installed — opening": "Установлено — открываю",
+    "Try again": "Попробовать ещё раз",
+    "The installer did not finish. Tell the chat what it says here.":
+      "Установка не завершилась. Скажите в чат, что здесь написано.",
+    "This window cannot install the app: reinstall it from the store.":
+      "Это окно не умеет ставить приложение: переустановите его из магазина.",
     "closed in the sandbox: cookies, browser databases — work is kept on disk":
       "в песочнице закрыто: cookie, базы браузера — работа хранится на диске",
   },
@@ -216,6 +227,59 @@ document.getElementById('полоска_закрыть').onclick = function(){
   полоска_.style.display = 'none';
 };
 
+// ── УСТАНОВКА С САМОЙ СТРАНИЦЫ ───────────────────────────────────────────
+// ЗАЧЕМ ЭТО ЗДЕСЬ. Покупка в магазине заводит агента и кладёт ему эксперта-
+// установщика, но САМА ПРОГРАММА на компьютер от этого не попадает: поток
+// покупки рапортует «installer_done», а на диске пусто — проверено начисто
+// 28.08.2026 (снёс папку, вызвал покупку, папка не появилась). Человек видел
+// «куплено» и пустое окно, и починить это ему было нечем.
+//
+// Канон (H5-бис) даёт прямой путь: страница продукта может позвать эксперта
+// своего агента, и с правом device.run он исполнится НА ЭТОМ компьютере, а не
+// в облаке. Отсюда кнопка: она делает ровно то, что должна была сделать
+// покупка. Цена вызова — 13–17 секунд, это физика маршрута
+// (страница → ОС → ядро → листенер), поэтому ожидание показываем словами.
+var ТОКЕН_ПРИЛОЖЕНИЯ = '{{app_token}}';
+var УСТАНОВЩИК = 'board_install';
+
+function поставить_сюда(){
+  var к = document.getElementById('поставить');
+  var подпись_ = document.getElementById('тихо');
+  if (!ТОКЕН_ПРИЛОЖЕНИЯ || ТОКЕН_ПРИЛОЖЕНИЯ.charAt(0) === '%') {
+    подпись_.textContent = т('This window cannot install the app: reinstall it from the store.');
+    return;
+  }
+  к.disabled = true;
+  к.textContent = т('Installing… this takes about half a minute');
+  fetch('https://os.extella.ai/api/app-agent/run', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({app_token: ТОКЕН_ПРИЛОЖЕНИЯ, expert_name: УСТАНОВЩИК, params: {}})
+  })
+  .then(function(о){ return о.json(); })
+  .then(function(д){
+    // ЧЕСТНО РАЗБИРАЕМ ОТВЕТ. «status: success» от платформы фактом установки
+    // не является — установщик возвращает свой ok и подпись машины (C3).
+    var р = д && (д.result || д.данные || д);
+    if (typeof р === 'string') { try { р = JSON.parse(р.replace(/'/g, '"')); } catch (e) {} }
+    if (р && р.ok) {
+      к.textContent = т('Installed — opening');
+      подпись_.textContent = (р['машина'] || '') + ' · ' + (р['система'] || '');
+      setTimeout(function(){ location.reload(); }, 1500);
+    } else {
+      к.disabled = false;
+      к.textContent = т('Try again');
+      подпись_.textContent = (р && (р['почему'] || р.почему)) ||
+                             т('The installer did not finish. Tell the chat what it says here.');
+    }
+  })
+  .catch(function(е){
+    к.disabled = false;
+    к.textContent = т('Try again');
+    подпись_.textContent = String(е).slice(0, 160);
+  });
+}
+
 function карточкой(текст, подпись){
   // Перекрыть приложение разрешено ТОЛЬКО настоящей бедой: приложение прямо
   // сказало «хранить работу негде» либо его вовсе нет на этом компьютере.
@@ -225,6 +289,13 @@ function карточкой(текст, подпись){
   запасной.style.display = 'flex';
   document.getElementById('сообщение').textContent = текст;
   document.getElementById('тихо').textContent = подпись;
+  // Кнопка нужна только когда программы на этой машине нет. Если приложение
+  // отвечает, но жалуется на хранилище, ставить нечего — и предлагать нечего.
+  var к = document.getElementById('поставить');
+  if (к && УСТАНОВЩИК && УСТАНОВЩИК.charAt(0) !== '%') {
+    к.style.display = 'block';
+    к.onclick = поставить_сюда;
+  }
 }
 
 // Приложение упало уже ПОСЛЕ того, как доложило о себе: подмена хранилища встаёт
