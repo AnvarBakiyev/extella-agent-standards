@@ -1,0 +1,140 @@
+<!-- Storage Probe v2: замер хранилищ и каналов из НАСТОЯЩЕЙ песочницы окна ОС.
+     Главное отличие v2 от v1 (правка по критике 29.08): мерим не «пишется ли»,
+     а «ПЕРЕЖИВЁТ ЛИ ПЕРЕЗАПУСК окна». При загрузке сперва читаем метку прошлого
+     запуска из каждого хранилища (что выжило), только потом пишем свежую. Второе
+     открытие показывает персистентность — иначе opaque-origin обманет: пишется,
+     а при следующем старте пусто. Одноразовый диагностический листинг, не продукт. -->
+<meta charset="utf-8">
+<title>Storage Probe</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#14161a; color:#d8d4c8; font:14px/1.5 "SF Mono",Menlo,Consolas,monospace;
+         margin:0; padding:28px; }
+  h1 { font-size:17px; color:#c9a35c; margin:0 0 4px; }
+  .sub { color:#7d8188; font-size:12px; margin-bottom:18px; }
+  table { border-collapse:collapse; width:100%; max-width:900px; }
+  td { padding:5px 10px; border-bottom:1px solid #23262c; vertical-align:top; }
+  td:first-child { color:#a8adb5; white-space:nowrap; }
+  .ok { color:#7dc98f; } .no { color:#d97f6e; } .part { color:#d9b96e; } .hd { color:#c9a35c; }
+  #send { margin-top:16px; color:#7d8188; }
+  #raw { margin-top:10px; font-size:11px; color:#565b63; word-break:break-all; max-width:900px; }
+</style>
+<h1>Storage Probe v2</h1>
+<div class="sub">открой ДВАЖДЫ: первый раз пишет метку, второй — покажет, что пережило перезапуск</div>
+<table id="t"></table>
+<div id="send">…</div>
+<div id="raw"></div>
+<script>
+var TOKEN = '{{app_token}}';
+var OS = 'https://os.extella.ai';
+var STAMP = 'st' + Date.now();
+var R = [];
+function row(name, verdict, note){
+  R.push({n:name, v:verdict, note:String(note||'').slice(0,120)});
+  var tr = document.createElement('tr');
+  var cls = verdict==='OK' ? 'ok' : (verdict==='PARTIAL'||verdict==='NONE' ? 'part' :
+            (verdict==='—' ? 'hd' : 'no'));
+  tr.innerHTML = '<td>'+name+'</td><td class="'+cls+'">'+verdict+'</td><td>'+
+                 String(note||'').slice(0,95)+'</td>';
+  document.getElementById('t').appendChild(tr);
+}
+function trySync(name, fn){
+  try { row(name, 'OK', fn()); } catch(e){ row(name, 'BLOCKED', e.name+': '+e.message); }
+}
+async function tryAsync(name, fn){
+  try { row(name, 'OK', await fn()); } catch(e){ row(name, 'BLOCKED', e.name+': '+e.message); }
+}
+
+async function main(){
+  // ── ПЕРСИСТЕНТНОСТЬ: что дожило с прошлого открытия ─────────────────────
+  row('ПЕРЕЖИЛО ПЕРЕЗАПУСК', '—', 'ниже — что вернуло метку прошлого запуска');
+  var survived = [];
+  async function readStamp(name, reader){
+    try { var was = await reader(); if (was) { survived.push(name); row('  ↳ '+name, 'OK', 'выжило: '+String(was).slice(0,22)); } }
+    catch(e){}
+  }
+  await readStamp('localStorage', function(){ return localStorage.getItem('probe_stamp'); });
+  await readStamp('history.state', function(){ return history.state && history.state.probe_stamp; });
+  await readStamp('window.name',  function(){ var m = /probe_stamp=(\S+)/.exec(window.name||''); return m ? m[1] : ''; });
+  await readStamp('Cache API', async function(){ var c = await caches.open('probe_persist'); var r = await c.match('/stamp'); return r ? await r.text() : ''; });
+  await readStamp('OPFS', async function(){ var d = await navigator.storage.getDirectory(); var h = await d.getFileHandle('stamp'); var f = await h.getFile(); return await f.text(); });
+  await readStamp('IndexedDB', function(){ return new Promise(function(res){
+    var q = indexedDB.open('probe_persist', 1);
+    q.onupgradeneeded = function(){ try{ q.result.createObjectStore('s'); }catch(e){} };
+    q.onsuccess = function(){ try { var g = q.result.transaction('s','readonly').objectStore('s').get('stamp');
+        g.onsuccess = function(){ res(g.result||''); try{q.result.close();}catch(e){} };
+        g.onerror = function(){ res(''); }; } catch(e){ res(''); } };
+    q.onerror = function(){ res(''); }; setTimeout(function(){ res(''); }, 3000); }); });
+  if (!survived.length) row('  ↳ итог', 'NONE', 'ничего не пережило — origin эфемерный (opaque)');
+
+  // ── КВОТА: мгновенный ответ, opaque ли origin ──────────────────────────
+  await tryAsync('storage.estimate', async function(){ var e = await navigator.storage.estimate();
+    return 'quota ' + Math.round((e.quota||0)/1048576) + 'МБ, usage ' + (e.usage||0) + 'Б'; });
+  await tryAsync('storage.persisted', async function(){ var p = await navigator.storage.persisted();
+    return p ? 'durable' : 'best-effort (чистится под давлением)'; });
+
+  // ── ЗАПИСЬ СВЕЖЕЙ МЕТКИ (проверит следующее открытие) ──────────────────
+  try { localStorage.setItem('probe_stamp', STAMP); } catch(e){}
+  try { history.replaceState({probe_stamp: STAMP}, ''); } catch(e){}
+  try { window.name = 'probe_stamp=' + STAMP; } catch(e){}
+  try { var cw = await caches.open('probe_persist'); await cw.put('/stamp', new Response(STAMP)); } catch(e){}
+  try { var dw = await navigator.storage.getDirectory(); var hw = await dw.getFileHandle('stamp', {create:true});
+        var w = await hw.createWritable(); await w.write(STAMP); await w.close(); } catch(e){}
+  try { var qq = indexedDB.open('probe_persist', 1);
+        qq.onupgradeneeded = function(){ try{ qq.result.createObjectStore('s'); }catch(e){} };
+        qq.onsuccess = function(){ try{ qq.result.transaction('s','readwrite').objectStore('s').put(STAMP,'stamp'); }catch(e){} }; } catch(e){}
+
+  // ── ДОСТУПНОСТЬ МЕХАНИЗМОВ (пишется ли вообще) ─────────────────────────
+  row('ДОСТУПНОСТЬ В ПЕСОЧНИЦЕ', '—', 'просто «есть ли API», отдельно от персистентности');
+  trySync('localStorage write', function(){ localStorage.setItem('p','1'); var v = localStorage.getItem('p'); localStorage.removeItem('p'); if (v!=='1') throw new Error('read '+v); return 'ok'; });
+  trySync('cookie', function(){ document.cookie='p=1'; if (document.cookie.indexOf('p=1')<0) throw new Error('dropped'); return 'ok'; });
+  trySync('history.state', function(){ history.replaceState({t:1},''); if (!history.state) throw new Error('null'); return 'set'; });
+  trySync('window.name', function(){ return 'kept in tab (~2MB)'; });
+  await tryAsync('Cache API', async function(){ var c = await caches.open('p'); await caches.delete('p'); return 'opened'; });
+  await tryAsync('OPFS getDirectory', async function(){ await navigator.storage.getDirectory(); return 'root acquired'; });
+  await tryAsync('IndexedDB open', function(){ return new Promise(function(res,rej){
+    var q = indexedDB.open('p',1); q.onsuccess=function(){ try{q.result.close();}catch(e){} res('opened'); };
+    q.onerror=function(){ rej(new Error(String(q.error))); }; setTimeout(function(){ rej(new Error('eternal pending')); },4000); }); });
+  await tryAsync('ServiceWorker.register', function(){ return new Promise(function(res,rej){
+    navigator.serviceWorker.register('data:text/javascript,//sw').then(function(){ res('registered'); })
+      .catch(function(e){ rej(new Error(e.name+': '+String(e.message).slice(0,40))); });
+    setTimeout(function(){ rej(new Error('timeout')); },4000); }); });
+  trySync('showSaveFilePicker', function(){ if (typeof window.showSaveFilePicker!=='function') throw new Error('not exposed'); return 'exposed (needs click)'; });
+  trySync('BroadcastChannel', function(){ new BroadcastChannel('p').close(); return 'constructed'; });
+  trySync('SharedWorker(blob)', function(){ var u=URL.createObjectURL(new Blob(['onconnect=0'],{type:'text/javascript'})); new SharedWorker(u); return 'constructed'; });
+  await tryAsync('Web Locks', function(){ return new Promise(function(res,rej){
+    navigator.locks.request('p', function(){ res('acquired'); }).catch(function(e){ rej(new Error(e.name)); });
+    setTimeout(function(){ res('acquired?'); },3000); }); });
+  trySync('RTCPeerConnection', function(){ var pc=new RTCPeerConnection(); pc.createDataChannel('p'); pc.close(); return 'datachannel ok'; });
+
+  // ── КАНАЛЫ НАРУЖУ ──────────────────────────────────────────────────────
+  row('КАНАЛЫ', '—', 'localhost, стол, прокси ОС');
+  await tryAsync('fetch localhost:34786', async function(){ var r = await fetch('http://127.0.0.1:34786/_extella_version',{signal:AbortSignal.timeout(4000)}); return 'HTTP '+r.status; });
+  await tryAsync('ws:// localhost', function(){ return new Promise(function(res,rej){
+    var ws=new WebSocket('ws://127.0.0.1:34786/probe'); ws.onopen=function(){ res('opened'); ws.close(); };
+    ws.onerror=function(){ rej(new Error('error event')); }; setTimeout(function(){ try{ws.close();}catch(e){} rej(new Error('timeout')); },4000); }); });
+  await tryAsync('postMessage→parent', function(){ window.parent.postMessage({type:'extella-probe-ping'},'*'); return 'sent (shell may ignore)'; });
+  await tryAsync('ext/fetch (allowed)', async function(){ var r = await fetch(OS+'/api/ext/fetch?url='+encodeURIComponent('https://httpbin.org/get'),{headers:{'X-App-Token':TOKEN},signal:AbortSignal.timeout(15000)}); return 'HTTP '+r.status; });
+  await tryAsync('ext/core kv/set (api.full)', async function(){ var r = await fetch(OS+'/api/ext/core/api/kv/set',{method:'POST',headers:{'X-App-Token':TOKEN,'Content-Type':'application/json','X-Agent-Id':'agent_extella_default'},body:JSON.stringify({key:'probe_core',value:'from-window'}),signal:AbortSignal.timeout(15000)}); return 'HTTP '+r.status; });
+
+  // ── ОТЧЁТ туда, где чат прочитает (kv.write через app-agent/call) ───────
+  var payload = JSON.stringify({when:new Date().toISOString(), stamp:STAMP,
+                                survived:survived, ua:navigator.userAgent.slice(0,90), results:R});
+  document.getElementById('raw').textContent = payload;
+  var sent = '';
+  var attempts = [
+    {op:'kv.write', body:{app_token:TOKEN, op:'kv.write', payload:{key:'storage_probe_report', value:payload}}},
+    {op:'kv.set',   body:{app_token:TOKEN, op:'kv.set',   payload:{key:'storage_probe_report', value:payload}}},
+  ];
+  for (var i=0; i<attempts.length && !sent; i++){
+    try { var r = await fetch(OS+'/api/app-agent/call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(attempts[i].body)});
+      var t = await r.text();
+      if (r.ok) sent = attempts[i].op+' HTTP '+r.status;
+      else if (i===attempts.length-1) sent = 'все формы не прошли: '+r.status+' '+t.slice(0,70);
+    } catch(e){ sent = 'ошибка: '+e.message; }
+  }
+  document.getElementById('send').textContent = 'отчёт отправлен через ' + (sent||'—') +
+    ' · открой окно ВТОРОЙ раз, чтобы увидеть, что пережило перезапуск';
+}
+main().catch(function(e){ row('main', 'BLOCKED', e.name+': '+e.message); });
+</script>
