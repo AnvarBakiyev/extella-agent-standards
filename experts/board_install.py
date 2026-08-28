@@ -147,6 +147,13 @@ def board_install(app_name: str = "", version: str = "", token: str = "",
                     что_есть=sorted(os.listdir(куда))[:8])
 
     среда = dict(os.environ)
+    # ЧИТАЕМ И ПИШЕМ ТОЛЬКО В UTF-8. Установщик говорит по-русски, а консоль
+    # Windows живёт в своей однобайтовой кодировке: замер на Windows ARM64
+    # владельца 28.08.2026 — поток чтения упал с UnicodeDecodeError, вывод
+    # потерялся целиком, и от установщика осталось голое «код 2» без причины.
+    # Человек в этот момент видит «не установилось» и ни слова почему.
+    среда["PYTHONIOENCODING"] = "utf-8"
+    среда["PYTHONUTF8"] = "1"
     среда["EXTELLA_APP_NAME"] = ПРИЛОЖЕНИЕ
     # B4: агента называет платформа — install.py запишет привязку в настройку
     # продукта. Из среды устройства этого не узнать: там мог остаться агент
@@ -158,7 +165,8 @@ def board_install(app_name: str = "", version: str = "", token: str = "",
 
     try:
         итог = subprocess.run([sys.executable, установщик], cwd=куда, env=среда,
-                              capture_output=True, text=True, timeout=1800)
+                              capture_output=True, text=True, timeout=1800,
+                              encoding="utf-8", errors="replace")
     except subprocess.TimeoutExpired:
         return dict(где, ok=False, почему="установщик не завершился за 30 минут")
 
@@ -169,7 +177,11 @@ def board_install(app_name: str = "", version: str = "", token: str = "",
         pass
 
     if итог.returncode != 0:
-        return dict(где, ok=False, вывод=вывод[-900:],
-                    почему="установщик вернул код %d" % итог.returncode)
+        # ПУСТОЙ ВЫВОД — ТОЖЕ ОТВЕТ, и о нём надо сказать словами. Иначе
+        # человек получает «код 2» и никакого следа, куда смотреть дальше.
+        почему = "установщик вернул код %d" % итог.returncode
+        if not вывод:
+            почему += " и не сказал ни слова — вывод потерялся по дороге"
+        return dict(где, ok=False, вывод=вывод[-900:], почему=почему)
     return dict(где, ok=True, приложение=ПРИЛОЖЕНИЕ, версия=ВЕРСИЯ or "?",
                 архив_мб=round(размер, 2), вывод=вывод[-900:])

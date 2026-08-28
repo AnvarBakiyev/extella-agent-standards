@@ -53,6 +53,18 @@ import urllib.request
 ИМЯ_СЛУЖБЫ = "schemes-board"
 
 
+# ГОВОРИМ ПО-РУССКИ ДАЖЕ НА WINDOWS. Консоль Windows живёт в однобайтовой
+# кодировке, и первый же print с кириллицей там рушит установку — либо саму
+# печать, либо чтение вывода на той стороне. Замер на Windows ARM64 владельца
+# 28.08.2026: установщик вернул код 2, а вывод пришёл ПУСТОЙ — текст ошибки
+# погиб по дороге, и стало непонятно вообще ничего.
+for _поток in (sys.stdout, sys.stderr):
+    try:
+        _поток.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass                      # старый Python или подменённый поток — не беда
+
+
 def сказать(текст: str) -> None:
     print(текст, flush=True)
 
