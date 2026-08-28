@@ -8,8 +8,8 @@ include("import tempfile", [])
 include("import urllib.request", [])
 include("import zipfile", [])
 
-def board_install(app_name: str = "", version: str = "", token: str = "",
-                  agent_id: str = "", **прочее) -> dict:
+def _установить2(app_name: str = "", version: str = "", token: str = "",
+                agent_id: str = "", **прочее) -> dict:
     """Installer for «Schemes Board». Downloads the product archive from the
     Extella OS store, unpacks it and runs install.py from the archive root:
     lays out the board, registers an autostart service and proves the window
@@ -44,9 +44,49 @@ def board_install(app_name: str = "", version: str = "", token: str = "",
     # Имя и версию берём ОТ ПЛАТФОРМЫ, если она их назвала: она знает, какую
     # именно версию покупает человек, а среда на устройстве — нет.
     ПРИЛОЖЕНИЕ = (app_name or "").strip() or os.environ.get("EXTELLA_APP_NAME") or "Schemes Board"
+    # СТАРШИНСТВО ВЕРСИИ, И ПОРЯДОК ЗДЕСЬ НЕ СЛУЧАЕН.
+    # 1) что назвала платформа в вызове — она знает, что покупает человек;
+    # 2) самая свежая в магазине — если вызов промолчал (кнопка «поставить»);
+    # 3) переменная среды — ПОСЛЕДНЯЯ, потому что на устройстве она хранит
+    #    версию ПРОШЛОЙ установки. Замер 28.08.2026: из-за неё эксперт снова и
+    #    снова качал архив 0.1.1, хотя в магазине лежала 0.2.3, — и каждая
+    #    новая попытка честно воспроизводила вчерашнюю ошибку.
     ВЕРСИЯ = (version or "").strip()
-    if not ВЕРСИЯ or ВЕРСИЯ.startswith("{{"):
-        ВЕРСИЯ = (os.environ.get("EXTELLA_APP_VERSION") or "").strip()
+    if ВЕРСИЯ.startswith("{{"):
+        ВЕРСИЯ = ""
+
+    def свежая_версия():
+        """Самая новая версия продукта в магазине.
+
+        ЗАМЕР 28.08.2026, И ЭТО ОБЪЯСНЯЕТ ЦЕЛЫЙ ДЕНЬ ХОЖДЕНИЯ ПО КРУГУ.
+        Магазин отдаёт архив, ПРИВЯЗАННЫЙ К ПОКУПКЕ, а не последний: запрос без
+        номера версии вернул архив 0.1.1, хотя выложены уже 0.2.3. То есть все
+        исправления установщика — английский вывод, кодировка, аргументы —
+        лежали в новых версиях, а на устройство покупателя приезжал старый
+        файл. Каждая новая попытка честно воспроизводила вчерашнюю ошибку.
+
+        Поэтому: если версию не назвали, спрашиваем магазин сами и берём
+        верхнюю. Не вышло спросить — работаем как раньше, по покупке.
+        """
+        try:
+            з = urllib.request.Request(
+                ОС_БАЗА + "/api/listing/d117273e-9f8a-46bd-9410-1e2c2f750a07")
+            з.add_header("X-Extella-Token", ТОКЕН)
+            з.add_header("X-Auth-Token", ТОКЕН)
+            д = json.loads(urllib.request.urlopen(з, timeout=60).read())
+            версии = [str(в.get("version") or "") for в in (д.get("versions") or [])]
+            версии = [в for в in версии if в]
+            if not версии:
+                return ""
+            # Сортируем по числам, а не по буквам: «0.2.10» новее «0.2.9».
+            def ключ(в):
+                try:
+                    return [int(ч) for ч in в.split(".")]
+                except ValueError:
+                    return [0]
+            return sorted(версии, key=ключ)[-1]
+        except Exception:
+            return ""
 
     def токен():
         """Токен, которым магазин ОС отдаёт архив.
@@ -98,6 +138,21 @@ def board_install(app_name: str = "", version: str = "", token: str = "",
                            "лежит в ~/.extella/os_token.txt и появляется сам после "
                            "первого запуска приложения Extella — откройте его один "
                            "раз и повторите установку")
+
+    # ОТКУДА ВЗЯЛАСЬ ВЕРСИЯ — записываем прямо в отчёт. Без этого спор
+    # «параметр не дошёл» против «запрос упал» не решается ничем, кроме догадок.
+    откуда = "вызов" if ВЕРСИЯ else ""
+    спрошено = ""
+    if not ВЕРСИЯ:
+        try:
+            спрошено = свежая_версия()
+        except Exception as е:
+            спрошено = "ОШИБКА: %s" % str(е)[:80]
+        if спрошено and not спрошено.startswith("ОШИБКА"):
+            ВЕРСИЯ, откуда = спрошено, "магазин"
+    if not ВЕРСИЯ:
+        ВЕРСИЯ = (os.environ.get("EXTELLA_APP_VERSION") or "").strip()
+        откуда = "среда устройства"
 
     адрес = ОС_БАЗА + "/api/app-archive?app=" + urllib.request.quote(ПРИЛОЖЕНИЕ)
     if ВЕРСИЯ:
@@ -184,4 +239,38 @@ def board_install(app_name: str = "", version: str = "", token: str = "",
             почему += " и не сказал ни слова — вывод потерялся по дороге"
         return dict(где, ok=False, вывод=вывод[-900:], почему=почему)
     return dict(где, ok=True, приложение=ПРИЛОЖЕНИЕ, версия=ВЕРСИЯ or "?",
-                архив_мб=round(размер, 2), вывод=вывод[-900:])
+                архив_мб=round(размер, 2), вывод=вывод[-900:],
+                версия_откуда=откуда, магазин_ответил=спрошено or "—",
+                ос_база=ОС_БАЗА)
+
+
+def board_setup(app_name: str = "", version: str = "", token: str = "",
+                  agent_id: str = "", **прочее) -> dict:
+    """Обёртка: делает работу и КЛАДЁТ ОТЧЁТ ТУДА, ГДЕ ЕГО ВИДНО ИЗДАЛЕКА.
+
+    Ответ эксперта уходит в задачу, а списка задач у платформы нет — по номеру
+    из окна результат не достать (проверено: /api/tasks/list и соседи отвечают
+    404). Пока у покупателя старое окно, отчёт до экрана может не дойти, и
+    разбор снова идёт вслепую. След это закрывает.
+
+    Личного здесь нет: имя компьютера, название системы и текст нашего же
+    установщика. Сбой записи следа установку не роняет — она вспомогательная.
+    """
+    import json, os, urllib.request
+
+    итог = _установить2(app_name=app_name, version=version, token=token,
+                       agent_id=agent_id, **прочее)
+    try:
+        з = urllib.request.Request(
+            "https://api.extella.ai/api/kv/set",
+            data=json.dumps({"key": "board_install_последний_отчёт",
+                             "value": json.dumps(итог, ensure_ascii=False)[:4000]}).encode(),
+            headers={"X-Auth-Token": os.environ.get("EXTELLA_AUTH_TOKEN") or token or "",
+                     "X-Profile-Id": "default",
+                     "X-Agent-Id": (agent_id or os.environ.get("EXTELLA_AGENT_ID")
+                                    or "agent_YbDQpKySopyi1ejHyQZuQ"),
+                     "Content-Type": "application/json"})
+        urllib.request.urlopen(з, timeout=60).read()
+    except Exception:
+        pass
+    return итог

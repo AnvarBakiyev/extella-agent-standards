@@ -8,7 +8,7 @@
     "локально"
   ],
   "иконка": "icon.png",
-  "версия": "0.2.3",
+  "версия": "0.3.0",
   "цена": 0,
   "состояние": "опубликован",
   "права": [
@@ -18,11 +18,11 @@
   "границы": "Runs on the computer where it is installed — the window will not work on someone else's machine until they install it too. About 22 MB. Drawings are kept in ~/extella-apps/schemes-board/рисунки and are never touched by reinstalls.",
   "содержимое": "Excalidraw (MIT) + окно ОС со строкой агента; раздача cabinet_server на устройстве",
   "listing_id": "d117273e-9f8a-46bd-9410-1e2c2f750a07",
-  "version_id": "9572233a-92d8-4348-8b1a-573db66ddfdc",
+  "version_id": "faab4bbb-e794-406f-ab7b-278037bec629",
   "name_ru": "Доска схем",
   "описание_ru": "Доска для схем и набросков, которая живёт на вашем компьютере. Рисунки хранятся файлом на диске, а не в браузере, поэтому переживают чистку кэша и запреты песочницы. Ставится со всем необходимым: без Docker, без сети, без учётной записи.",
   "границы_ru": "Работает на том компьютере, где установлена: у коллеги окно не заработает, пока она не поставит её себе. Около 22 МБ. Рисунки лежат в ~/extella-apps/schemes-board/рисунки и при переустановке не трогаются.",
-  "установщик": "board_install",
+  "установщик": "board_setup",
   "агент": "agent_YbDQpKySopyi1ejHyQZuQ",
   "прежняя_карточка": {
     "listing_id": "135bdecf-ed2c-4700-b00c-67d9fab07b9c",
