@@ -8,12 +8,22 @@ include("import tempfile", [])
 include("import urllib.request", [])
 include("import zipfile", [])
 
-def board_install(version: str = "") -> dict:
+def board_install(app_name: str = "", version: str = "", token: str = "",
+                  agent_id: str = "", **прочее) -> dict:
     """Installer for «Schemes Board». Downloads the product archive from the
     Extella OS store, unpacks it and runs install.py from the archive root:
     lays out the board, registers an autostart service and proves the window
     answers. Returns a report: what was downloaded, what install.py printed,
     and the exit code. Params: version — optional version to install.
+
+    ПРИНИМАЕМ ВСЁ, ЧТО ШЛЁТ ПЛАТФОРМА, И ЕЩЁ **прочее.
+    Замер на Windows владельца 28.08.2026: платформа зовёт установщик с
+    четырьмя именованными аргументами — app_name, version, token, agent_id.
+    Функция знала только version и падала на первом же:
+    «got an unexpected keyword argument 'app_name'». Путь до устройства при
+    этом РАБОТАЛ — эксперт доехал и запустился. Открытый **прочее** оставлен
+    намеренно: платформа вправе добавить пятый аргумент, и это не должно
+    ронять установку у всех покупателей разом.
 
     ФОРМАТ ЭТОГО ЭКСПЕРТА — ОБЫЧНЫЙ (fython), И ЭТО ГЛАВНОЕ.
     Прежняя редакция была написана как nohup-эксперт: сырой код, запуск в
@@ -31,7 +41,9 @@ def board_install(version: str = "") -> dict:
     import json, os, shutil, subprocess, sys, tempfile, urllib.request, zipfile
 
     ОС_БАЗА = (os.environ.get("EXTELLA_OS_BASE") or "https://os.extella.ai").rstrip("/")
-    ПРИЛОЖЕНИЕ = os.environ.get("EXTELLA_APP_NAME") or "Schemes Board"
+    # Имя и версию берём ОТ ПЛАТФОРМЫ, если она их назвала: она знает, какую
+    # именно версию покупает человек, а среда на устройстве — нет.
+    ПРИЛОЖЕНИЕ = (app_name or "").strip() or os.environ.get("EXTELLA_APP_NAME") or "Schemes Board"
     ВЕРСИЯ = (version or "").strip()
     if not ВЕРСИЯ or ВЕРСИЯ.startswith("{{"):
         ВЕРСИЯ = (os.environ.get("EXTELLA_APP_VERSION") or "").strip()
@@ -76,7 +88,9 @@ def board_install(version: str = "") -> dict:
         except Exception:
             return {}
 
-    ТОКЕН = токен()
+    # ТОКЕН ОТ ПЛАТФОРМЫ — ПЕРВЫЙ ПО СТАРШИНСТВУ. Он выдан под эту установку
+    # и не зависит от того, что лежит на диске у покупателя.
+    ТОКЕН = (token or "").strip() or токен()
     где = где_я()
     if not ТОКЕН:
         return dict(где, ok=False,
@@ -134,6 +148,11 @@ def board_install(version: str = "") -> dict:
 
     среда = dict(os.environ)
     среда["EXTELLA_APP_NAME"] = ПРИЛОЖЕНИЕ
+    # B4: агента называет платформа — install.py запишет привязку в настройку
+    # продукта. Из среды устройства этого не узнать: там мог остаться агент
+    # прошлой покупки.
+    if agent_id:
+        среда["EXTELLA_AGENT_ID"] = agent_id
     if ВЕРСИЯ:
         среда["EXTELLA_APP_VERSION"] = ВЕРСИЯ
 
