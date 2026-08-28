@@ -279,8 +279,19 @@ def прописать_службу(порт: int) -> str:
         return f"systemd · {файл}"
 
     if система.startswith("win"):
+        # ПОДНИМАЕМ СРАЗУ, до всякой регистрации автозапуска: человек открыл
+        # окно и ждёт рисовалку сейчас, а не после перезагрузки. Ниже мы лишь
+        # договариваемся, чтобы она вернулась и завтра.
+        try:
+            subprocess.Popen(команда, cwd=str(ГНЕЗДО),
+                             stdout=open(журнал, "ab"), stderr=subprocess.STDOUT,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            time.sleep(2)
+        except OSError as е:
+            провал(f"could not start the app: {е}")
+
         # КОМАНДУ КЛАДЁМ В ФАЙЛ, А НЕ В СТРОКУ ПЛАНИРОВЩИКА. У прокси имена
-        # аргументов кириллические («--папка», «--данные»), да и пути内 бывают
+        # аргументов кириллические («--папка», «--данные»), да и пути бывают
         # нелатинскими. Планировщик Windows принимает такую строку в своей
         # кодировке консоли, и до питона она доезжает искажённой — служба
         # создаётся, а запуститься не может. Обёртка .cmd переключает кодовую
@@ -290,15 +301,34 @@ def прописать_службу(порт: int) -> str:
                   " ".join(f'"{ч}"' if (" " in ч or not ч.isascii()) else ч
                            for ч in команда)]
         обёртка.write_text("\r\n".join(строки) + "\r\n", encoding="utf-8")
-        задача = f"Extella\\{ИМЯ_СЛУЖБЫ}"
+
+        # ПЛАНИРОВЩИК — ЖЕЛАТЕЛЬНЫЙ, А НЕ ОБЯЗАТЕЛЬНЫЙ. Замер на Windows 11
+        # ARM64 владельца 28.08.2026: файлы легли, порт выбрался, а
+        # `schtasks /Create` ответил «Access is denied» — создание задачи в
+        # папке «Extella\» требует прав администратора, которых у покупателя
+        # обычно нет и просить их за автозапуск рисовалки нельзя.
+        #
+        # Поэтому три ступени, от лучшей к рабочей: задача с плоским именем
+        # (без папки — прав нужно меньше), иначе ярлык в автозагрузке
+        # пользователя (прав не нужно вовсе), а сам сервер поднимаем прямо
+        # сейчас в любом случае — иначе окно не ответит до перезагрузки.
+        задача = f"Extella-{ИМЯ_СЛУЖБЫ}"
         subprocess.run(["schtasks", "/Delete", "/TN", задача, "/F"], capture_output=True)
         и = subprocess.run(["schtasks", "/Create", "/TN", задача, "/SC", "ONLOGON",
-                            "/RL", "LIMITED", "/F", "/TR", f'"{обёртка}"'],
-                           capture_output=True, text=True)
-        if и.returncode != 0:
-            провал(f"the autostart task was not created: {(и.stdout or и.stderr or '')[:200]}")
-        subprocess.run(["schtasks", "/Run", "/TN", задача], capture_output=True)
-        return f"Планировщик заданий · {задача} (через {обёртка.name})"
+                            "/F", "/TR", f'"{обёртка}"'], capture_output=True, text=True)
+        if и.returncode == 0:
+            return f"Task Scheduler · {задача}"
+
+        автозагрузка = (ДОМ / "AppData" / "Roaming" / "Microsoft" / "Windows"
+                        / "Start Menu" / "Programs" / "Startup")
+        try:
+            автозагрузка.mkdir(parents=True, exist_ok=True)
+            (автозагрузка / f"{ИМЯ_СЛУЖБЫ}.cmd").write_text(
+                f'@echo off\r\nstart "" /min "{обёртка}"\r\n', encoding="utf-8")
+            return f"Startup folder · {автозагрузка / (ИМЯ_СЛУЖБЫ + '.cmd')}"
+        except OSError as е:
+            сказать(f"  WARNING: no autostart ({е}). The app works until reboot.")
+            return "no autostart — started for this session"
 
     сказать(f"  WARNING: system '{система}' has no autostart support here.")
     сказать(f"  Start it by hand: {' '.join(команда)}")
