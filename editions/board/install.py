@@ -53,7 +53,14 @@ import urllib.request
 ИМЯ_СЛУЖБЫ = "schemes-board"
 
 
-# ГОВОРИМ ПО-РУССКИ ДАЖЕ НА WINDOWS. Консоль Windows живёт в однобайтовой
+# ВЫВОД УСТАНОВЩИКА — ПО-АНГЛИЙСКИ, И ЭТО НЕ ПРО ЯЗЫК ИНТЕРФЕЙСА.
+# Замер на Windows ARM64 владельца 28.08.2026, дважды подряд: русский текст
+# установщика рушил чтение вывода на стороне вызывающего (cp1252 не знает
+# наших букв), и от установки оставалось голое «код 2» без причины. Одна
+# незнакомая буква в сообщении об ошибке — и человек не узнаёт ошибку вовсе.
+# ASCII читается любой кодировкой, а перевод на язык человека — дело окна.
+#
+# Ниже — ремень поверх подтяжек: даже английский вывод пишем явным UTF-8. Консоль Windows живёт в однобайтовой
 # кодировке, и первый же print с кириллицей там рушит установку — либо саму
 # печать, либо чтение вывода на той стороне. Замер на Windows ARM64 владельца
 # 28.08.2026: установщик вернул код 2, а вывод пришёл ПУСТОЙ — текст ошибки
@@ -72,7 +79,7 @@ def сказать(текст: str) -> None:
 def провал(почему: str) -> None:
     # B3: честный ненулевой код. Ноль при поломке = человека спишут за то, что
     # не работает, и он узнает об этом сам, открыв пустое окно.
-    сказать(f"УСТАНОВКА НЕ УДАЛАСЬ: {почему}")
+    сказать(f"INSTALL FAILED: {почему}")
     sys.exit(2)
 
 
@@ -126,10 +133,10 @@ def занять_порт() -> int:
             if свободен(ПОРТ_ПО_УМОЛЧАНИЮ):
                 return ПОРТ_ПО_УМОЛЧАНИЮ
             time.sleep(1)
-    провал(f"порт {ПОРТ_ПО_УМОЛЧАНИЮ} занят другой программой. Окно Доски "
-           f"смотрит именно на этот адрес, поэтому переехать на соседний порт "
-           f"нельзя — окно осталось бы пустым. Освободите порт "
-           f"{ПОРТ_ПО_УМОЛЧАНИЮ} и поставьте Доску ещё раз")
+    провал(f"port {ПОРТ_ПО_УМОЛЧАНИЮ} is taken by another program. The Board "
+           f"window looks at exactly this address, so moving to a neighbouring "
+           f"port would leave the window empty. Free port {ПОРТ_ПО_УМОЛЧАНИЮ} "
+           f"and install the Board again")
 
 
 def снять_службу(имя: str = "") -> None:
@@ -163,11 +170,12 @@ def положить_файлы() -> None:
     ДАННЫЕ.mkdir(parents=True, exist_ok=True)
 
     if not (ЗДЕСЬ / "cabinet_server.py").exists():
-        провал("в архиве нет cabinet_server.py — без него доска откроется, но "
-               "рисунки будет негде хранить. Это ошибка сборки пакета")
+        провал("cabinet_server.py is missing from the archive: the board would "
+               "open, but drawings would have nowhere to live. This is a packaging "
+               "error, not a problem with your computer")
     if not (ЗДЕСЬ / "board" / "index.html").exists():
-        провал("в архиве нет самой доски (board/index.html). Это ошибка сборки "
-               "пакета, а не вашей машины")
+        провал("the board itself is missing from the archive (board/index.html). "
+               "This is a packaging error, not a problem with your computer")
     shutil.copy(ЗДЕСЬ / "cabinet_server.py", ГНЕЗДО / "cabinet_server.py")
     # Статику кладём заново целиком: старые файлы версии не должны остаться
     # вперемешку с новыми.
@@ -175,8 +183,8 @@ def положить_файлы() -> None:
         shutil.rmtree(СТАТИКА)
     shutil.copytree(ЗДЕСЬ / "board", СТАТИКА)
     сколько = sum(1 for _ in СТАТИКА.rglob("*") if _.is_file())
-    сказать(f"  доска: {СТАТИКА} ({сколько} файлов)")
-    сказать(f"  рисунки: {ДАННЫЕ}")
+    сказать(f"  board: {СТАТИКА} ({сколько} files)")
+    сказать(f"  drawings: {ДАННЫЕ}")
 
 
 def перенести_прежнюю_работу() -> None:
@@ -201,12 +209,12 @@ def перенести_прежнюю_работу() -> None:
         return
     try:
         shutil.copy(прежний, свой)
-        сказать(f"  прежние рисунки перенесены: {прежний.name} → {свой.name}")
+        сказать(f"  earlier drawings carried over: {прежний.name} -> {свой.name}")
     except OSError as е:
         # Не повод валить установку: доска откроется, работа не потеряна —
         # она лежит в прежнем файле. Но человек должен знать.
-        сказать(f"  ВНИМАНИЕ: прежние рисунки не перенеслись ({е}). "
-                f"Они целы в {прежний}")
+        сказать(f"  WARNING: earlier drawings were not carried over ({е}). "
+                f"They are intact in {прежний}")
 
 
 def прописать_службу(порт: int) -> str:
@@ -242,7 +250,7 @@ def прописать_службу(порт: int) -> str:
         и = subprocess.run(["launchctl", "bootstrap", метка, str(файл)],
                            capture_output=True, text=True)
         if и.returncode != 0:
-            провал(f"служба не встала: {(и.stderr or '')[:200]}")
+            провал(f"the service did not start: {(и.stderr or '')[:200]}")
         return f"launchd · {файл}"
 
     if система.startswith("linux"):
@@ -251,11 +259,11 @@ def прописать_службу(порт: int) -> str:
         вывод = (проба.stdout or "") + (проба.stderr or "")
         if "Failed to connect to bus" in вывод or "No medium found" in вывод:
             # B6: где автозапуск не поддержан — честно печатаем команду.
-            сказать("  ВНИМАНИЕ: своей службы systemd у пользователя нет "
-                    "(так бывает на серверах и в контейнерах).")
-            сказать(f"  Запускайте вручную: {' '.join(команда)}")
-            сказать("  Либо один раз выполните: loginctl enable-linger $USER")
-            return "без автозапуска — команда напечатана"
+            сказать("  WARNING: this user has no systemd session "
+                    "(usual on servers and inside containers).")
+            сказать(f"  Start it by hand: {' '.join(команда)}")
+            сказать("  Or run once: loginctl enable-linger $USER")
+            return "no autostart — command printed"
         папка = ДОМ / ".config" / "systemd" / "user"
         папка.mkdir(parents=True, exist_ok=True)
         файл = папка / f"extella-{ИМЯ_СЛУЖБЫ}.service"
@@ -267,7 +275,7 @@ def прописать_службу(порт: int) -> str:
         и = subprocess.run(["systemctl", "--user", "enable", "--now",
                             f"extella-{ИМЯ_СЛУЖБЫ}.service"], capture_output=True, text=True)
         if и.returncode != 0:
-            провал(f"служба не встала: {(и.stderr or '')[:200]}")
+            провал(f"the service did not start: {(и.stderr or '')[:200]}")
         return f"systemd · {файл}"
 
     if система.startswith("win"):
@@ -288,13 +296,13 @@ def прописать_службу(порт: int) -> str:
                             "/RL", "LIMITED", "/F", "/TR", f'"{обёртка}"'],
                            capture_output=True, text=True)
         if и.returncode != 0:
-            провал(f"задача автозапуска не создалась: {(и.stdout or и.stderr or '')[:200]}")
+            провал(f"the autostart task was not created: {(и.stdout or и.stderr or '')[:200]}")
         subprocess.run(["schtasks", "/Run", "/TN", задача], capture_output=True)
         return f"Планировщик заданий · {задача} (через {обёртка.name})"
 
-    сказать(f"  ВНИМАНИЕ: система «{система}» без автозапуска.")
-    сказать(f"  Запускайте вручную: {' '.join(команда)}")
-    return "без автозапуска — команда напечатана"
+    сказать(f"  WARNING: system '{система}' has no autostart support here.")
+    сказать(f"  Start it by hand: {' '.join(команда)}")
+    return "no autostart — command printed"
 
 
 def доказать(порт: int) -> None:
@@ -305,16 +313,16 @@ def доказать(порт: int) -> None:
         try:
             with urllib.request.urlopen(адрес, timeout=3) as о:
                 if о.status == 200:
-                    сказать(f"  проверка: окно отвечает на порту {порт}")
+                    сказать(f"  check: the window answers on port {порт}")
                     return
         except (urllib.error.URLError, OSError):
             time.sleep(1)
-    провал(f"служба прописана, но окно не ответило на порту {порт} за 20 секунд. "
-           f"Посмотрите {ГНЕЗДО / 'служба.log'}")
+    провал(f"the service is registered, but the window did not answer on port "
+           f"{порт} within 20 seconds. Look into {ГНЕЗДО / 'служба.log'}")
 
 
 def main() -> int:
-    сказать("Установка Schemes Board")
+    сказать("Installing Schemes Board")
     агент = os.environ.get("EXTELLA_AGENT_ID", "").strip()
     версия = os.environ.get("EXTELLA_APP_VERSION", "").strip() or "?"
 
@@ -327,12 +335,12 @@ def main() -> int:
     НАСТРОЙКА.write_text(json.dumps(
         {"agent_id": агент, "порт": порт, "версия": версия},
         ensure_ascii=False, indent=2), encoding="utf-8")
-    сказать(f"  адрес окна: localhost:{порт}")
+    сказать(f"  window address: localhost:{порт}")
     как = прописать_службу(порт)
-    сказать(f"  автозапуск: {как}")
-    if "без автозапуска" not in как:
+    сказать(f"  autostart: {как}")
+    if "no autostart" not in как:
         доказать(порт)
-    сказать("Готово. Откройте Schemes Board — рисунки хранятся файлом на этом компьютере.")
+    сказать("Done. Open Schemes Board — drawings are kept as a file on this computer.")
     return 0
 
 
@@ -342,4 +350,4 @@ if __name__ == "__main__":
     except SystemExit:
         raise
     except Exception as е:                       # noqa: BLE001
-        провал(f"неожиданная ошибка: {type(е).__name__}: {е}")
+        провал(f"unexpected error: {type(е).__name__}: {е}")
