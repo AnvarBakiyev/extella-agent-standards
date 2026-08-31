@@ -378,6 +378,27 @@ def сверить_арность(ui: str, сказать=print) -> list:
         сказать(f"  ✗ {б}")
     return беды
 
+def проверить_etb_мост(text: str) -> list[str] | None:
+    """Канонический iframe-мост H62; None означает другой транспорт."""
+    if "etb_run_expert" not in text:
+        return None
+    беды = []
+    требования = (
+        ("etb_expert_result", "нет обратной половины etb_expert_result"),
+        ("allowedExperts", "нет явного allowlist экспертов"),
+        ("setTimeout", "нет конечного ожидания ответа"),
+    )
+    for признак, сообщение in требования:
+        if признак not in text:
+            беды.append(сообщение)
+    if not re.search(r"event\.source\s*!==\s*window\.parent", text):
+        беды.append("ответы не ограничены родительским окном")
+    if not re.search(r"type\s*:\s*['\"]etb_run_expert['\"]", text):
+        беды.append("исходящее сообщение не имеет точного типа etb_run_expert")
+    if not re.search(r"\btarget\s*[,}]", text):
+        беды.append("вызов не закреплён singular target")
+    return беды
+
 def main(argv) -> int:
     root = Path(argv[0]).expanduser().resolve() if argv else Path.cwd()
     port_arg = argv[1] if len(argv) > 1 else None
@@ -405,6 +426,17 @@ def main(argv) -> int:
     if extra:
         print(f"  дочитано подключённых скриптов: {extra}")
     print(f"{root.name} ({ui_path.name}" + (f", порт {port}" if port else ", сервер не найден") + ")")
+    etb_беды = проверить_etb_мост(ui)
+    if etb_беды is not None:
+        print("Договор панели с обёрткой Extella H62\n")
+        if etb_беды:
+            for беда in etb_беды:
+                print(f"  ✗ {беда}")
+            print("\nДОГОВОР ETB РАСХОДИТСЯ")
+            return 1
+        print("  ✓ etb_run_expert → etb_expert_result, allowlist, timeout, parent guard, target")
+        return 0
+
     called = called_methods(ui)
     served = server_methods()
     problems = []
@@ -584,6 +616,19 @@ class API:
                    ШЛЁТ_ТРИ, БЕРЁТ_ЧЕТЫРЕ, False)
     случай_арности("метод со *args не сверяется",
                    ШЛЁТ_ПЯТЬ, БЕРЁТ_СВОБОДНО, False)
+
+    etb_good = """const allowedExperts=[]; setTimeout(()=>{},1);
+    window.parent.postMessage({type:'etb_run_expert', target}, '*');
+    if (event.source !== window.parent) return;
+    if (data.type === 'etb_expert_result') return data;"""
+    if проверить_etb_мост(etb_good) == []:
+        print("  ✓ канонический etb-мост H62 проходит")
+    else:
+        провалы.append("канонический etb-мост H62 не распознан")
+    if проверить_etb_мост(etb_good.replace("event.source !== window.parent", "true")):
+        print("  ✓ etb-мост без parent guard падает")
+    else:
+        провалы.append("etb-мост без parent guard прошёл")
 
     if провалы:
         print("ИТОГ САМОПРОВЕРКИ: провалы —", "; ".join(провалы))
