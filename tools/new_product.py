@@ -509,7 +509,7 @@ README_MD = '''# __NAME_RU__
 - **Манифест зависимостей** (`MANIFEST.yaml`) — всё, что продукт ждёт от машины,
   проверяется установщиком ДО первого использования, а не в момент падения.
 - **Панель по канону дизайна** — шкалы кеглей/радиусов/отступов, «ты», без теней.
-  Проверка: `python3 ~/Documents/Extella/extella-toolbar-src/tools/check_panel_canon.py app/index.html`.
+  Проверка: `python3 tools/check_panel_canon.py app/index.html` (чекер лежит в `tools/` стандартов).
 - **Честные исходы** — `running`/`failed` никогда не показываются успехом.
 
 ## Правила роста
@@ -1012,7 +1012,7 @@ def selftest() -> int:
     else:
         print("  ✓ паспорт проходит гейт стандартов")
 
-    canon_gate = Path.home() / "Documents/Extella/extella-toolbar-src/tools/check_panel_canon.py"
+    canon_gate = Path(__file__).resolve().parent / "check_panel_canon.py"
     if canon_gate.exists():
         r = subprocess.run([sys.executable, str(canon_gate), str(tmp / "app" / "index.html")],
                            capture_output=True, text=True)
@@ -1124,7 +1124,7 @@ def selftest() -> int:
     if manifest_problems("тонкий", tmp2):
         bad += 1
 
-    canon_gate2 = Path.home() / "Documents/Extella/extella-toolbar-src/tools/check_panel_canon.py"
+    canon_gate2 = Path(__file__).resolve().parent / "check_panel_canon.py"
     if canon_gate2.exists():
         r = subprocess.run([sys.executable, str(canon_gate2), str(tmp2 / "panel.html")],
                            capture_output=True, text=True)
