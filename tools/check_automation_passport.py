@@ -31,6 +31,12 @@ SCHEDULE_KINDS = {"external_cron", "internal", "in_service"}
 ALLOWED_PROVIDER = "alibaba"
 # A2: где живёт автоматизация. server/client_server джанитор не трогает — каталога на диске нет.
 HOSTING_PROFILES = {"local", "server", "client_server"}
+# Вид записи (03.09.2026, «Что такое модуль»). automation — то, что клиент установил и чем
+# пользуется: экран, агент, состояние. module — узел для сборщика: наружу выведены только
+# эксперты, экрана нет, агента нет, у класса «функция» нет и процесса. Поэтому у модуля не
+# спрашивают help_surface, состав агентов и источник состояния, зато требуют «что делает»
+# у каждого эксперта: по этому тексту сборщик модуль находит, без него — не найдёт никогда.
+PASSPORT_KINDS = {"automation", "module"}
 # A4: как ПДн проходят через коннектор. Умолчания нет — «не сказано» это не «не трогает».
 PERSONAL_DATA_MODES = {"none", "reads", "stores"}
 # Пункт 4 запроса Console (06.08.2026): состояние автоматизации читается ЭКСПЕРТОМ,
@@ -121,6 +127,15 @@ def check_report(doc):
                "one component, then run the check again")
         return {"ready": False, "errors": errors, "warnings": warns}
 
+    # 0. Вид записи: автоматизация (умолчание) или модуль. Неизвестный вид — ошибка, а не
+    # молчаливое «считаем автоматизацией»: иначе опечатка в kind включает все проверки экрана.
+    kind = str(a.get("kind") or "automation").strip().lower()
+    if kind not in PASSPORT_KINDS:
+        _issue(errors, "AUTOMATION_KIND_INVALID", "automation.kind",
+               "вид «%s» неизвестен — допустимо: %s" % (kind, ", ".join(sorted(PASSPORT_KINDS))),
+               "kind %r is unknown — allowed: %s" % (kind, ", ".join(sorted(PASSPORT_KINDS))))
+    is_module = kind == "module"
+
     # 1. Тождество автоматизации
     if is_blank(a.get("automation_id")):
         _issue(errors, "AUTOMATION_ID_REQUIRED", "automation.automation_id",
@@ -155,7 +170,7 @@ def check_report(doc):
                "НЕ делает». Без границ выпуск запрещён",
                "limits are missing: state at least one honest line about what this automation "
                "does NOT do. Without limits the release is forbidden")
-    if is_blank(a.get("help_surface")):
+    if not is_module and is_blank(a.get("help_surface")):
         _issue(errors, "AUTOMATION_HELP_REQUIRED", "automation.help_surface",
                "не указано, где на экране живёт пояснение «? Как это работает» (§3.20)",
                "help_surface is missing: where the «? How it works» panel lives (§3.20)")
@@ -187,7 +202,7 @@ def check_report(doc):
     # иначе поле можно было бы вписать пустым и навсегда остаться в warning-режиме.
     scope_declared = bool(reader) and "agent_scope" in reader
     has_service = any(not is_blank(svc.get(f)) for f in ("health", "state"))
-    if not reader and not has_service:
+    if not reader and not has_service and not is_module:
         _issue(errors, "AUTOMATION_STATE_SOURCE_REQUIRED", "automation.state_reader",
                "не объявлен ни один источник состояния: нужен state_reader (эксперт на "
                "устройстве) или service (HTTP-контракт своего сервера). Без него Console "
@@ -420,7 +435,7 @@ def check_report(doc):
                                    "with an exact «<path>:<field>» binding_ref")
 
     # 4. Состав: платформенные агенты — компоненты, и каждый проверяется как агент
-    if not agents:
+    if not agents and not is_module:
         _issue(errors, "AUTOMATION_AGENTS_REQUIRED", "components.platform_agents",
                "не перечислен ни один платформенный агент автоматизации",
                "no platform agent is listed for the automation")
@@ -478,6 +493,29 @@ def check_report(doc):
             _warn(warns, "AUTOMATION_AGENT_ROLE_EMPTY", base + ".role",
                   "не сказано, зачем этот агент в автоматизации",
                   "the component role is not stated")
+
+    # 4.1. Модуль: его единственный интерфейс — эксперты. Имя без «что делает» — способность,
+    # которую сборщик не найдёт словами (реестр индексирует именно этот текст).
+    if is_module:
+        experts = comp.get("experts") if isinstance(comp.get("experts"), list) else []
+        if not experts:
+            _issue(errors, "MODULE_EXPERTS_REQUIRED", "components.experts",
+                   "у модуля не перечислен ни один эксперт — а кроме экспертов у него ничего "
+                   "наружу не выведено",
+                   "the module lists no experts — and experts are its only public interface")
+        for i, x in enumerate(experts):
+            base = "components.experts[%d]" % i
+            if not isinstance(x, dict) or is_blank(x.get("name")):
+                _issue(errors, "MODULE_EXPERT_NAME_REQUIRED", base + ".name",
+                       "эксперт модуля должен быть объектом с name и what",
+                       "a module expert must be an object with name and what")
+                continue
+            if is_blank(x.get("what")):
+                _issue(errors, "MODULE_EXPERT_WHAT_REQUIRED", base + ".what",
+                       "у эксперта «%s» не сказано, что он делает словами клиента — по этому "
+                       "тексту сборщик модуль находит, без него не найдёт" % x.get("name"),
+                       "expert %r does not say what it does in the client's words — that text "
+                       "is how the builder finds the module" % x.get("name"))
 
     # 5. Расписания: вид обязателен — Console должна знать, где тик живёт
     for i, s in enumerate(comp.get("schedules") or []):
@@ -665,6 +703,28 @@ BAD_STATE = {
     "operations": {"rollback": "переустановить прежнюю версию карточки"},
 }
 
+# Модуль: экрана нет, агента нет, процесса нет — только эксперты с «что делает».
+GOOD_MODULE = {
+    "automation": {
+        "kind": "module", "automation_id": "toolkit_probe_read",
+        "name": {"ru": "Модуль «проба»", "en": "Probe module"},
+        "owner": "Анвар", "business_goal": "проверка стандарта модуля", "version": "0.1.0",
+        "languages": ["ru", "en"], "hosting_profile": "local",
+        "limits": ["наружу не пишет"],
+    },
+    "components": {
+        "platform_agents": [], "schedules": [], "integrations": [], "knowledge": [], "rules": [],
+        "experts": [{"name": "toolkit_probe_read", "required": True,
+                     "what": "читает пробу и отдаёт текст"}],
+    },
+    "operations": {"rollback": "удалить копию эксперта из скоупа агента"},
+}
+
+MODULE_CHECKS = [
+    ("вид записи неизвестен", "AUTOMATION_KIND_INVALID"),
+    ("у эксперта модуля нет «что делает»", "MODULE_EXPERT_WHAT_REQUIRED"),
+]
+
 STATE_CHECKS = [
     ("нет эксперта состояния", "AUTOMATION_STATE_READER_EXPERT_REQUIRED"),
     ("нет схемы ответа", "AUTOMATION_STATE_READER_SCHEMA_REQUIRED"),
@@ -748,6 +808,36 @@ def selftest():
         print("FAIL: тонкая автоматизация не прошла:")
         for e in thin["errors"]:
             print("      - %s %s" % (e["code"], e["message_ru"]))
+    module = check_report(json.loads(json.dumps(GOOD_MODULE)))
+    if module["ready"]:
+        print("PASS: модуль без экрана, агента и состояния проходит (только эксперты с «что делает»)")
+    else:
+        ok = False
+        print("FAIL: модуль не прошёл:")
+        for e in module["errors"]:
+            print("      - %s %s" % (e["code"], e["message_ru"]))
+    # Два порченых паспорта, а не один: неизвестный kind выключает модульные проверки,
+    # и «нет what» в том же документе просто не дошёл бы до проверки.
+    bad_kind = json.loads(json.dumps(GOOD_MODULE))
+    bad_kind["automation"]["kind"] = "модуль"
+    bad_what = json.loads(json.dumps(GOOD_MODULE))
+    bad_what["components"]["experts"][0]["what"] = ""
+    module_codes = ({e["code"] for e in check_report(bad_kind)["errors"]} |
+                    {e["code"] for e in check_report(bad_what)["errors"]})
+    for label, code in MODULE_CHECKS:
+        if code in module_codes:
+            print("PASS: %s — поймано" % label)
+        else:
+            ok = False
+            print("FAIL: %s — НЕ поймано (%s)" % (label, code))
+    plain_module = json.loads(json.dumps(GOOD_MODULE))
+    del plain_module["automation"]["kind"]
+    plain_codes = {e["code"] for e in check_report(plain_module)["errors"]}
+    if {"AUTOMATION_HELP_REQUIRED", "AUTOMATION_AGENTS_REQUIRED"} <= plain_codes:
+        print("PASS: без kind: module те же поля снова обязательны (умолчание — автоматизация)")
+    else:
+        ok = False
+        print("FAIL: без kind: module паспорт модуля прошёл как автоматизация")
     localhost_case = json.loads(json.dumps(BAD_STATE))
     localhost_case["automation"]["state_reader"]["execution_device"] = "127.0.0.1:8971"
     if any(e["code"] == "AUTOMATION_STATE_READER_LOCALHOST"
