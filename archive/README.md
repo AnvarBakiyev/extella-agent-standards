@@ -4,5 +4,5 @@
 (метка `toolbar-final-2026-08`, 04.09.2026), чтобы ссылки на них не вели в архивный репозиторий.
 
 - `DESIGN_RULE_FOR_APPS.md` — правило по дизайну для приложений, июль 2026. Заменено абзацем-цитатой
-  в `AGENT_BUILD_GUIDE.md` §3а и `DESIGN_CODE.md` в `extella-os`.
+  в `AGENT_BUILD_GUIDE.md` §3а и `DESIGN_CODE.md` в корне репозитория.
 - `UX_CANON.md` — UX-канон от 28.07.2026. Заменён `DESIGN_CODE.md` (31.07.2026).

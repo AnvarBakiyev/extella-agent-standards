@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Копия из extella-os/tools/check_panel_canon.py (источник и правки — там; здесь — для гейта
-# new_product.py и для авторов, у которых нет репозитория OS). Один файл, только stdlib.
+# Единственный дом чекера (с 04.09.2026). Его зовут new_product.py, авторы панелей и
+# extella-os/tools/safe_push.sh из соседнего клона. Один файл, только stdlib.
 # -*- coding: utf-8 -*-
 """
 Проверка панели агента по дизайн-коду Extella (DESIGN_CODE.md).
