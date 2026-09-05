@@ -53,7 +53,10 @@ def main(argv) -> int:
     р = argparse.ArgumentParser()
     р.add_argument("--apps", required=True, help="json со списком {имя,id}")
     р.add_argument("--limit", type=int, default=0, help="прогнать только первые N")
-    р.add_argument("--пауза", type=int, default=8, help="секунд между прогонами")
+    # Латинский --pause как алиас: под cron локаль бывает POSIX, кириллический
+    # флаг через неё лучше не гонять.
+    р.add_argument("--пауза", "--pause", dest="пауза", type=int, default=8,
+                   help="секунд между прогонами")
     р.add_argument("--out", default="catalog_board.json")
     а = р.parse_args(argv)
 
