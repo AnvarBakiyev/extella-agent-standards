@@ -214,9 +214,22 @@ def собрать(папка: pathlib.Path, реестр: dict, без_пасп
     слаг = план["slug"]
     сегодня = datetime.date.today().isoformat()
 
+    # Из чего собрано — видно человеку: в «? Как это работает» и в описании карточки. Без этого
+    # приложение из модулей неотличимо от любого другого в магазине, а разница и есть продукт.
+    имена_модулей = {"ru": [], "en": []}
+    for з in записи:
+        нм = з.get("name") or {}
+        имена_модулей["ru"].append(f"{нм.get('ru') or з['automation_id']} ({з['automation_id']})")
+        имена_модулей["en"].append(f"{нм.get('en') or з['automation_id']} ({з['automation_id']})")
+    for м in нет:
+        имена_модулей["ru"].append(f"{м} (без паспорта)")
+        имена_модулей["en"].append(f"{м} (no passport)")
+    план_окна = json.loads(json.dumps(план, ensure_ascii=False))
+    for язык, заголовок in (("ru", "Собрано из модулей библиотеки Extella: "), ("en", "Built from Extella library modules: ")):
+        план_окна["help"][язык]["extra"] = заголовок + "; ".join(имена_модулей[язык]) + "."
     (папка / "docs").mkdir(exist_ok=True)
     (папка / "experts").mkdir(exist_ok=True)
-    (папка / "index.html").write_text(окно.страница(план), encoding="utf-8")
+    (папка / "index.html").write_text(окно.страница(план_окна), encoding="utf-8")
     (папка / "MANIFEST.yaml").write_text(манифест(записи), encoding="utf-8")
     shutil.copy(КАНОН_МАНИФЕСТ, папка / "manifest_check.py")
     (папка / "docs" / "automation_passport.yaml").write_text(паспорт(план, записи, версия, слаг), encoding="utf-8")
@@ -232,7 +245,8 @@ def собрать(папка: pathlib.Path, реестр: dict, без_пасп
         границы += [л for л in (з.get("limits") or []) if л not in границы]
     листинг = {
         "name": план["name"]["ru"], "name_en": план["name"]["en"],
-        "описание": план["description"]["ru"], "description_en": план["description"]["en"],
+        "описание": план["description"]["ru"] + " Собрано из модулей библиотеки Extella: " + "; ".join(имена_модулей["ru"]) + ".",
+        "description_en": план["description"]["en"] + " Built from Extella library modules: " + "; ".join(имена_модулей["en"]) + ".",
         "теги": ТЕГИ + [т for т in (план.get("tags") or []) if т not in ТЕГИ][:4],
         "иконка": "icon.png", "версия": версия, "цена": план.get("price", 0),
         "права": ПРАВА, "состояние": "собрано", "границы": границы,
@@ -243,7 +257,9 @@ def собрать(папка: pathlib.Path, реестр: dict, без_пасп
     if старый.exists():
         try:
             прежний = json.loads(старый.read_text(encoding="utf-8"))
-            for к in ("listing_id", "version_id"):
+            # Идентификаторы и состояние в магазине принадлежат выкладке, а не сборке:
+            # пересборка не должна возвращать опубликованное приложение в «собрано».
+            for к in ("listing_id", "version_id", "состояние"):
                 if прежний.get(к):
                     листинг[к] = прежний[к]
         except Exception:
