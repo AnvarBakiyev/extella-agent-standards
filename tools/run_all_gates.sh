@@ -92,6 +92,7 @@ run provision_modules
 run build_app_from_modules
 run check_app_from_modules
 run deploy_app_from_modules
+run build_modules_shelf
 run check_state_contract
 run check_masking_policy
 run check_code_canon
