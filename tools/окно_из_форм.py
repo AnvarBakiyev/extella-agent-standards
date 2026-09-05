@@ -47,7 +47,7 @@ SLUG = re.compile(r"^[a-z][a-z0-9_]{2,30}$")
 }
 
 # Слова окна на двух языках. Свой переключатель языка запрещён каноном дизайна: язык
-# приходит от хоста, а до его сообщения берётся язык браузера.
+# приходит от хоста, а до его сообщения окно русское.
 СЛОВА = {
     "ru": {
         "help": "? Как это работает", "run": "Запустить",
@@ -132,7 +132,10 @@ h2{font:600 20px/1.3 'Source Serif 4',Georgia,serif;margin-bottom:12px}
 СЦЕНАРИЙ = r"""
 var APP_TOKEN = '{{app_token}}';
 var DEVICE = '';
-var WLANG = (navigator.language || 'ru').slice(0, 2) === 'en' ? 'en' : 'ru';
+// Язык по умолчанию — первый язык плана (ru). Браузер внутри ОС отвечает «en» даже у
+// русского приложения (замер 05.09.2026 на Mac Анвара), поэтому на него не смотрим:
+// переключает только хост сообщением etb_init.
+var WLANG = 'ru';
 function el(id){ return document.getElementById(id); }
 function э(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
