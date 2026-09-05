@@ -68,7 +68,6 @@ def __ИМЯ__(method: str = "state") -> dict:
         "schedules": [],
         "checked_at": now,
         "modules": __МОДУЛИ__,
-        "listener_present": os.path.exists(os.path.expanduser("~/.extella/device.txt")),
         "bound_to": {
             "hosting_profile": "local",
             "host": socket.gethostname(),
