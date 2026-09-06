@@ -84,10 +84,14 @@ def проверить(папка: pathlib.Path, реестр: dict, стади�
         известные.update((по_id.get(м) or {}).get("experts") or [м])
     известные.update(п.stem for п in (папка / "experts").glob("*.py")) if (папка / "experts").is_dir() else None
     for э in план["screens"]:
-        if э.get("action") and э["action"]["expert"] not in известные:
-            _issue(беды, "APP_ACTION_EXPERT_FOREIGN",
-                   f"экран «{э['id']}» зовёт эксперт «{э['action']['expert']}», который не принадлежит ни одному модулю приложения",
-                   f"screen {э['id']!r} calls expert {э['action']['expert']!r} that belongs to none of the app modules")
+        if not э.get("action"):
+            continue
+        зовёт = [ш.get("expert") for ш in (э["action"].get("steps") or [])] or [э["action"].get("expert")]
+        for имя in зовёт:
+            if имя not in известные:
+                _issue(беды, "APP_ACTION_EXPERT_FOREIGN",
+                       f"экран «{э['id']}» зовёт эксперт «{имя}», который не принадлежит ни одному модулю приложения",
+                       f"screen {э['id']!r} calls expert {имя!r} that belongs to none of the app modules")
 
     # 2. Файлы сборки.
     for имя, ru, en in (("index.html", "нет окна — собери: build_app_from_modules.py", "no window — run build_app_from_modules.py"),
