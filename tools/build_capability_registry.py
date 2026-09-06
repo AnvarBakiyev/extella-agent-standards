@@ -117,6 +117,8 @@ def _entry(path, doc, report):
         "kind": str(a.get("kind") or "automation").strip().lower(),
         "name": a.get("name") or {},
         "business_goal": a.get("business_goal") or None,
+        # «Проверено живьём» — только из паспорта: дата и где запускали. Нет поля — нет метки.
+        "verified": a.get("verified") if isinstance(a.get("verified"), dict) else None,
         "needs": needs,
         "manifest_path": manifest,
         "version": a.get("version") or None,
