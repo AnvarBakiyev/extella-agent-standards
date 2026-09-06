@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Витрина «Приложения из модулей»: страница магазина, которая рассказывает и передаёт.
+"""Каталог способностей: страница магазина, которая рассказывает и передаёт.
 
 ЗАЧЕМ. Первая версия полки была справочником: карточки с идентификаторами и «желательно:
 pdftoppm». Анвар 06.09.2026: «худшее приложение, которое я видел» — непонятно, для чего,
-что показывает и что даёт. Решение: это не рабочее окно, а витрина с одним действием.
+что показывает и что даёт. Решение: это не рабочее окно, а витрина с одним действием. Имя и форму 06.09.2026 Анвар выбрал
+из замысла «Каталог способностей» (04.09): наборы по работе, плитка с «на чём сделано, где
+исполняется, сколько стоит», метка «проверено живьём» — теперь она берётся из поля `verified`
+паспорта, а не пишется руками.
 Она отвечает на три вопроса за пять секунд (что это, что можно, что сделать первым):
 сценарии словами бизнеса, узлы плитками с честным статусом «есть / в работе / нужен»,
 три шага и одна кнопка «Скопировать задание для ИИ». Кнопка не зовёт платформу: она
@@ -69,7 +72,8 @@ from формы import Отказ  # noqa: E402
      "who": {"ru": "юристу", "en": "for the lawyer"},
      "story": {"ru": "Договор загружается файлом или сканом. Приложение читает его на компьютере юриста, находит риски и готовит протокол разногласий. Наружу текст не уходит.",
                "en": "A contract is uploaded as a file or a scan. The app reads it on the lawyer's computer, finds risks and drafts a protocol of disagreements. The text stays inside."},
-     "nodes": [{"id": "toolkit_contract_read", "ru": "чтение договора локальной моделью", "en": "contract reading by a local model"},
+     "nodes": [{"id": "toolkit_contract_read", "ru": "чтение договора локальной моделью", "en": "contract reading by a local model",
+                "exists": True},   # эксперт есть на платформе с 26.08, паспорта нет
                {"id": "toolkit_ocr_read", "ru": "распознавание скана", "en": "scan recognition"},
                {"id": "doc_to_pdf", "ru": "документ в PDF", "en": "document to PDF"},
                {"id": "contract_protocol", "ru": "протокол разногласий", "en": "protocol of disagreements"}]},
@@ -77,15 +81,17 @@ from формы import Отказ  # noqa: E402
 
 СЛОВА = {
     "ru": {
-        "brand": "Extella", "title": "Приложения для сотрудников собираются из готовых узлов",
-        "lead": "Не пишем с нуля и не ставим чужое. Узлы с описанными границами, ИИ-создатель и ваша задача словами.",
+        "brand": "Extella", "title": "Каталог способностей",
+        "lead": "Умения для агента и узлы для приложений сотрудников — одна библиотека. У каждой способности паспорт: что делает, чего не делает, где исполняется. Приложение под твою задачу собирается из них одной кнопкой ниже.",
         "help": "? Как это работает",
-        "scen_h": "Что можно собрать", "scen_lead": "Три сценария, с которых обычно начинают. Под каждым видно, какие узлы уже есть.",
+        "scen_h": "Готовые наборы по работе", "scen_lead": "С чего обычно начинают. Под каждым набором видно, какие способности уже есть, какие в работе, каких нет.",
         "take": "Взять за основу задания",
         "st_now": "собирается сегодня", "st_part": "частично: есть {n} из {m} узлов", "st_later": "после следующих узлов",
-        "nodes_h": "Узлы библиотеки", "nodes_lead": "У каждого узла паспорт: что делает, чего не делает, что нужно на компьютере. Всё ниже взято из паспортов.",
+        "nodes_h": "Все способности", "nodes_lead": "Только то, у чего есть паспорт. На плитке: на чём сделано, где исполняется, сколько стоит и когда проверено живьём.",
+        "made": "на чём", "where_local": "на вашем компьютере", "where_server": "на сервере", "free": "бесплатно",
+        "verified": "проверено живьём {at}", "not_verified": "паспорт есть, живьём не проверено",
         "more": "Границы и требования", "less": "Свернуть", "needs": "Нужно на компьютере", "limits": "Чего не делает",
-        "st_have": "есть", "st_work": "в работе", "st_need": "нужен", "nodes_none": "Узлов с паспортом пока нет.",
+        "st_have": "есть", "st_work": "в работе", "st_need": "нужен", "nodes_none": "Способностей с паспортом пока нет.",
         "how_h": "Как получить своё приложение",
         "steps": [
             {"t": "Опиши задачу словами", "d": "Кому, что должно делать, откуда приходят данные и куда уходят. Поле ниже уже содержит подсказку."},
@@ -101,15 +107,17 @@ from формы import Отказ  # noqa: E402
         "foot": "Витрина собрана из реестра паспортов",
     },
     "en": {
-        "brand": "Extella", "title": "Employee apps are assembled from ready-made nodes",
-        "lead": "No writing from scratch and no third-party installs. Nodes with stated limits, an AI creator and your task in words.",
+        "brand": "Extella", "title": "Capability catalog",
+        "lead": "Skills for the agent and nodes for employee apps are one library. Every capability has a passport: what it does, what it does not, where it runs. An app for your task is assembled from them with one button below.",
         "help": "? How it works",
-        "scen_h": "What can be assembled", "scen_lead": "Three scenarios people usually start with. Under each you see which nodes already exist.",
+        "scen_h": "Ready sets by job", "scen_lead": "Where people usually start. Under each set you see which capabilities exist, which are in progress, which are missing.",
         "take": "Use as the task",
         "st_now": "assembles today", "st_part": "partly: {n} of {m} nodes exist", "st_later": "after the next nodes",
-        "nodes_h": "Library nodes", "nodes_lead": "Every node has a passport: what it does, what it does not, what it needs on the computer. Everything below comes from the passports.",
+        "nodes_h": "All capabilities", "nodes_lead": "Only what has a passport. On the tile: what it is made of, where it runs, what it costs and when it was verified live.",
+        "made": "made of", "where_local": "on your computer", "where_server": "on the server", "free": "free",
+        "verified": "verified live {at}", "not_verified": "passport exists, not verified live",
         "more": "Limits and requirements", "less": "Collapse", "needs": "Needed on the computer", "limits": "What it does not do",
-        "st_have": "exists", "st_work": "in progress", "st_need": "needed", "nodes_none": "No node with a passport yet.",
+        "st_have": "exists", "st_work": "in progress", "st_need": "needed", "nodes_none": "No capability with a passport yet.",
         "how_h": "How to get your own app",
         "steps": [
             {"t": "Describe the task in words", "d": "For whom, what it must do, where the data comes from and where it goes. The field below already has a hint."},
@@ -246,6 +254,9 @@ def узлы_из_реестра(реестр: dict) -> list:
             continue
         узлы.append({"id": м.get("automation_id"), "name": м.get("name") or {}, "goal": м.get("business_goal") or "",
                      "ok": bool(м.get("passport_ok")), "needs": м.get("needs") or [],
+                     "verified": м.get("verified") or None, "hosting": м.get("hosting_profile") or "local",
+                     "made": [н.split(":", 1)[1].split("(")[0].strip() for н in (м.get("needs") or [])
+                              if н.startswith(("command:", "module:"))],
                      "experts": [{"name": и, "what": (м.get("experts_what") or {}).get(и) or ""} for и in (м.get("experts") or [])],
                      "limits": {"ru": _границы(м.get("limits"), "ru"), "en": _границы(м.get("limits"), "en")}})
     return узлы
@@ -386,14 +397,19 @@ function рисовать(){
   el('scenarios').innerHTML = ДАННЫЕ.scenarios.map(function(с){
     var пилюля = с.have === с.total ? С.st_now : (с.have > 0 ? С.st_part.replace('{n}', с.have).replace('{m}', с.total) : С.st_later);
     var узлы = с.nodes.map(function(у){ return '<span class="узел ' + класс(у.status) + '" title="' + э(статус_слово(у.status)) + '">' + э(t(у)) + ' · ' + э(статус_слово(у.status)) + '</span>'; }).join('');
-    return '<div class="карта"><span class="пилюля' + (с.have === с.total ? ' есть' : '') + '">' + э(пилюля) + '</span><h3>' + э(t(с.title)) + '</h3>' +
-      '<span class="кому">' + э(t(с.who)) + '</span><p>' + э(t(с.story)) + '</p><div class="узлы">' + узлы + '</div>' +
+    var кому = t(с.who); кому = кому.charAt(0).toUpperCase() + кому.slice(1);
+    return '<div class="карта"><span class="пилюля' + (с.have === с.total ? ' есть' : '') + '">' + э(пилюля) + '</span><h3>' + э(кому) + '</h3>' +
+      '<span class="кому">' + э(t(с.title)) + '</span><p>' + э(t(с.story)) + '</p><div class="узлы">' + узлы + '</div>' +
       '<div><button type="button" class="btn ghost sm" onclick="взять(\'' + э(с.id) + '\')">' + э(С.take) + '</button></div></div>';
   }).join('');
   el('nodes_h').textContent = С.nodes_h; el('nodes_lead').textContent = С.nodes_lead;
   el('nodes').innerHTML = ДАННЫЕ.nodes.length ? ДАННЫЕ.nodes.map(function(у){
     var лимиты = (у.limits[WLANG] || []).map(function(l){ return '<li>' + э(l) + '</li>'; }).join('');
-    return '<div class="плитка"><span class="пилюля есть">' + э(С.st_have) + '</span><b>' + э(t(у.name)) + '</b><p>' + э(у.goal) + '</p>' +
+    var где = у.hosting === 'local' ? С.where_local : С.where_server;
+    var состав = (у.made && у.made.length ? С.made + ': ' + у.made.join(', ') + ' · ' : '') + где + ' · ' + С.free;
+    var проверка = у.verified && у.verified.at ? '<span class="пилюля есть" title="' + э(у.verified.where || '') + '">' + э(С.verified.replace('{at}', String(у.verified.at).split('-').reverse().join('.'))) + '</span>'
+                                              : '<span class="пилюля">' + э(С.not_verified) + '</span>';
+    return '<div class="плитка">' + проверка + '<b>' + э(t(у.name)) + '</b><p>' + э(у.goal) + '</p><p class="метка">' + э(состав) + '</p>' +
       '<details><summary>' + э(С.more) + '</summary><ul>' + лимиты + '</ul>' +
       (у.needs.length ? '<p><span class="метка">' + э(С.needs) + '</span><br>' + э(у.needs.join(' · ')) + '</p>' : '') + '</details></div>';
   }).join('') : '<p class="подлид">' + э(С.nodes_none) + '</p>';
@@ -467,11 +483,11 @@ def собрать(папка: pathlib.Path, реестр: dict, каталог:
         except ValueError:
             старый = {}
     листинг = {
-        "name": "Приложения из модулей",
-        "описание": "Что Extella собирает из готовых узлов для сотрудников: сценарии словами бизнеса, узлы библиотеки "
-                    "с честным статусом и границами из паспортов, и одна кнопка — скопировать задание для ИИ-создателя, "
-                    "который соберёт приложение под твою задачу.",
-        "теги": ["инструмент", "модули", "библиотека", "конструктор"], "иконка": "icon.png",
+        "name": "Каталог способностей",
+        "описание": "Что умеет Extella: умения для агента и узлы для приложений сотрудников с паспортами — что делает, "
+                    "чего не делает, где исполняется, когда проверено живьём. Готовые наборы по работе и одна кнопка: "
+                    "скопировать задание для ИИ-создателя, который соберёт приложение под твою задачу.",
+        "теги": ["инструмент", "способности", "каталог", "модули"], "иконка": "icon.png",
         "версия": старый.get("версия") or "0.1.0", "цена": 0, "права": [],
         "состояние": старый.get("состояние") or "собрано",
         "узлов": len(узлы), "сценариев": len(сценарии), "приложений": len(приложения),
@@ -490,6 +506,7 @@ def selftest() -> int:
         {"automation_id": "toolkit_ocr_read", "kind": "module", "name": {"ru": "Распознавание текста", "en": "Text recognition"},
          "business_goal": "достать текст со скана", "passport_ok": True, "needs": ["command: tesseract (желательно)"],
          "experts": ["toolkit_ocr_read"], "experts_what": {"toolkit_ocr_read": "читает скан"},
+         "verified": {"at": "2026-09-05", "where": "стенд"}, "hosting_profile": "local",
          "limits": ["RU: наружу не пишет. EN: sends nothing out.", "<img src=x onerror=alert(1)>"]},
         {"automation_id": "app_x", "kind": "automation", "name": {"ru": "Не модуль", "en": "Not a module"}, "passport_ok": True},
     ]}
@@ -513,6 +530,10 @@ def selftest() -> int:
         else:
             ошибки.append(f"статусы узлов неверны: {статусы}")
         задание_ru = задание(узлы_из_реестра(реестр), "ru")
+        if '"at": "2026-09-05"' not in с or '"made": ["tesseract"]' not in с:
+            ошибки.append("плитка не несёт «проверено живьём» и «на чём сделано» из паспорта")
+        else:
+            print("  ✓ плитка: «проверено живьём» и «на чём сделано» взяты из паспорта")
         if "{{ЗАДАЧА}}" in задание_ru and "toolkit_ocr_read" in задание_ru and "APP_FROM_MODULES.md" in задание_ru and "наружу не пишет" in задание_ru:
             print("  ✓ задание для ИИ несёт репозиторий, главу, узлы и их границы")
         else:

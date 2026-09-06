@@ -494,6 +494,17 @@ def check_report(doc):
                   "не сказано, зачем этот агент в автоматизации",
                   "the component role is not stated")
 
+    # 4.0. «Проверено живьём» (06.09.2026, Каталог способностей): метка на витрине берётся только
+    # отсюда. Поле необязательное, но если объявлено — обязано сказать когда и где, иначе это
+    # «проверено» без проверки.
+    проверено = a.get("verified")
+    if проверено is not None:
+        if not isinstance(проверено, dict) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(проверено.get("at") or "")) \
+                or is_blank(проверено.get("where")):
+            _issue(errors, "AUTOMATION_VERIFIED_SHAPE", "automation.verified",
+                   "verified должен быть объектом {at: ГГГГ-ММ-ДД, where: где запускали живьём}",
+                   "verified must be an object {at: YYYY-MM-DD, where: where it was run live}")
+
     # 4.1. Модуль: его единственный интерфейс — эксперты. Имя без «что делает» — способность,
     # которую сборщик не найдёт словами (реестр индексирует именно этот текст).
     if is_module:
