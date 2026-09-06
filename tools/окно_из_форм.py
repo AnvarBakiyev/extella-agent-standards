@@ -196,12 +196,26 @@ function значение(объект, путь){
 }
 function подставить(шаблон, объект){
   if (шаблон && typeof шаблон === 'object' && !Array.isArray(шаблон)) { return t(шаблон); }
-  return String(шаблон == null ? '' : шаблон).replace(/\{([\w.]+)\}/g, function(_, к){
-    var v = значение(объект, к); return v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+  // Имя в скобках — любой путь без скобок: ключи ответа бывают кириллическими («статус»).
+  return String(шаблон == null ? '' : шаблон).replace(/\{([^{}]+)\}/g, function(_, к){
+    var v = значение(объект, к.trim()); return v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
   });
 }
+// Параметры шага цепочки: строки подставляются, объекты и списки — рекурсивно; объект целиком
+// уходит эксперту строкой JSON (так модуль очереди принимает item_json).
+function подставить_параметры(п, ктх){
+  if (Array.isArray(п)) { return п.map(function(x){ return подставить_параметры(x, ктх); }); }
+  if (п && typeof п === 'object') { var о = {}; Object.keys(п).forEach(function(к){ о[к] = подставить_параметры(п[к], ктх); }); return о; }
+  if (typeof п === 'string') {
+    var одиночный = п.match(/^\{([^{}]+)\}$/);
+    if (одиночный) { var v = значение(ктх, одиночный[1].trim()); return v == null ? '' : v; }
+    return подставить(п, ктх);
+  }
+  return п;
+}
 function по_карте(карта, ответ){
-  var д = {form: карта.form, title: t(карта.title), caption: карта.caption ? t(карта.caption) : ''};
+  // Заголовок и подпись тоже шаблоны: «новых {counts.new}» — подпись очереди из ответа модуля.
+  var д = {form: карта.form, title: подставить(t(карта.title), ответ), caption: карта.caption ? подставить(t(карта.caption), ответ) : ''};
   if (карта.form === 'number') { д.value = подставить(карта.value, ответ); return д; }
   if (карта.form === 'document') {
     д.sections = (карта.sections || []).map(function(с){ return {name: t(с.name), text: подставить(с.text, ответ)}; });
@@ -245,7 +259,9 @@ function run_expert(имя, параметры){
 function запустить(id){
   var экран = ЭКРАНЫ.filter(function(э_){ return э_.id === id; })[0];
   var кнопка = el('btn_' + id), статус = el('st_' + id), вывод = el('out_' + id);
-  var параметры = {};
+  // Постоянные параметры кнопки (action.params) — например method модуля с несколькими
+  // методами: человек их не видит и не правит, поля ввода ложатся поверх.
+  var параметры = Object.assign({}, экран.action.params || {});
   (экран.action.inputs || []).forEach(function(в){
     var поле = el('in_' + id + '_' + в.name);
     параметры[в.name] = в.kind === 'number' ? Number(поле.value) : поле.value;
@@ -253,16 +269,29 @@ function запустить(id){
   if (!APP_TOKEN || APP_TOKEN.charAt(0) === '{') { статус.textContent = слово('no_token'); return; }
   кнопка.disabled = true;
   статус.textContent = t(экран.waiting) + (DEVICE ? '' : ' ' + слово('no_device'));
-  run_expert(экран.action.expert, параметры).then(function(о){
+  // Цепочка: шаги идут по одному, каждый видит ввод (input) и ответы прежних (s1, s2, …, last).
+  // Платформа ждёт один вызов не дольше ~51 с, поэтому три модуля — три вызова, а не один.
+  var шаги = экран.action.steps && экран.action.steps.length ? экран.action.steps : [{expert: экран.action.expert, params: null}];
+  var ктх = {input: параметры};
+  var разобрать_ответ = function(о){
     var р = разобрать(о.raw);
-    if (о.status === 403) { статус.textContent = слово('forbidden'); return; }
-    if (!р || typeof р !== 'object') { статус.textContent = слово('empty') + ' ' + String(о.raw || '').slice(0, 400); return; }
-    if (р.status === 'error' || р.ok === false) {
-      статус.textContent = слово('failed') + ' ' + (р.message || р['почему'] || JSON.stringify(р)).slice(0, 600);
-      return;
-    }
+    if (о.status === 403) { throw new Error(слово('forbidden')); }
+    if (!р || typeof р !== 'object') { throw new Error(слово('empty') + ' ' + String(о.raw || '').slice(0, 400)); }
+    if (р.status === 'error' || р.ok === false) { throw new Error(слово('failed') + ' ' + (р.message || р['почему'] || JSON.stringify(р)).slice(0, 600)); }
+    return р;
+  };
+  var цепочка = Promise.resolve();
+  шаги.forEach(function(шаг, i){
+    цепочка = цепочка.then(function(){
+      if (шаги.length > 1) { статус.textContent = t(экран.waiting) + ' · ' + (i + 1) + '/' + шаги.length + (шаг.label ? ' · ' + t(шаг.label) : ''); }
+      var п = шаг.params ? подставить_параметры(шаг.params, ктх) : параметры;
+      Object.keys(п).forEach(function(к){ if (п[к] && typeof п[к] === 'object') { п[к] = JSON.stringify(п[к]); } });
+      return run_expert(шаг.expert, п).then(разобрать_ответ).then(function(р){ ктх['s' + (i + 1)] = р; ктх.last = р; });
+    });
+  });
+  цепочка.then(function(){
     статус.textContent = слово('done');
-    вывод.innerHTML = рисовать(по_карте(экран.action.map, р));
+    вывод.innerHTML = рисовать(по_карте(экран.action.map, шаги.length > 1 ? ктх : ктх.last));
   }).catch(function(е){
     статус.textContent = слово('failed') + ' ' + String(е).slice(0, 200);
   }).finally(function(){
@@ -297,6 +326,8 @@ document.addEventListener('DOMContentLoaded', function(){
   показать(ЭКРАНЫ[0].id);
   el('help_btn').addEventListener('click', function(){ openHelp('app'); });
   helpFirstTime('app');
+  // Экран с auto: true запускается сам при открытии — очередь должна быть видна без нажатия.
+  ЭКРАНЫ.forEach(function(э_){ if (э_.action && э_.action.auto) { запустить(э_.id); } });
 });
 """
 
@@ -364,14 +395,42 @@ def проверить_план(план: dict) -> dict:
             if not isinstance(д, dict):
                 raise Отказ(f"{где}.action: объект")
             _двуязычно(д.get("label"), где + ".action.label")
-            if not re.match(r"^[a-z][a-z0-9_]{2,63}$", str(д.get("expert") or "")):
+            шаги = д.get("steps")
+            if шаги is not None:
+                if not isinstance(шаги, list) or not шаги:
+                    raise Отказ(f"{где}.action.steps: непустой список шагов {{expert, params}}")
+                for k, ш in enumerate(шаги):
+                    if not isinstance(ш, dict) or not re.match(r"^[a-z][a-z0-9_]{2,63}$", str(ш.get("expert") or "")):
+                        raise Отказ(f"{где}.action.steps[{k}].expert: имя эксперта в snake_case")
+                    if ш.get("params") is not None and not isinstance(ш.get("params"), dict):
+                        raise Отказ(f"{где}.action.steps[{k}].params: объект имя → шаблон")
+                    if ш.get("label") is not None:
+                        _двуязычно(ш.get("label"), f"{где}.action.steps[{k}].label")
+            elif not re.match(r"^[a-z][a-z0-9_]{2,63}$", str(д.get("expert") or "")):
                 raise Отказ(f"{где}.action.expert: имя эксперта в snake_case")
+            if д.get("auto") is not None and not isinstance(д.get("auto"), bool):
+                raise Отказ(f"{где}.action.auto: true или false")
             for j, в in enumerate(д.get("inputs") or []):
                 if not isinstance(в, dict) or not re.match(r"^[a-z][a-z0-9_]{0,30}$", str(в.get("name") or "")):
                     raise Отказ(f"{где}.action.inputs[{j}].name: латиница и подчёркивание")
                 _двуязычно(в.get("label"), f"{где}.action.inputs[{j}].label")
                 if в.get("kind", "text") not in ВИДЫ_ВВОДА:
                     raise Отказ(f"{где}.action.inputs[{j}].kind: {' | '.join(ВИДЫ_ВВОДА)}")
+            # Постоянные параметры кнопки (06.09.2026, модуль toolkit_hrms): у модуля с
+            # несколькими методами `method` не должен быть полем ввода — человек его не выбирает.
+            # Только скаляры и только имена, которых нет среди полей ввода: иначе непонятно,
+            # кто победил.
+            постоянные = д.get("params") or {}
+            if not isinstance(постоянные, dict):
+                raise Отказ(f"{где}.action.params: объект имя → значение")
+            имена_ввода = {str(в.get("name")) for в in (д.get("inputs") or []) if isinstance(в, dict)}
+            for имя, значение in постоянные.items():
+                if not re.match(r"^[a-z][a-z0-9_]{0,30}$", str(имя)):
+                    raise Отказ(f"{где}.action.params.{имя}: латиница и подчёркивание")
+                if not isinstance(значение, (str, int, float, bool)):
+                    raise Отказ(f"{где}.action.params.{имя}: только строка, число или да/нет")
+                if имя in имена_ввода:
+                    raise Отказ(f"{где}.action.params.{имя}: одновременно поле ввода и постоянный параметр")
             карта = д.get("map")
             if not isinstance(карта, dict) or карта.get("form") != э["form"]:
                 raise Отказ(f"{где}.action.map: объект с form == «{э['form']}» — как ответ эксперта ложится в форму")
