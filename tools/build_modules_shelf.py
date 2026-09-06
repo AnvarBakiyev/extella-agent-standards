@@ -55,8 +55,8 @@ from формы import Отказ  # noqa: E402
      "story": {"ru": "Счета приходят сканами и PDF. Приложение складывает их в очередь, читает, достаёт номер, сумму и поставщика, бухгалтер проверяет и передаёт в 1С.",
                "en": "Invoices arrive as scans and PDFs. The app queues them, reads them, extracts number, amount and supplier; the accountant checks and passes them to 1C."},
      "nodes": [{"id": "toolkit_ocr_read", "ru": "распознавание скана", "en": "scan recognition"},
-               {"id": "uc_parse_invoices_acts", "ru": "реквизиты из текста", "en": "fields from text"},
-               {"id": "app_queue", "ru": "очередь и история", "en": "queue and history"},
+               {"id": "toolkit_invoice_fields", "ru": "реквизиты из текста", "en": "fields from text"},
+               {"id": "toolkit_queue", "ru": "очередь и история", "en": "queue and history"},
                {"id": "wz_1c_call", "ru": "передача в 1С", "en": "hand-over to 1C"}]},
     {"id": "leads",
      "title": {"ru": "Заявки из WhatsApp и почты", "en": "Requests from WhatsApp and email"},
@@ -525,7 +525,7 @@ def selftest() -> int:
             ошибки.append(f"счёт неверен: {итог}")
         сц = json.loads((корень / "apps" / "shelf" / "scenarios.json").read_text())
         статусы = {у["id"]: статус_узла(у["id"], узлы_из_реестра(реестр), известные) for с_ in сц for у in с_["nodes"]}
-        if статусы["toolkit_ocr_read"] == ЕСТЬ and статусы["uc_parse_invoices_acts"] == В_РАБОТЕ and статусы["app_queue"] == НУЖЕН:
+        if статусы["toolkit_ocr_read"] == ЕСТЬ and статусы["wz_connector_whatsapp"] == В_РАБОТЕ and статусы["crm_backend"] == НУЖЕН:
             print("  ✓ статус узла: паспорт — «есть», без паспорта — «в работе», неизвестный — «нужен»")
         else:
             ошибки.append(f"статусы узлов неверны: {статусы}")
