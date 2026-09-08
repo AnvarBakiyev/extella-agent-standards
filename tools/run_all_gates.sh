@@ -93,6 +93,7 @@ run check_brand_copy
 run check_writing_style
 run check_waiting_state
 run check_self_check
+run check_user_onboarding
 # Не только селфтест: прогоняем правило языка по СВОИМ текстам. Проверка, которая
 # умеет падать, но ни к чему не применена, ничего не охраняет.
 # ── ПРОВЕРКИ САМОГО КАНОНА ────────────────────────────────────────────────────
