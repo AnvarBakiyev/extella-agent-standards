@@ -27,7 +27,7 @@ import time
 
 СЮДА = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(СЮДА))
-from формы import Отказ, проверить, пример, строки_пункта  # noqa: E402
+from формы import Отказ, проверить, пример, строки_пункта, по_человечески  # noqa: E402
 
 ПАПКА = pathlib.Path.home() / "extella-cabinet" / "отчёты"
 
@@ -73,53 +73,53 @@ def _э(т) -> str:
 
 
 def тело(д: dict) -> str:
-    форма, куски = д["форма"], []
+    форма, куски = д["form"], []
 
-    if форма == "число":
-        return f'<div class="число">{_э(д["значение"])}</div>'
+    if форма == "number":
+        return f'<div class="число">{_э(д["value"])}</div>'
 
-    if форма == "список":
+    if форма == "list":
         куски.append('<div class="карты">')
-        for п in д["строки"]:
+        for п in д["rows"]:
             поля = "".join(f"<dt>{_э(к)}</dt><dd>{_э(з)}</dd>"
-                           for к, з in (п.get("поля") or {}).items())
-            куски.append(f'<div class="карта"><b>{_э(п["имя"])}</b><dl>{поля}</dl></div>')
+                           for к, з in (п.get("fields") or {}).items())
+            куски.append(f'<div class="карта"><b>{_э(п["name"])}</b><dl>{поля}</dl></div>')
         куски.append("</div>")
         return "".join(куски)
 
-    if форма == "шаги":
-        for i, п in enumerate(д["шаги"], 1):
-            подпись = f' — {_э(п["подпись"])}' if п.get("подпись") else ""
-            куски.append(f'<div class="шаг"><i>{i}</i>{_э(п["имя"])}{подпись}</div>')
+    if форма == "steps":
+        for i, п in enumerate(д["steps"], 1):
+            подпись = f' — {_э(п["caption"])}' if п.get("caption") else ""
+            куски.append(f'<div class="шаг"><i>{i}</i>{_э(п["name"])}{подпись}</div>')
         return "".join(куски)
 
-    if форма == "связи":
-        for п in д["связи"]:
-            куски.append(f'<div class="связь"><div>{_э(п["от"])}</div>'
-                         f'<span>→<br>{_э(п.get("подпись") or "")}</span>'
-                         f'<div>{_э(п["к"])}</div></div>')
+    if форма == "links":
+        for п in д["links"]:
+            куски.append(f'<div class="связь"><div>{_э(п["from"])}</div>'
+                         f'<span>→<br>{_э(п.get("caption") or "")}</span>'
+                         f'<div>{_э(п["to"])}</div></div>')
         return "".join(куски)
 
-    for п in д["разделы"]:
-        куски.append(f'<div class="раздел"><h2>{_э(п["имя"])}</h2>'
-                     f'<p>{_э(п["текст"])}</p></div>')
+    for п in д["sections"]:
+        куски.append(f'<div class="раздел"><h2>{_э(п["name"])}</h2>'
+                     f'<p>{_э(п["text"])}</p></div>')
     return "".join(куски)
 
 
 def страница(д: dict, источник: str) -> str:
-    подпись = (f'<div class="подпись">{_э(д["подпись"])}</div>' if д.get("подпись") else "")
+    подпись = (f'<div class="подпись">{_э(д["caption"])}</div>' if д.get("caption") else "")
     return (f'<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
-            f'<title>{_э(д["заголовок"])}</title><style>{СТИЛЬ}</style></head><body>'
-            f'<div class="лист"><h1>{_э(д["заголовок"])}</h1>{подпись}'
+            f'<title>{_э(д["title"])}</title><style>{СТИЛЬ}</style></head><body>'
+            f'<div class="лист"><h1>{_э(д["title"])}</h1>{подпись}'
             f'<div class="след">собрано агентом · источник: {_э(источник)} · '
-            f'{time.strftime("%d.%m.%Y %H:%M")} · форма: {_э(д["форма"])}</div>'
+            f'{time.strftime("%d.%m.%Y %H:%M")} · форма: {_э(д["form"])}</div>'
             f'{тело(д)}</div></body></html>')
 
 
 def selftest() -> int:
     ошибки = []
-    for ф in ("список", "число", "шаги", "связи", "документ"):
+    for ф in ("list", "number", "steps", "links", "document"):
         с = страница(проверить(пример(ф)), "проба")
         if "<body>" not in с or len(с) < 800:
             ошибки.append(f"форма «{ф}» дала пустую страницу")
@@ -143,8 +143,8 @@ def selftest() -> int:
         print("  ✓ получатель не знает ни одного источника по имени")
 
     # Опасное: содержимое источника попадает в HTML.
-    зло = {"форма": "список", "заголовок": "<script>alert(1)</script>",
-           "строки": [{"имя": "<img src=x onerror=alert(1)>", "поля": {}}]}
+    зло = {"форма": "list", "title": "<script>alert(1)</script>",
+           "rows": [{"name": "<img src=x onerror=alert(1)>", "fields": {}}]}
     с = страница(проверить(зло), "проба")
     # Ищем ОТКРЫВАЮЩИЙ тег, а не текст «onerror=alert»: экранирование оставляет
     # эти буквы как обычные буквы, и первый заход считал их дефектом.
@@ -180,7 +180,7 @@ def main() -> int:
         ПАПКА.mkdir(parents=True, exist_ok=True)
         куда = ПАПКА / f"{а.источник}.html"
         куда.write_text(страница(д, а.источник))
-        print(f"\nФорма «{д['форма']}» · {д['заголовок']} · источник «{а.источник}»")
+        print(f"\nФорма «{по_человечески(д['form'])}» · {д['title']} · источник «{а.источник}»")
         print(f"  ✓ отчёт собран: {куда} ({куда.stat().st_size // 1024} КБ)")
         if а.открыть:
             subprocess.run(["open", str(куда)])

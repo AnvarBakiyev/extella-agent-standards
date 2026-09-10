@@ -1,6 +1,6 @@
 {
-  "name": "Документы",
-  "описание": "Все md-файлы компьютера в одном окне: свежие сверху, поиск по имени, чтение с нормальной вёрсткой. Выделенная строка одной кнопкой становится задачей в приложении «Задачи и календарь» — с пометкой, из какого файла пришла. Файлы открываются только для чтения, наружу ничего не уходит.",
+  "name": "MD Reader",
+  "описание": "Every text document on your computer in one window: a folder tree with counts, search by name, a «newest first» mode, and reading with proper typography. A new document is added by dropping it into the window or picking a file — it lands in the folder you have open in the tree. Selected text becomes a task in the «Tasks and Calendar» app with one button. Interface in English and Russian, switch in the header.",
   "теги": [
     "приложение",
     "офис",
@@ -8,11 +8,23 @@
     "задачи"
   ],
   "иконка": "icon.png",
-  "версия": "0.1.0",
+  "версия": "1.0.0",
   "цена": 0,
   "состояние": "предрелиз",
-  "права": [],
-  "границы": "Не редактирует md-файлы — только читает. Требует запущенного сервера Документов на этом компьютере: без него окно честно скажет, что сервер не отвечает. Задачи создаёт только по нажатию человека.",
-  "listing_id": "f3c3c08a-3491-4ba9-ba77-9541c1c3dccf",
-  "version_id": "9c61b6a8-f887-45cb-9124-2d86f98f88d9"
+  "права": [
+    "expert.run",
+    "device.run"
+  ],
+  "границы": "Shows and accepts text documents only (.md, .markdown, .txt) and only from three folders on the computer (~/Extella Claude Bridge, ~/extella-cabinet, ~/Documents/Extella; the list is edited in config.json next to the server). Does not edit content — only reads and adds whole files. A file with the same name is never overwritten: a numbered copy appears next to it. Files over 5 MB are not accepted.",
+  "name_ru": "Читалка MD",
+  "описание_ru": "Все текстовые документы компьютера в одном окне: дерево папок со счётчиками, поиск по имени, режим «свежие сверху», чтение с нормальной вёрсткой. Новый документ добавляется перетаскиванием в окно или кнопкой выбора — он ложится в раскрытую папку дерева. Выделенная строка одной кнопкой становится задачей в приложении «Задачи и календарь».",
+  "границы_ru": "Показывает и принимает только текстовые документы (.md, .markdown, .txt) и только из трёх папок компьютера (~/Extella Claude Bridge, ~/extella-cabinet, ~/Documents/Extella; список правится в config.json рядом с сервером). Не редактирует содержимое — только читает и добавляет файлы целиком. Одноимённый файл не затирается: рядом появляется копия с номером. Файл больше 5 МБ не принимается.",
+  "установщик": "md_reader_setup",
+  "агент": "agent_94UyVbvlsRNqSgcjVo9Sw",
+  "прежняя_карточка": {
+    "listing_id": "f3c3c08a-3491-4ba9-ba77-9541c1c3dccf",
+    "почему": "карточка типа «extensions»: ставила только окно, программу покупатель не получал. Снята с витрины 08.09.2026, дочистить после перехода людей"
+  },
+  "listing_id": "12af60fc-75f3-4985-9918-b83d177c784b",
+  "version_id": "71e9cb47-50bb-437c-8d7e-c848bcf452b8"
 }

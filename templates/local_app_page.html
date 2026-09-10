@@ -1,3 +1,6 @@
+<!-- extella:обёртка-окна v1 — этот файл СОЗДАН tools/make_local_app_page.py
+     Если вы видите его вместо приложения — приложение было затёрто;
+     ищите рядом копию .до_пробы или .обёртка_* -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -22,6 +25,10 @@ button,input,select,textarea{font-family:inherit}
 .строка input{flex:1;min-width:0;font-size:13px;color:var(--tx);
   background:transparent;border:1px solid var(--гр);border-radius:8px;
   padding:8px 12px}
+.язык_окна{background:transparent;border:1px solid var(--гр);border-radius:8px;
+  padding:7px 10px;font:600 11px/1 Nunito,system-ui,sans-serif;letter-spacing:.04em;
+  color:var(--tx3);cursor:pointer}
+.язык_окна:hover{color:var(--tx);border-color:var(--a)}
 .строка input::placeholder{color:var(--tx3)}
 .строка input:focus{outline:none;border-color:var(--a)}
 .сказать{font-size:13px;font-weight:600;color:#fff;background:var(--a);
@@ -58,12 +65,13 @@ p{color:var(--tx2);margin:0 0 16px}
 <body>
 <div class="строка" id="строка">
   <input id="фраза" type="text" autocomplete="off" spellcheck="false"
-         placeholder="Скажите агенту: возьми из астры первые 8 — положит сюда">
-  <button type="button" class="сказать" id="сказать">Сказать</button>
+         placeholder="Tell the agent: take the first 8 from astra — it will put them here" data-т="Tell the agent: take the first 8 from astra — it will put them here" data-т-поле="placeholder">
+  <button type="button" class="язык_окна" id="язык_окна" title="Русский / English">RU</button>
+  <button type="button" class="сказать" id="сказать" data-т="Send">Send</button>
 </div>
 <div class="ответ" id="ответ">
   <span id="ответ_текст"></span>
-  <button type="button" id="ответ_закрыть" title="Скрыть">×</button>
+  <button type="button" id="ответ_закрыть" title="Hide" data-т="Hide" data-т-поле="title">×</button>
 </div>
 
 <iframe id="окно" allow="clipboard-read; clipboard-write"></iframe>
@@ -71,7 +79,10 @@ p{color:var(--tx2);margin:0 0 16px}
 <div class="запасной" id="запасной">
   <div class="карточка">
     <h1>%ИМЯ%</h1>
-    <p id="сообщение">Открываю…</p>
+    <p id="сообщение" data-т="Opening…">Opening…</p>
+    <button type="button" class="сказать" id="поставить"
+            style="display:none;margin:16px auto 0;padding:10px 22px"
+            data-т="Install on this computer">Install on this computer</button>
     <div class="тихо" id="тихо"></div>
   </div>
 </div>
@@ -79,10 +90,62 @@ p{color:var(--tx2);margin:0 0 16px}
 <div class="полоска" id="полоска">
   <span id="полоска_текст"></span>
   <button type="button" class="сказать" id="полоска_обновить"
-          style="display:none;padding:4px 12px">Обновить</button>
-  <button type="button" id="полоска_закрыть" title="Скрыть">×</button>
+          style="display:none;padding:4px 12px" data-т="Refresh">Refresh</button>
+  <button type="button" id="полоска_закрыть" title="Hide" data-т="Hide" data-т-поле="title">×</button>
 </div>
 
+<script>
+/* ── два языка строки агента ─────────────────────────────────────────────
+   Эта полоска стоит В КАЖДОМ окне, поэтому её перевод — единственное место,
+   где английский появляется сразу везде. Решение владельца 23.08.2026:
+   английский оригинал, русский переключателем.
+
+   Ключи английские (канон), русский лежит переводом. Нет перевода — вернётся
+   английский ключ: лучше английское слово в русском окне, чем пустое место. */
+window.__СЛОВАРЬ_ОКНА = {
+  ru: {
+    "Tell the agent: take the first 8 from astra — it will put them here":
+      "Скажите агенту: возьми из астры первые 8 — положит сюда",
+    "Send": "Сказать",
+    "Hide": "Скрыть",
+    "Opening…": "Открываю…",
+    "Refresh": "Обновить",
+    "Something changed — from the agent, for example. Refresh now, or finish your work and press later.":
+      "Появились изменения — например, от агента. Обновить сейчас или доработайте и нажмите позже.",
+    "The app inside is not responding. Refresh the window once more; if it is still empty — tell the chat.":
+      "Приложение внутри не отвечает. Обновите окно ещё раз; если снова пусто — скажите чату.",
+    "The app could not start:": "Приложение не смогло запуститься:",
+    "error": "ошибка",
+    ". Refresh the window; if that does not help — tell the chat.":
+      ". Обновите окно; если не поможет — скажите чату.",
+    "The browser did not let the app into this window. This is fixed on our side — tell the chat.":
+      "Браузер не пустил приложение внутрь этого окна. Это чинится на нашей стороне — скажите чату.",
+    "This app runs on the computer where it is installed, and here it does not answer.":
+      "Это приложение работает на том компьютере, где оно установлено, — здесь оно не отвечает.",
+    "If it is your app — restart Extella. If someone shared this window with you — install the app from the store first: it does not run on their machine for you.":
+      "Если приложение ваше — перезапустите Extella. Если окно вам прислали — приложение нужно поставить себе из магазина: на чужом компьютере оно для вас не работает.",
+    "not responding": "не отвечает",
+    "Install on this computer": "Установить на этот компьютер",
+    "Installing… this takes about half a minute": "Ставлю… это займёт около половины минуты",
+    "Installed — opening": "Установлено — открываю",
+    "Try again": "Попробовать ещё раз",
+    "The installer did not finish. Tell the chat what it says here.":
+      "Установка не завершилась. Скажите в чат, что здесь написано.",
+    "This window cannot install the app: reinstall it from the store.":
+      "Это окно не умеет ставить приложение: переустановите его из магазина.",
+    "closed in the sandbox: cookies, browser databases — work is kept on disk":
+      "в песочнице закрыто: cookie, базы браузера — работа хранится на диске",
+  },
+};
+window.__ЯЗЫК_ОКНА = (function(){
+  try { const с = localStorage.getItem("extella-язык"); if (с) return с; } catch (e) {}
+  return (navigator.language || "en").toLowerCase().startsWith("ru") ? "ru" : "en";
+})();
+window.т = function(ключ){
+  const с = window.__СЛОВАРЬ_ОКНА[window.__ЯЗЫК_ОКНА];
+  return (с && с[ключ]) || ключ;
+};
+</script>
 <script>
 // ОБЩИЙ КАРКАС ОКНА ДЛЯ МЕСТНОГО ПРИЛОЖЕНИЯ. Собирается из этого шаблона
 // инструментом tools/make_local_app_page.py — руками не правится, иначе три
@@ -167,6 +230,76 @@ document.getElementById('полоска_закрыть').onclick = function(){
   полоска_.style.display = 'none';
 };
 
+// ── УСТАНОВКА С САМОЙ СТРАНИЦЫ ───────────────────────────────────────────
+// ЗАЧЕМ ЭТО ЗДЕСЬ. Покупка в магазине заводит агента и кладёт ему эксперта-
+// установщика, но САМА ПРОГРАММА на компьютер от этого не попадает: поток
+// покупки рапортует «installer_done», а на диске пусто — проверено начисто
+// 28.08.2026 (снёс папку, вызвал покупку, папка не появилась). Человек видел
+// «куплено» и пустое окно, и починить это ему было нечем.
+//
+// Канон (H5-бис) даёт прямой путь: страница продукта может позвать эксперта
+// своего агента, и с правом device.run он исполнится НА ЭТОМ компьютере, а не
+// в облаке. Отсюда кнопка: она делает ровно то, что должна была сделать
+// покупка. Цена вызова — 13–17 секунд, это физика маршрута
+// (страница → ОС → ядро → листенер), поэтому ожидание показываем словами.
+var ТОКЕН_ПРИЛОЖЕНИЯ = '%ТОКЕН_ПРИЛОЖЕНИЯ%';
+var УСТАНОВЩИК = '%УСТАНОВЩИК%';
+
+function поставить_сюда(){
+  var к = document.getElementById('поставить');
+  var подпись_ = document.getElementById('тихо');
+  if (!ТОКЕН_ПРИЛОЖЕНИЯ || ТОКЕН_ПРИЛОЖЕНИЯ.charAt(0) === '%') {
+    подпись_.textContent = т('This window cannot install the app: reinstall it from the store.');
+    return;
+  }
+  к.disabled = true;
+  к.textContent = т('Installing… this takes about half a minute');
+  fetch('https://os.extella.ai/api/app-agent/run', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({app_token: ТОКЕН_ПРИЛОЖЕНИЯ, expert_name: УСТАНОВЩИК, params: {}})
+  })
+  .then(function(о){ return о.json(); })
+  .then(function(д){
+    // ЧЕСТНО РАЗБИРАЕМ ОТВЕТ. «status: success» от платформы фактом установки
+    // не является — установщик возвращает свой ok и подпись машины (C3).
+    var сырой = '';
+    var р = д && (д.result || д.данные || д);
+    if (typeof р === 'string') {
+      сырой = р;
+      // ОТВЕТ ПРИХОДИТ СЛОВАРЁМ PYTHON, А НЕ JSON. Замер 28.08.2026: платформа
+      // вернула {'ok': False, 'почему': '…'} — после замены кавычек это всё
+      // равно не JSON, потому что False/True/None пишутся иначе. Разбор падал
+      // молча, и окно показывало общую фразу ВМЕСТО настоящей причины: три
+      // попытки владельца прошли впустую, хотя машина каждый раз отвечала.
+      var чинёный = р.replace(/'/g, '"')
+                     .replace(/\bFalse\b/g, 'false')
+                     .replace(/\bTrue\b/g, 'true')
+                     .replace(/\bNone\b/g, 'null');
+      try { р = JSON.parse(чинёный); } catch (e) { р = null; }
+    }
+    if (р && р.ok) {
+      к.textContent = т('Installed — opening');
+      подпись_.textContent = (р['машина'] || '') + ' · ' + (р['система'] || '');
+      setTimeout(function(){ location.reload(); }, 1500);
+    } else {
+      к.disabled = false;
+      к.textContent = т('Try again');
+      // ПОКАЗЫВАЕМ ХОТЬ ЧТО-НИБУДЬ НАСТОЯЩЕЕ. Если разобрать не вышло —
+      // отдаём сырой ответ как есть: невнятная строка полезнее вежливой
+      // пустоты, потому что её можно переслать в чат.
+      подпись_.textContent = (р && (р['почему'] || р['вывод'])) ||
+                             (сырой ? сырой.slice(0, 400) : '') ||
+                             т('The installer did not finish. Tell the chat what it says here.');
+    }
+  })
+  .catch(function(е){
+    к.disabled = false;
+    к.textContent = т('Try again');
+    подпись_.textContent = String(е).slice(0, 160);
+  });
+}
+
 function карточкой(текст, подпись){
   // Перекрыть приложение разрешено ТОЛЬКО настоящей бедой: приложение прямо
   // сказало «хранить работу негде» либо его вовсе нет на этом компьютере.
@@ -176,6 +309,13 @@ function карточкой(текст, подпись){
   запасной.style.display = 'flex';
   document.getElementById('сообщение').textContent = текст;
   document.getElementById('тихо').textContent = подпись;
+  // Кнопка нужна только когда программы на этой машине нет. Если приложение
+  // отвечает, но жалуется на хранилище, ставить нечего — и предлагать нечего.
+  var к = document.getElementById('поставить');
+  if (к && УСТАНОВЩИК && УСТАНОВЩИК.charAt(0) !== '%') {
+    к.style.display = 'block';
+    к.onclick = поставить_сюда;
+  }
 }
 
 // Приложение упало уже ПОСЛЕ того, как доложило о себе: подмена хранилища встаёт
@@ -297,7 +437,7 @@ window.addEventListener('message', function(e){
   var d = e.data || {};
   if (d.type !== 'extella_обновление_ждёт') return;
   кнопка_обновить.style.display = '';
-  полоской('Появились изменения — например, от агента. Обновить сейчас или доработайте и нажмите позже.');
+  полоской(т('Something changed — from the agent, for example. Refresh now, or finish your work and press later.'));
 });
 
 window.addEventListener('message', function(e){
@@ -305,8 +445,8 @@ window.addEventListener('message', function(e){
   if (d.type !== 'extella_сбой') return;
   // «Откройте отдельным окном» здесь не советуем: отдельное окно Электрона
   // наследует ту же песочницу, совет был легендой. Замер 20.08.2026, Сторож.
-  полоской('Приложение не смогло запуститься: ' + (d.причина || 'ошибка') +
-           '. Обновите окно; если не поможет — скажите чату.');
+  полоской(т('The app could not start:') + ' ' + (d.причина || т('error')) +
+           т('. Refresh the window; if that does not help — tell the chat.'));
 });
 
 window.addEventListener('message', function(e){
@@ -339,19 +479,22 @@ setTimeout(function(){
       if (!загрузилась || не_пустили()) {
         // Приложение отвечает, а внутрь его не пустили. Так бывает, когда окно
         // защищённое, а адрес приложения — обычный: браузер их не смешивает.
-        полоской('Браузер не пустил приложение внутрь этого окна. ' +
-                 'Это чинится на нашей стороне — скажите чату.');
+        полоской(т('The browser did not let the app into this window. This is fixed on our side — tell the chat.'));
       } else {
-        полоской('Приложение внутри не отвечает. Обновите окно ещё раз; ' +
-                 'если снова пусто — скажите чату.');
+        полоской(т('The app inside is not responding. Refresh the window once more; if it is still empty — tell the chat.'));
       }
     })
     .catch(function(){
       // Не отвечает вовсе: в рамке будет страница ошибки браузера, и честнее
       // сказать прямо, чем оставить человека смотреть в белое.
-      карточкой('Приложение на этом компьютере сейчас не запущено: его служба ' +
-                'остановлена. Перезапустите Extella или скажите чату.',
-                '%ПОДПИСЬ% · не отвечает');
+      // ДВА РАЗНЫХ СЛУЧАЯ, ОДИН ВИД СНАРУЖИ. Порт не отвечает и когда служба
+      // остановлена, и когда приложения на этой машине нет вовсе. Прежний текст
+      // знал только первый случай и советовал «перезапустите Extella» — совет,
+      // который человеку со второй машины не помогает никак: у него ставить
+      // нечего (замер 25.08.2026 — окно у коллеги владельца). Называем оба.
+      карточкой(т('This app runs on the computer where it is installed, and here it does not answer.') + ' ' +
+                т('If it is your app — restart Extella. If someone shared this window with you — install the app from the store first: it does not run on their machine for you.'),
+                '%ПОДПИСЬ% · ' + т('not responding'));
     });
 }, 6000);
 
@@ -413,6 +556,26 @@ function сказать(){
 фраза_.addEventListener('keydown', function(e){
   if (e.key === 'Enter') сказать();
 });
+
+/* Перевод по меткам: разметка держит английский канон, метка называет ключ.
+   getAttribute, а не dataset: кириллические имена атрибутов браузер к
+   camelCase не приводит, и «тПоле» тихо оказывается undefined. */
+function применитьЯзыкОкна(){
+  document.querySelectorAll("[data-т]").forEach(function(э){
+    var ключ = э.getAttribute("data-т"), поле = э.getAttribute("data-т-поле");
+    if (поле) э.setAttribute(поле, т(ключ)); else э.textContent = т(ключ);
+  });
+  var к = document.getElementById("язык_окна");
+  if (к) к.textContent = window.__ЯЗЫК_ОКНА === "ru" ? "EN" : "RU";
+  document.documentElement.lang = window.__ЯЗЫК_ОКНА;
+}
+var кнЯзык = document.getElementById("язык_окна");
+if (кнЯзык) кнЯзык.addEventListener("click", function(){
+  window.__ЯЗЫК_ОКНА = window.__ЯЗЫК_ОКНА === "ru" ? "en" : "ru";
+  try { localStorage.setItem("extella-язык", window.__ЯЗЫК_ОКНА); } catch (e) {}
+  применитьЯзыкОкна();
+});
+применитьЯзыкОкна();
 </script>
 </body>
 </html>

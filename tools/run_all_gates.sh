@@ -85,6 +85,14 @@ fi
 
 run check_agent_passport
 run check_automation_passport
+# Приложение из модулей (04.09.2026): окно из пяти форм, провижининг без записи
+# instructions, сборка из плана и реестра, гейт готовности по стадии.
+run окно_из_форм
+run provision_modules
+run build_app_from_modules
+run check_app_from_modules
+run deploy_app_from_modules
+run build_modules_shelf
 run check_state_contract
 run check_masking_policy
 run check_code_canon
@@ -130,7 +138,7 @@ run_command "язык инженерных записей" python3 "$ROOT/tools/
   --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md" \
   "$ROOT/INSTALLER_CANON.md" "$ROOT/docs/DOCKER_APP_TRACK.md" \
   "$ROOT/docs/ICON_STYLE_BRONZE.md" "$ROOT/OS_CAPABILITIES.md" \
-  "$ROOT/SYMPTOMS.md"
+  "$ROOT/SYMPTOMS.md" "$ROOT/APP_FROM_MODULES.md"
 run_command "латиница в проводе" python3 "$ROOT/tools/check_wire_ascii.py" \
   "$ROOT/templates/storage_shim.html" "$ROOT/store_app/page.template.html" \
   "$ROOT/store_app/index.html"

@@ -57,8 +57,40 @@ def find_passports(roots):
     return sorted(set(found))
 
 
+def _needs_from_manifest(passport_path):
+    """Требования модуля к машине — из его MANIFEST.yaml, а не из второго словаря в паспорте.
+
+    Манифест уже есть у каждого продукта (№29) и проверяется установщиком; сборщику нужны те
+    же факты словами: «нужна программа tesseract», «желателен модуль sglang». Ищем рядом с
+    паспортом и в корне плагина (паспорт лежит в docs/). Нет манифеста — нет требований,
+    и это честная пустота, а не выдумка.
+    """
+    here = os.path.dirname(os.path.abspath(passport_path))
+    candidates = [os.path.join(here, "MANIFEST.yaml"),
+                  os.path.join(os.path.dirname(here), "MANIFEST.yaml")]
+    manifest = next((c for c in candidates if os.path.isfile(c)), None)
+    if not manifest:
+        return [], None
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                        "templates"))
+        from manifest_check import parse as parse_manifest   # канон, тот же разбор, что у установщика
+        with open(manifest, encoding="utf-8") as f:
+            records = parse_manifest(f.read())
+    except Exception:
+        return [], manifest
+    needs = []
+    for r in records:
+        kind = str(r.get("kind") or "")
+        subject = r.get("name") or r.get("path") or r.get("port") or r.get("min_version") or ""
+        level = "желательно" if str(r.get("level") or "").strip() == "warn" else "обязательно"
+        needs.append("%s: %s (%s)" % (kind, subject, level))
+    return needs, manifest
+
+
 def _entry(path, doc, report):
     a = doc.get("automation") if isinstance(doc.get("automation"), dict) else {}
+    needs, manifest = _needs_from_manifest(path)
     comp = doc.get("components") if isinstance(doc.get("components"), dict) else {}
     agents = [str(x.get("platform_agent_id") or "").strip()
               for x in (comp.get("platform_agents") or []) if isinstance(x, dict)]
@@ -82,7 +114,13 @@ def _entry(path, doc, report):
                              "personal_data": it.get("personal_data")})
     return {
         "automation_id": a.get("automation_id") or None,
+        "kind": str(a.get("kind") or "automation").strip().lower(),
         "name": a.get("name") or {},
+        "business_goal": a.get("business_goal") or None,
+        # «Проверено живьём» — только из паспорта: дата и где запускали. Нет поля — нет метки.
+        "verified": a.get("verified") if isinstance(a.get("verified"), dict) else None,
+        "needs": needs,
+        "manifest_path": manifest,
         "version": a.get("version") or None,
         "hosting_profile": a.get("hosting_profile") or None,
         "service": a.get("service") or {},
@@ -255,6 +293,58 @@ def selftest():
     return 0 if ok else 1
 
 
+DECLARED_KEY = "capability:declared:v1"       # свободное имя без истории (урок 28.07: близнецы ключей)
+DECLARED_AGENT = "agent_extella_default"       # тот же скоуп-канон, что у живого реестра
+DECLARED_SHARD = 8000
+
+
+def publish(reg, api_base="https://api.extella.ai", api_token=""):
+    """Кладёт собранный реестр паспортов в KV платформы. Возвращает код выхода (0 — успех).
+
+    Зачем: wz_capability_find читает паспорта из файла на устройстве исполнения, а исполняется
+    он по умолчанию на VPS, где git-репозиториев нет. Живой случай 04.09.2026: паспорт OCR
+    собран на Mac, платформа отвечала «паспорта нет». Файл в git остаётся источником, KV — его
+    зеркало, пересобираемое одной командой; читатель берёт из KV только то, что свежее локального.
+    """
+    import base64
+    import urllib.request
+    if not api_token:
+        try:
+            with open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8") as f:
+                api_token = json.load(f).get("auth_token", "")
+        except Exception:
+            api_token = ""
+    if not api_token:
+        print("ОШИБКА: --publish без токена: нет --api-token и нет ~/extella_wizard/app/config.json")
+        return 1
+
+    def api(path, payload):
+        req = urllib.request.Request(
+            api_base.rstrip("/") + path, data=json.dumps(payload).encode("utf-8"),
+            headers={"X-Auth-Token": api_token, "Content-Type": "application/json",
+                     "X-Profile-Id": "default", "X-Agent-Id": DECLARED_AGENT}, method="POST")
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    b64 = base64.b64encode(json.dumps(reg, ensure_ascii=False).encode("utf-8")).decode("ascii")
+    chunks = [b64[i:i + DECLARED_SHARD] for i in range(0, len(b64), DECLARED_SHARD)]
+    try:
+        for i, c in enumerate(chunks):
+            api("/api/kv/set", {"key": "%s:%d" % (DECLARED_KEY, i), "value": c, "global": True,
+                                "description": "реестр паспортов (declared), шард %d" % i})
+        api("/api/kv/set", {"key": DECLARED_KEY, "global": True,
+                            "value": json.dumps({"chunks": len(chunks), "enc": "b64",
+                                                 "built_at": reg["built_at"],
+                                                 "count": reg["counts"]["automations"]}),
+                            "description": "реестр паспортов из git (declared), мета шардов"})
+    except Exception as exc:
+        print("ОШИБКА: реестр паспортов в KV не записан: %s" % str(exc)[:160])
+        return 1
+    print("Реестр паспортов опубликован в KV: %s, шардов %d, built_at %s"
+          % (DECLARED_KEY, len(chunks), reg["built_at"]))
+    return 0
+
+
 def main(argv):
     p = argparse.ArgumentParser(add_help=True, description="Сборка реестра способностей из паспортов")
     p.add_argument("roots", nargs="*", help="каталоги, где искать паспорта")
@@ -264,6 +354,13 @@ def main(argv):
                    help="не писать, а СВЕРИТЬ готовый файл с паспортами: отличается — код 1. "
                         "Гейт против протухания: артефакт в дистрибутиве уезжает клиенту, "
                         "а паспорта живут в других репозиториях и меняются без него")
+    p.add_argument("--publish", action="store_true",
+                   help="после сборки положить реестр паспортов в KV платформы (глобально, "
+                        "шардами), чтобы wz_capability_find видел его на любом устройстве, а не "
+                        "только там, где лежит файл")
+    p.add_argument("--api-base", default="https://api.extella.ai")
+    p.add_argument("--api-token", default="",
+                   help="токен платформы; по умолчанию берётся из ~/extella_wizard/app/config.json")
     p.add_argument("--selftest", action="store_true")
     args = p.parse_args(argv)
 
@@ -315,6 +412,13 @@ def main(argv):
         return 1
 
     text = json.dumps(reg, ensure_ascii=False, indent=2)
+    if args.publish:
+        # Зеркало в KV — тем же приёмом, что и живой реестр (b64-шарды по 8000: kv/set строит
+        # эмбеддинг значения и большое не берёт). Источник остаётся в git; KV — производная,
+        # которую читатель на любом устройстве может забрать, если локального файла нет.
+        code = publish(reg, api_base=args.api_base, api_token=args.api_token)
+        if code:
+            return code
     if args.out:
         with open(os.path.expanduser(args.out), "w", encoding="utf-8") as f:
             f.write(text + "\n")

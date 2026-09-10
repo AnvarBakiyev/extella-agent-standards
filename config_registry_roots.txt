@@ -3,3 +3,7 @@
 ~/Documents/Extella/extella-core-portal
 ~/Documents/Extella/extella-1c-agent
 ~/Documents/kazakh-lawyer
+# Библиотека модулей (03.09.2026): узлы для сборщика, у которых наружу выведены только эксперты.
+# Берём именно подкаталог, а не весь ~/extella-plugins: там лежат установленные копии паков,
+# которые объявляют те же automation_id, что и каноничные репозитории выше.
+~/extella-plugins/modules
