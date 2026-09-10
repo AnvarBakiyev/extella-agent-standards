@@ -454,6 +454,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
 
 def иконка(куда: pathlib.Path) -> str:
+    """Канонический генератор, а если его нет (чистая машина CI без библиотеки картинок,
+    замер 10.09.2026) — запасная плитка из сборщика приложений. Отказ здесь стоил красного CI."""
     if куда.exists():
         return "уже есть"
     for глиф in ("layers", "shapes"):
@@ -463,7 +465,9 @@ def иконка(куда: pathlib.Path) -> str:
                 return глиф
         except Exception:
             pass
-    raise Отказ("иконка не собралась: python3 tools/bronze_icon.py --список")
+    from build_app_from_modules import _png
+    куда.write_bytes(_png())
+    return "запасная плитка (bronze_icon.py не сработал)"
 
 
 def собрать(папка: pathlib.Path, реестр: dict, каталог: pathlib.Path, известные: set) -> dict:
