@@ -22,8 +22,12 @@ import sys
 ПРИЗНАКИ = [
     (r"app-agent/run",            "expert.run",
      "страница запускает эксперта"),
+    (r"etb_run_expert",           "expert.run",
+     "страница запускает эксперта через каноническую обёртку H62"),
     (r"app-agent/message",        "agent.run",
      "страница разговаривает с агентом"),
+    (r"etb_run_expert[\s\S]{0,240}\btarget\s*[,}]", "device.run",
+     "обёртка H62 закрепляет вызов за устройством покупателя"),
     (r"subprocess\.(run|Popen|call|check_call|check_output)", "device.run",
      "Expert запускает процесс на устройстве покупателя"),
     (r"[\"']?targets[\"']?\s*[:=]", "device.run",
@@ -84,16 +88,34 @@ def объявленные(папка: pathlib.Path):
     return None
 
 
+def исходники_страницы(папка: pathlib.Path, страницы: list[pathlib.Path]):
+    """HTML и его локальные script src; публичные URL и выход из корня запрещены."""
+    найдено = list(страницы)
+    корень = папка.resolve()
+    for страница in страницы:
+        текст = страница.read_text(encoding="utf-8", errors="ignore")
+        for совпадение in re.finditer(r'''<script[^>]+src=['"]([^'"]+)['"]''', текст):
+            ссылка = совпадение.group(1).split("?", 1)[0]
+            if ссылка.startswith(("http://", "https://", "//")):
+                continue
+            кандидат = (страница.parent / ссылка.lstrip("/")).resolve()
+            if кандидат.is_file() and (кандидат == корень or корень in кандидат.parents):
+                найдено.append(кандидат)
+    return sorted(set(найдено))
+
+
 def проверить(папка: pathlib.Path) -> int:
     страницы = list(папка.glob("index.html")) + list(папка.glob("*/index.html"))
     if not страницы:
         print("страницы нет — права приложения не нужны, проверять нечего")
         return 0
+    страницы_и_скрипты = исходники_страницы(папка, страницы)
     эксперты = [
         п for п in папка.rglob("expert_*.py")
         if not any(часть in {"__pycache__", "migrations", "tests"} for часть in п.parts)
     ]
-    код = "\n".join(п.read_text() for п in страницы + эксперты)
+    код = "\n".join(п.read_text(encoding="utf-8", errors="ignore")
+                     for п in страницы_и_скрипты + эксперты)
 
     объявлено = объявленные(папка)
     if объявлено is None:

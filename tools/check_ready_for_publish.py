@@ -86,7 +86,11 @@ def scan_files(root: Path) -> dict:
         rel = str(p.relative_to(root))
         posix = "/" + rel.replace("\\", "/")
 
-        if p.suffix.lower() in CLIENT_EXT or any(c in posix for c in CLIENT_PATHS):
+        # Product specifications named "contracts" are not customer contracts.
+        # They remain content-scanned below; only the path-only classifier is skipped.
+        specification = posix.startswith("/docs/contracts/") and p.suffix.lower() == ".md"
+        if p.suffix.lower() in CLIENT_EXT or (
+                any(c in posix for c in CLIENT_PATHS) and not specification):
             findings["клиентские файлы"].append(rel)
             continue
 
