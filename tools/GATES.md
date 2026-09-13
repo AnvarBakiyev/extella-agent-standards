@@ -58,7 +58,32 @@ python3 tools/<имя_гейта>.py --selftest
 `check_self_check`, `check_single_source`, `check_state_contract`,
 `check_surface_classes`, `check_symptom_index`, `check_translation`,
 `check_ui_api_contract`, `check_waiting_state`, `check_wire_ascii`,
-`check_writing_style`.
+`check_writing_style`, `extella_doctor`.
+
+## Доктор среды (`extella_doctor`)
+
+Рантайм-самопроверка приложения по паспорту — стандарт `DOCTOR_STANDARD.md`,
+классы поломок `FAILURE_CLASSES.md`. Не статический анализ кода, а осмотр среды
+на машине покупателя: что доктор ловит сам (A — «это мы на порту?», C — жив ли
+исполнитель, E — сеть/сертификат/права/чужой питон, F — ОС/Python/библиотеки/
+место/права/часы/порт), а что остаётся соседним стражам (B — `check_screen_rules`;
+D-целостность — `check_state_contract`; A-шов — `check_self_check`), расписано в
+шапке `tools/extella_doctor.py`.
+
+```
+python3 tools/extella_doctor.py путь/к/продукту          # быстрый осмотр (<0.5 c, локальное)
+python3 tools/extella_doctor.py путь/к/продукту --full   # плюс сеть, часы, права, исполнитель
+python3 tools/extella_doctor.py путь/к/продукту --json   # машинный отчёт (без секретов)
+python3 tools/extella_doctor.py --selftest               # зубы: ловит ли посаженные беды
+```
+
+Продукт описывает себя паспортом — `doctor_passport.json` (или ключ `доктор:` в
+`MANIFEST.yaml`): `product_ru`, `min_python`, `modules`, `data_dir`, `min_free_mb`,
+`panel_port`, `platform`, `max_clock_skew`. Пробы устройства-исполнителя и прав
+(`executor`, `scopes_probe`) — только у встроившего доктор продукта, из файла их
+не прочитать; из CLI полный режим об этом честно предупреждает, а не рисует
+зелень. **Нет паспорта — код 2 «проверять было нечем», это не успех** (правило
+выше).
 
 Точный состав аргументов конкретного гейта — в его `--help`, а не в его исходнике.
 
