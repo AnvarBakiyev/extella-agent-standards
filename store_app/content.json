@@ -1,14 +1,14 @@
 {
-  "версия_содержимого": "2026-08-26.2",
+  "версия_содержимого": "2026-08-27.1",
   "шапка": {
     "метка": "руководство",
     "заголовок": "Разработка на Extella",
-    "лид": "Как создать агента, подготовить его к магазину и не повредить чужие продукты",
-    "вступление": "Это не руководство по стилю, а набор обязательных рабочих правил. Почти каждое из них появилось после реальной поломки. Проще всего передать этот текст агенту и сказать: «Настройся по этой инструкции и сделай мне такого-то агента». Агент выполнит работу, а прочитать можно только те части, которые нужны именно тебе.",
+    "лид": "Опиши идею словами — агент соберёт приложение и поставит его прямо в Extella",
+    "вступление": "Нажми «Скопировать промпт для агента» и вставь его в Claude Code, Codex, Cursor или другое приложение для разработки. Следом опиши своими словами, какое приложение тебе нужно, попроси сразу поставить его в Extella — и нажми ввод. Дальше агент всё сделает сам и в конце скажет, что осталось за тобой.",
     "метка_en": "guide",
     "заголовок_en": "Building on Extella",
-    "лид_en": "How to build an agent, take it to the store and break nothing along the way",
-    "вступление_en": "This is not a style guide but a set of mandatory working rules. Almost every one of them appeared after a real breakage. The simplest way is to hand this to your assistant and say: «Set yourself up by this guide and build me such-and-such an agent.» It will do the work, and you read only what matters to you."
+    "лид_en": "Describe your idea in plain words — your agent will build the app and install it right into Extella",
+    "вступление_en": "Press «Copy prompt for your agent» and paste it into Claude Code, Codex, Cursor or another development tool. Then describe the app you need in your own words, ask to install it straight into Extella — and hit enter. Your agent does the rest and tells you at the end what is left for you."
   },
   "разделы": [
     {
