@@ -96,6 +96,7 @@ stages:
       - check_manifest_copies
       - check_surface_classes
       - check_agent_repo
+      - check_installable
       - check_ready_for_publish
       - register_new_agents
       - build_agent_cabinet

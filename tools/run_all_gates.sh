@@ -162,6 +162,7 @@ run check_manifest_copies
 run check_surface_classes
 run check_app_scopes
 run check_listing_meta
+run check_installable
 run platform_client
 run connect_mcp
 run check_toolkit
