@@ -35,7 +35,11 @@ def md_reader_setup(app_name: str = "", version: str = "", token: str = "",
     import json, os, shutil, subprocess, sys, tempfile, urllib.request, zipfile
 
     OS_BASE = (os.environ.get("EXTELLA_OS_BASE") or "https://os.extella.ai").rstrip("/")
-    LISTING = "f3c3c08a-3491-4ba9-ba77-9541c1c3dccf"
+    # Id карточки, у которой спрашиваем свежую версию. РАСХОЖДЕНИЕ ЗДЕСЬ НЕ
+    # ВИДНО СНАРУЖИ: эксперт честно скачает архив, установка пройдёт, а приедет
+    # версия чужой карточки. Замер 19.09.2026: стоял id прежней карточки, и на
+    # стенд уехала 1.0.0 вместо 1.1.0 — с виду успешная установка без исправлений.
+    LISTING = "12af60fc-75f3-4985-9918-b83d177c784b"
     APP = (app_name or "").strip() or os.environ.get("EXTELLA_APP_NAME") or "MD Reader"
 
     def where_am_i():
