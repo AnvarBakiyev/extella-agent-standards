@@ -647,7 +647,22 @@ def __SLUG___call(route="", body_json="{}") -> str:
 '''
 
 
-# ── ТОНКИЙ РЕЖИМ (--serverless): панель без собственного сервера ───────────────
+# ── ТОНКИЙ РЕЖИМ (--serverless): СНЯТ 22.09.2026, канон H106 ─────────────────────
+# Режим строил панель для плагинов и тулбара (card.json, мост etb_run_expert). Тулбар
+# сняли 12.08.2026; замер в живом окне ОС 22.09 показал: ОС этот мост не слушает, а
+# доступ к parent.extellaDesktop закрыт песочницей. Панель из этого режима в ОС мертва
+# с рождения. Код ниже оставлен для истории и для разбора старых продуктов; флаг
+# --serverless теперь отказывает и отправляет к templates/app-recipe/ — там окно ОС
+# ходит через {{app_token}} и /api/app-agent/run, проверено изнутри живого окна.
+THIN_RETIRED = (
+    "Тонкий режим (--serverless) снят 22.09.2026 (канон H106): он строил панель для\n"
+    "тулбара, а окно Extella OS мост etb_run_expert не слушает — такая панель в ОС\n"
+    "мертва с рождения.\n\n"
+    "Страничный продукт для ОС начинай с templates/app-recipe/ (README там же):\n"
+    "  ключ окна {{app_token}} + вызов /api/app-agent/run, устройство сообщает эксперт,\n"
+    "  права expert.run + device.run, проверка: python3 templates/app-recipe/tools/check.py"
+)
+#
 # Восемь продуктов = восемь локальных серверов = восемь портов, автозапусков и
 # зависимостей от питона машины; практически весь бэклог 03–04.08 вырос отсюда.
 # Тонкая панель не имеет ни порта, ни процесса: страница живёт в приложении
@@ -1044,96 +1059,23 @@ def selftest() -> int:
 
     shutil.rmtree(tmp.parent, ignore_errors=True)
 
-    # ── Тонкий режим: панель без сервера ──────────────────────────────────────
-    tmp2 = Path(tempfile.mkdtemp()) / "probe_thin"
-    generate("probethin", "Тонкая проба", "тонкой пробе", 8918, tmp2, register=False, thin=True)
-    for py in list(tmp2.rglob("*.py")):
-        try:
-            ast.parse(py.read_text(encoding="utf-8"))
-        except SyntaxError as e:
-            print("  ✗ тонкий: синтаксис", py.name, e)
-            bad += 1
-
-    # Ни порта, ни процесса, ни автозапуска — иначе это не тонкая панель.
-    card = json.loads((tmp2 / "card.json").read_text(encoding="utf-8"))
-    if card.get("ui", {}).get("type") != "html" or card.get("ui", {}).get("port") or card.get("service"):
-        print("  ✗ тонкий: карточка не бессерверная:", card.get("ui"))
+    # ── Тонкий режим снят (H106): флаг обязан отказывать, а замена — быть исправной ──
+    import contextlib, io as _io
+    buf = _io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        code = main(["probethin", "Тонкая проба", "тонкой пробе", "8918", "--serverless"])
+    if code != 1 or "app-recipe" not in buf.getvalue():
+        print("  ✗ H106: --serverless снова порождает панель для тулбара — в окне ОС она мертва")
         bad += 1
-    if not card.get("ui", {}).get("tokenless"):
-        print("  ✗ тонкий: карточка не помечена tokenless — странице выдадут токен аккаунта")
+    else:
+        print("  ✓ H106: --serverless отказывает и ведёт к templates/app-recipe")
+    recipe_check = STANDARDS / "templates" / "app-recipe" / "tools" / "check.py"
+    r = subprocess.run([sys.executable, str(recipe_check)], capture_output=True, text=True)
+    if r.returncode != 0:
+        print("  ✗ H106: замена тонкого режима (app-recipe) не проходит свою проверку:\n" + r.stdout[-500:])
         bad += 1
-
-    page = (tmp2 / "panel.html").read_text(encoding="utf-8")
-    leaks = [m for m in ("api.extella.ai", "X-Auth-Token", "auth_token") if m in page]
-    if leaks:
-        print("  ✗ тонкий: страница ходит в платформу сама:", leaks)
-        bad += 1
-    if "msg.target=" not in page.replace(" ", ""):
-        print("  ✗ тонкий: мост зовётся без строкового target — установленная сборка "
-              "витрины читает именно его, работа уедет на устройство по умолчанию")
-        bad += 1
-    # Ищем ОБРАЩЕНИЕ, а не упоминание: первая версия гейта краснела на комментарии,
-    # который объясняет, что localhost убран. Ложный запрет обходят целиком.
-    live_calls = [ln for ln in page.splitlines()
-                  if ("127.0.0.1" in ln or "localhost" in ln)
-                  and not ln.lstrip().startswith(("//", "*", "/*", "#"))]
-    if live_calls:
-        print("  ✗ тонкий: страница обращается к localhost — это и есть то, от чего "
-              "тонкий режим уходит (устройство приходит в etb_init):")
-        for ln in live_calls[:3]:
-            print("      " + ln.strip()[:100])
-        bad += 1
-    if "d.res" not in page:
-        print("  ✗ тонкий: панель не читает поле res — в установленной сборке витрины "
-              "каждый успешный вызов выглядел бы пустым")
-        bad += 1
-    # Контракт сверяем с ЖИВОЙ сборкой витрины, а не с исходниками: на машине
-    # человека работает именно она (урок 04.08).
-    art = Path.home() / "Library/Application Support/extella-desktop/toolbar.js"
-    if art.exists():
-        blob = art.read_text(encoding="utf-8", errors="replace")
-        if "e.data.target" not in blob:
-            print("  ~ в установленной витрине нет чтения e.data.target — контракт моста изменился")
-        if "etb_expert_result" not in blob:
-            print("  ✗ установленная витрина не знает моста экспертов — тонкий режим не заработает")
-            bad += 1
-
-    # Эксперты исполняются как их зовёт листенер — на ЧУЖОМ HOME.
-    import tempfile as _tf
-    fake_home = _tf.mkdtemp()
-    env_home = os.environ.get("HOME")
-    os.environ["HOME"] = fake_home
-    try:
-        for name, kwargs, expect in (("probethin_state", {}, "success"),
-                                     ("probethin_bind", {"agent_id": "agent_extella_default"}, "error"),
-                                     ("probethin_bind", {"agent_id": "agent_qwen_x"}, "success"),
-                                     ("probethin_ping", {}, "success")):
-            src = (tmp2 / "experts" / (name + ".py")).read_text(encoding="utf-8")
-            ns = {}
-            exec(compile(src, name, "exec"), ns)
-            got = json.loads(ns[name](**kwargs)).get("status")
-            if got != expect:
-                print("  ✗ тонкий: %s дал %s вместо %s" % (name, got, expect))
-                bad += 1
-    finally:
-        if env_home:
-            os.environ["HOME"] = env_home
-    if not bad:
-        print("  ✓ тонкий режим: без порта и процесса, токена нет, работа закреплена, эксперты живы")
-
-    if manifest_problems("тонкий", tmp2):
-        bad += 1
-
-    canon_gate2 = Path(__file__).resolve().parent / "check_panel_canon.py"
-    if canon_gate2.exists():
-        r = subprocess.run([sys.executable, str(canon_gate2), str(tmp2 / "panel.html")],
-                           capture_output=True, text=True)
-        if "✕" in r.stdout:
-            print("  ✗ тонкая панель вне канона дизайна:\n" + r.stdout[-500:])
-            bad += 1
-        else:
-            print("  ✓ тонкая панель проходит канон дизайна")
-    shutil.rmtree(tmp2.parent, ignore_errors=True)
+    else:
+        print("  ✓ H106: app-recipe — ключ окна, app-agent/run, права — проверка зелёная")
 
     if bad:
         print("\nКАРКАС НЕИСПРАВЕН: %d" % bad)
@@ -1148,11 +1090,13 @@ def main(argv) -> int:
     if len(argv) < 4:
         print(__doc__)
         return 1
-    thin = "--serverless" in argv
+    if "--serverless" in argv:
+        print(THIN_RETIRED)
+        return 1
     argv = [a for a in argv if not a.startswith("--")]
     slug, name_ru, dat_ru, port = argv[0], argv[1], argv[2], int(argv[3])
     dest = Path(argv[4]).expanduser() if len(argv) > 4 else Path.home() / "Documents" / ("extella-" + slug)
-    generate(slug, name_ru, dat_ru, port, dest, thin=thin)
+    generate(slug, name_ru, dat_ru, port, dest)
     return 0
 
 

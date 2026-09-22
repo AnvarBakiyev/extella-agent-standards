@@ -42,6 +42,9 @@
       </section>
     </section>
   </main>
+  <!-- The OS replaces {{app_token}} with this app's key when it serves index.html (H106).
+       Outside Extella the placeholder stays as is, and the app runs in local demo mode. -->
+  <script>window.EXTELLA_APP_TOKEN = "{{app_token}}";</script>
   <script src="extella-bridge.js"></script>
   <script src="app.js"></script>
 </body>
