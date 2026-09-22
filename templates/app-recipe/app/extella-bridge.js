@@ -1,4 +1,9 @@
-/* H106: scoped app_token transport for an Extella OS page. */
+/* H106: scoped app_token transport for an Extella OS page.
+
+   Measured inside a live OS window 22.09.2026: the OS does not listen to 'etb_run_expert',
+   parent.extellaDesktop is blocked by the sandbox, localStorage throws. The page calls
+   /api/app-agent/run with its {{app_token}}; the device is named by the app's own
+   dispatcher expert and every next call is pinned to it with targets:[device]. */
 class ExtellaBridge {
   constructor({ timeoutMs = 90000, allowedExperts = [], routeExpert = '' } = {}) {
     this.timeoutMs = timeoutMs;
@@ -13,6 +18,30 @@ class ExtellaBridge {
 
   get embedded() { return Boolean(this.appToken) && !this.appToken.startsWith('{{'); }
 
+  static isDevice(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || '')); }
+
+  // A "syntax error" on line 1 of <container> is not syntax: the machine is logged into another
+  // Extella account and the expert code arrives unreadable (H104). Wording floats between runs.
+  static explain(text) {
+    if (/\(<container>, line 1\)/.test(text)) {
+      return 'Extella отправила задание на компьютер, который вошёл в другой аккаунт Extella. ' +
+             'Открой Extella на нужном компьютере тем же аккаунтом, что и это окно, или отвяжи лишний компьютер от аккаунта.';
+    }
+    return 'Код не выполнился на компьютере: ' + String(text).replace('[Execution Error]', '').trim().slice(0, 200);
+  }
+
+  // Platform-level failures hidden inside a 200 answer become errors, not data.
+  static failure(value, depth = 0) {
+    if (depth > 8 || value == null) return '';
+    if (typeof value === 'string') {
+      if (value.startsWith('[Execution Error]')) return ExtellaBridge.explain(value);
+      if (value.startsWith('deferred')) return 'Работа идёт дольше обычного и продолжается в фоне. Подожди минуту и нажми ещё раз.';
+      try { return ExtellaBridge.failure(JSON.parse(value), depth + 1); } catch { return ''; }
+    }
+    if (typeof value !== 'object') return '';
+    return ExtellaBridge.failure(value.result, depth + 1);
+  }
+
   targetFrom(value, depth = 0) {
     if (!value || depth > 8) return '';
     if (typeof value === 'string') {
@@ -20,7 +49,8 @@ class ExtellaBridge {
     }
     if (typeof value !== 'object') return '';
     const direct = value.pageRoute?.targetId || value.device || value.device_id || value.targetId;
-    if (typeof direct === 'string' && direct.trim()) return direct.trim();
+    // Only a real device id counts: once a storefront handed out "[object Promise]" as a device.
+    if (ExtellaBridge.isDevice(direct)) return String(direct).trim();
     for (const key of ['result', 'data', 'response', 'payload']) {
       const found = this.targetFrom(value[key], depth + 1);
       if (found) return found;
@@ -64,8 +94,16 @@ class ExtellaBridge {
       if (!response.ok) {
         if (response.status === 401) throw new Error('Ключ приложения истёк. Обнови окно Extella и повтори.');
         if (response.status === 403) throw new Error('Разреши приложению запуск экспертов на устройстве.');
-        throw new Error(payload.message || payload.detail || `Extella вернула HTTP ${response.status}`);
+        const text = String(payload.message || payload.detail || '');
+        if (/is unavailable/i.test(text)) {
+          const gone = new Error('Компьютер, на котором работало приложение, сейчас не на связи. Открой на нём Extella и повтори.');
+          gone.deviceGone = true;
+          throw gone;
+        }
+        throw new Error(text || `Extella вернула HTTP ${response.status}`);
       }
+      const failed = ExtellaBridge.failure(payload);
+      if (failed) throw new Error(failed);
       return payload;
     } catch (error) {
       if (error?.name === 'AbortError') throw new Error('Extella не подтвердила выполнение за отведённое время.');
@@ -88,13 +126,20 @@ class ExtellaBridge {
 
   async run(expert, params = {}, { timeoutMs = this.timeoutMs } = {}) {
     if (!this.allowedExperts.has(expert)) return { ok:false, error:'Этот маршрут не разрешён приложению.' };
-    try {
-      const target = await this.discover();
-      const payload = await this.request(expert, params, [target], timeoutMs);
-      return { ok:true, data:this.unwrap(payload), device:target };
-    } catch (error) {
-      return { ok:false, error:error?.message || String(error) };
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const target = await this.discover();
+        const payload = await this.request(expert, params, [target], timeoutMs);
+        const data = this.unwrap(payload);
+        if (data && typeof data === 'object' && data.status === 'error') return { ok:false, error:data.message || 'Эксперт вернул ошибку.' };
+        return { ok:true, data, device:target };
+      } catch (error) {
+        // The machine was removed or went offline: forget it and ask the dispatcher once more.
+        if (error?.deviceGone && attempt === 0) { this.device = null; this.discovery = null; continue; }
+        return { ok:false, error:error?.message || String(error) };
+      }
     }
+    return { ok:false, error:'Не удалось найти компьютер для работы.' };
   }
 }
 
