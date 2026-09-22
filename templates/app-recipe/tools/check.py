@@ -15,7 +15,7 @@ for forbidden in ('prompt(', 'alert(', 'confirm(', 'fetch("http://127.', "fetch(
 # Работает только ключ окна {{app_token}} и прямой вызов /api/app-agent/run.
 # Ищем ОБРАЩЕНИЕ, а не упоминание: комментарии, объясняющие запрет, — не нарушение.
 code = re.sub(r'/\*.*?\*/|<!--.*?-->|^\s*//.*$', '', all_text, flags=re.S | re.M)
-for dead in ('etb_run_expert', 'extellaDesktop'):
+for dead in ('etb_run_expert', 'parent.extellaDesktop'):
     if dead in code: errors.append(f'H106: {dead} в окне ОС не работает — звать экспертов через app-agent/run')
 if '{{app_token}}' not in files.get('index.html', ''): errors.append('H106: в index.html нет {{app_token}} — ОС не выдаст странице ключ')
 bridge = files.get('extella-bridge.js', '')
@@ -28,6 +28,9 @@ for scope in ('expert.run', 'device.run'):
 # первый же вызов ответит «Expert not found» (правило «код зовёт — эксперт в поставке»).
 for name in re.findall(r"(?:routeExpert|allowedExperts)\s*:\s*\[?\s*'([a-z0-9_]+)'", files.get('app.js', '')):
     if not (ROOT / 'experts' / f'{name}.py').is_file(): errors.append(f'Страница зовёт эксперта {name}, а experts/{name}.py нет')
+for need in ('DEVICE_REQUIRED', 'connectDevice', 'Работать через это устройство'):
+    if need not in all_text: errors.append(f'H106/H104: нет временного выбора устройства ({need})')
+if 'localStorage' in code: errors.append('H106: localStorage запрещён в песочнице окна; Device ID хранится только в памяти')
 if errors:
     print('НЕ ГОТОВО\n' + '\n'.join(f'- {item}' for item in errors)); raise SystemExit(1)
 print('ГОТОВО: структура, мост, права и запреты проверены')
