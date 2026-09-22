@@ -1,0 +1,31 @@
+{
+  "schema": "extella.selfcheck/v1",
+  "product": {
+    "name": "table",
+    "version": ""
+  },
+  "artifact": {
+    "kind": "page",
+    "name": "index.html",
+    "sha256": "ff0477c691e3c909fb49d3c6566bf07aaa3a5c63ef3d30c03af9cbd4caa3eb0d"
+  },
+  "ran_at": "2026-09-19T14:45:13Z",
+  "runner": {
+    "where": "author-device",
+    "runtime": "python3.12.9"
+  },
+  "command": "python3 payload/install.py --selftest",
+  "result": "ready",
+  "checks": [
+    {
+      "name": "self_check_runs",
+      "status": "pass",
+      "detail": "Самопроверка установщика «Таблицы»: ✓ занятый порт распознаётся занятым ✓ выбор порта обходит занятый ✓ чужая служба на порту НЕ принимается за свою ✓ своё приложение на порту узнаётся ✓ в команде есть папка приложения ✓ в команде есть порт ✓ в команде есть имя и данные ✓ реестр знает порт ✓ реестр помечен установленным ✓ упакованный сервер поднимается и отдаёт приложение ✓ DELETE отвечает осознан"
+    }
+  ],
+  "negative_control": {
+    "ran": true,
+    "mutation": "payload/cabinet_server.py:do_DELETE (интерфейс не найден)",
+    "self_check_went_red": true
+  }
+}

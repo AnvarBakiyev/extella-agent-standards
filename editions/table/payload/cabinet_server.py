@@ -1,0 +1,603 @@
+#!/usr/bin/env python3
+"""Сервер приложения кабинета: раздаёт файлы и хранит работу НА ДИСКЕ.
+
+ЗАЧЕМ. Приложение в окне ОС оказывается «третьей стороной», и браузер закрывает
+ему хранилище: drawio умирает с английской ошибкой, excalidraw открывается и молча
+теряет рисунки. Обход «откройте отдельным окном» — не решение, а перекладывание
+проблемы на человека.
+
+Здесь хранилище своё. Приложение думает, что пишет в localStorage, а на деле работа
+ложится файлом в ~/extella-cabinet/данные/<приложение>.json. Из этого следует то,
+чего у обычного excalidraw нет вовсе:
+
+  * работа не пропадает при чистке браузера и не зависит от окна, в котором открыта;
+  * её видно как файл — можно скопировать, положить в архив, отдать агенту;
+  * приложение работает ВНУТРИ окна ОС, а не «в отдельном окне».
+
+Слушает только 127.0.0.1: сервер, доступный по сети, отдаёт папку любому рядом.
+
+    python3 cabinet_server.py --папка ~/extella-cabinet/board --порт 34785 \
+                              --имя board --данные ~/extella-cabinet/данные
+"""
+
+import argparse
+import http.server
+import json
+import pathlib
+import sys
+import threading
+
+# Латиницей намеренно: кириллица приезжает процентами и не совпадает.
+ПУТЬ_ХРАНИЛИЩА = "/_extella_storage"
+ПУТЬ_ВЕРСИИ = "/_extella_version"
+# Счётчик изменений. Нужен, чтобы открытое окно узнавало: работу поменял КТО-ТО
+# ДРУГОЙ (агент), и надо перечитать. Замер 17.08.2026: без него открытая доска
+# сохраняла свою старую сцену поверх нарисованного агентом — и рисунок исчезал.
+ВЕРСИЯ = [0]
+# Банка кук прокси-режима: песочница окна ОС сетевые куки режет нацело, поэтому
+# сессию контейнера держит прокси в памяти процесса (шестая дверь, 21.08.2026).
+КУКИ = {}
+# Включается флагом --журнал: печатать каждый запрос в лог службы.
+ЖУРНАЛ = [False]
+# Пути, которые прокси НЕ передаёт в контейнер, а гасит пустым ответом.
+# Нужны для вечных потоков: окно ОС снимает загрузочную шторку по событию
+# «страница догрузилась», а незакрытый поток внутри его не даёт (замер
+# 21.08.2026, Заметки/memos: /api/v1/sse).
+ГЛУШИТЬ = []
+# Куда уводить голый «/». ВОСЬМАЯ ДВЕРЬ: окно ОС держит загрузочную шторку,
+# пока адрес приложения — корень, и снимает её только на настоящем маршруте.
+# Мало открыть окно на «/home»: внутри приложения есть своя кнопка «домой»,
+# она ведёт на «/», и шторка падает СНОВА, посреди работы (замер 21.08.2026,
+# Заметки). Поэтому корня у приложения просто не бывает: навигация к нему
+# уводится сюда.
+КОРЕНЬ_НА = [""]
+ЗАМОК = threading.Lock()
+
+# ── Действия по кнопке ────────────────────────────────────────────────────────
+# Пульт в окне ОС нажимает кнопку — здесь выполняется НАЗВАННОЕ действие.
+# Список закрытый: произвольных команд с этого адреса запускать нельзя, иначе
+# любая открытая в браузере страница получит право хозяйничать на компьютере.
+ПУТЬ_ДЕЙСТВИЯ = "/_extella_action"
+ИНСТРУМЕНТЫ = pathlib.Path.home() / "Documents/Extella/extella-agent-standards/tools"
+ДЕЙСТВИЯ = {
+    "схема":       ("board_to_app.py", ["--нарисовать-схему", "{название}"]),
+    "приложение":  ("board_to_app.py", ["--собрать", "--slug", "{slug}", "--имя", "{название}"]),
+    "отток":       ("astra_churn_to_board.py", ["--топ", "8"]),
+    "правила":     ("board_rules_to_astra.py", []),
+    "правила_в_платформу": ("board_rules_to_astra.py", ["--в-правила", "--сухой"]),
+    "пример_правила": ("board_rules_to_astra.py", ["--пример"]),
+    "витрина":     ("check_listing_meta.py", ["{издание}"]),
+    "выложить":    ("deploy_page_product.py", ["{издание}"]),
+    # Главный вход. Не кнопка на каждое приложение, а одна строка: что умеет
+    # система, решает реестр источников, а не длина этого списка. Вместе с
+    # фразой едет имя окна, из которого она сказана: «возьми из астры» без
+    # названного получателя кладёт данные в ЭТО окно (контекст «здесь»).
+    "скажи":       ("скажи.py", ["{фраза}", "--учись", "--окно", "{окно}"]),
+}
+# Publish среди действий НЕТ намеренно: публичность включает владелец в магазине.
+
+# Кому разрешено нажимать. Заголовки «всем можно» нужны, чтобы окно ОС вообще
+# достучалось до этого компьютера, — но для ДЕЙСТВИЙ это опасно: любая открытая
+# вкладка получила бы право их запускать. Поэтому здесь список поимённый.
+СВОИ_АДРЕСА = ("https://os.extella.ai", "http://localhost", "http://127.0.0.1")
+
+# Действия, которые выходят за пределы этого компьютера: они трогают магазин и
+# правила агента. Для них мало «свой адрес» — нужно слово человека, набранное
+# в пульте. Рисование на доске в этот список не входит: испортить им нечего,
+# а лишнее подтверждение на каждый чих люди перестают читать.
+ОПАСНЫЕ = {"выложить", "правила_в_платформу"}
+СЛОВО = "подтверждаю"
+
+
+def _свой(происхождение: str) -> bool:
+    if not происхождение:
+        return True                       # запрос не из браузера (curl, эксперт)
+    # «null» — это песочница окна ОС: она намеренно лишает страницу адреса, и
+    # поимённый список её отвергал. Замер 18.08.2026: пульт в окне ОС получал
+    # «не достучался». Пускаем — но за платформенные действия отвечает уже не
+    # адрес, а подтверждение человека (см. ОПАСНЫЕ).
+    if происхождение.strip().lower() == "null":
+        return True
+    return any(происхождение.startswith(а) for а in СВОИ_АДРЕСА)
+
+
+def выполнить(имя: str, параметры: dict) -> dict:
+    import re as _re
+    import subprocess as _sp
+    if имя not in ДЕЙСТВИЯ:
+        return {"ошибка": f"неизвестное действие «{имя}»"}
+    if имя in ОПАСНЫЕ and str(параметры.get("подтверждение", "")).strip().lower() != СЛОВО:
+        return {"ошибка": f"это действие выходит за пределы компьютера — "
+                          f"наберите в пульте слово «{СЛОВО}»"}
+    файл, образец = ДЕЙСТВИЯ[имя]
+    название = str(параметры.get("название") or "Панель")[:60]
+    # Фраза человека едет отдельным аргументом списка, а не в оболочку: строка
+    # от человека внутри shell-команды — это чужой код на его же машине.
+    фраза = " ".join(str(параметры.get("фраза") or "").split())[:300]
+    if имя == "скажи" and not фраза:
+        return {"ошибка": "скажите словами, что взять и куда положить — "
+                          "например «возьми из астры первые 9 и нарисуй на доске»"}
+    slug = str(параметры.get("slug") or "")
+    if "{slug}" in " ".join(образец) and not _re.fullmatch(r"[a-z][a-z0-9-]{1,30}", slug):
+        return {"ошибка": "имя латиницей: строчные буквы, цифры и дефис"}
+    # Имя окна, из которого сказана фраза, — контекст «здесь». Пустое имя
+    # допустимо: фраза из терминала или чата контекста окна не имеет.
+    окно = " ".join(str(параметры.get("окно") or "").split())[:60]
+    издание = str(ИНСТРУМЕНТЫ.parent / "editions" / slug)
+    аргументы = [а.replace("{название}", название).replace("{slug}", slug)
+                  .replace("{издание}", издание).replace("{фраза}", фраза)
+                  .replace("{окно}", окно)
+                 for а in образец]
+    try:
+        # ТЕМ ЖЕ питоном, что крутит сервер. Звать «python3» по имени нельзя:
+        # в фоновой службе это оказался старый 3.9 из Xcode, и инструменты
+        # падали на современном синтаксисе. Замер 17.08.2026, кнопка «отток».
+        итог = _sp.run([__import__("sys").executable, str(ИНСТРУМЕНТЫ / файл), *аргументы],
+                       capture_output=True, text=True, timeout=180)
+    except _sp.TimeoutExpired:
+        return {"ошибка": "действие не уложилось в три минуты"}
+    return {"код": итог.returncode,
+            "вывод": ((итог.stdout or "") + (итог.stderr or "")).strip()[-4000:]}
+
+
+def _вставить_шим(данные: bytes, шим: str) -> bytes:
+    """Вшить подмену хранилища в чужой HTML на лету.
+
+    ЗАЧЕМ. Docker-приложения сами отдают свои страницы — в файлы на диске шим не
+    вставить, а без него страница в песочнице окна ОС умирает о запертое
+    хранилище (белое окно Сторожа, замер 20.08.2026; «отдельное окно» Электрона
+    наследует ту же песочницу и не спасает). Прокси решает это по-взрослому:
+    страница едет через нас и получает шим, как будто всегда с ним жила.
+    """
+    текст = данные.decode("utf-8", errors="replace")
+    # Скрипты приложения для песочницы окна — «чужие», и их падения браузер
+    # прячет за пустым «Script error.» без файла и строки. Помечаем их
+    # crossorigin=anonymous (наш ACAO уже отдаётся) — и докладчик шима получает
+    # настоящие сообщения. Замер 21.08.2026, tududi: полоска-пустышка.
+    import re as _re
+    текст = _re.sub(r"<script(?![^>]*\bcrossorigin)(?=[^>]*\bsrc=)",
+                    '<script crossorigin="anonymous"', текст)
+    for метка in ("<head>", "<HEAD>"):
+        if метка in текст:
+            return текст.replace(метка, метка + шим, 1).encode()
+    н = текст.find("<head")
+    if н >= 0:
+        к = текст.find(">", н)
+        if к > 0:
+            return (текст[:к + 1] + шим + текст[к + 1:]).encode()
+    return (шим + текст).encode()
+
+
+def сделать_обработчик(папка: pathlib.Path, файл_данных: pathlib.Path,
+                       прокси_на: int | None = None, шим: str = "",
+                       автовход: str = ""):
+    class Обработчик(http.server.SimpleHTTPRequestHandler):
+        def _автовход(self) -> bool:
+            """Войти в контейнер за человека — машинным секретом из файла.
+
+            Решение владельца 21.08.2026: в локальном контуре паролей нет —
+            вход уже охраняет Extella, а порт наружу не торчит. Файл автовхода
+            (права 600, рядом с .env) держит {"путь", "тело"}; куки сессии
+            ложатся в банку прокси. Секрет машинный, человеку не показывается."""
+            import http.client
+            try:
+                конф = json.loads(pathlib.Path(автовход).expanduser().read_text())
+                с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=30)
+                с.request("POST", конф.get("путь") or "/api/login",
+                          body=json.dumps(конф.get("тело") or {}).encode(),
+                          headers={"Content-Type": "application/json"})
+                о = с.getresponse()
+                тело_логина = о.read()
+                for к, з in о.getheaders():
+                    # Grpc-Metadata-Set-Cookie — не экзотика, а обычный путь
+                    # приложений на connect-rpc: memos отдаёт refresh-куку
+                    # ИМЕННО так, и сборщик по имени «Set-Cookie» её не видел —
+                    # окно показывало логин при живом токене (замер 21.08.2026).
+                    if к.lower() in ("set-cookie", "grpc-metadata-set-cookie"):
+                        кусок = з.split(";", 1)[0]
+                        if "=" in кусок:
+                            и, зн = кусок.split("=", 1)
+                            КУКИ[и.strip()] = зн.strip()
+                # Часть приложений отдаёт вход НЕ кукой, а полем в теле ответа
+                # (memos: accessToken). Конфиг автовхода говорит, какое поле
+                # взять и под каким именем куки нести: "кука_из_тела":
+                # {"поле": "accessToken", "имя": "memos.access-token"}.
+                киз = конф.get("кука_из_тела")
+                if киз:
+                    try:
+                        зн = json.loads(тело_логина.decode()).get(киз.get("поле") or "")
+                        if зн and киз.get("как") == "bearer":
+                            # Приложение признаёт только Authorization: Bearer
+                            # (memos, замер 21.08.2026) — спец-ключ банки.
+                            КУКИ["__bearer"] = str(зн)
+                        elif зн:
+                            КУКИ[киз.get("имя") or "token"] = str(зн)
+                    except (ValueError, AttributeError):
+                        pass
+                return о.status < 400 and bool(КУКИ)
+            except (OSError, json.JSONDecodeError, ValueError):
+                return False
+
+        def __init__(self, *a, **kw):
+            super().__init__(*a, directory=str(папка), **kw)
+
+        def log_message(self, формат, *a):
+            # Тишина по умолчанию: обычный журнал сервера в работе не нужен.
+            # С --журнал он включается — это «журнал охоты» из
+            # docs/DOCKER_APP_TRACK.md: единственный способ увидеть, ДОШЁЛ ли
+            # запрос из окна ОС и чем ответили. Без него белое окно
+            # диагностируется гаданием (замер 21.08.2026, Заметки).
+            if ЖУРНАЛ[0]:
+                sys.stderr.write("[запрос] " + (формат % a) + "\n")
+                sys.stderr.flush()
+
+        def _ответ(self, код, тело: bytes, тип="application/json; charset=utf-8"):
+            self.send_response(код)
+            self.send_header("Content-Type", тип)
+            self.send_header("Content-Length", str(len(тело)))
+            self.send_header("Cache-Control", "no-store")
+            # Разрешения для страницы ОС ставит end_headers — один раз на любой
+            # ответ. Слать их и здесь нельзя: два одинаковых заголовка браузер
+            # считает ошибкой и режет запрос целиком.
+            self.end_headers()
+            self.wfile.write(тело)
+
+        def _прочитать_всё(self) -> dict:
+            if not файл_данных.exists():
+                return {}
+            try:
+                return json.loads(файл_данных.read_text())
+            except (json.JSONDecodeError, OSError):
+                # Битый файл не роняем и не затираем: рядом ляжет копия, а
+                # приложение начнёт с пустого — это честнее, чем упасть.
+                битый = файл_данных.with_suffix(".битый.json")
+                try:
+                    файл_данных.replace(битый)
+                except OSError:
+                    pass
+                return {}
+
+        def end_headers(self):
+            # Страницы приложений не кэшируем. Замер 15.08.2026: браузер держал
+            # старую копию index.html, и наша вставка не доезжала до окна — час
+            # ушёл на поиск причины в хранилище, которое было ни при чём.
+            if self.path.split("?")[0].rstrip("/").endswith((".html", "")) or \
+               self.path.split("?")[0].endswith("/"):
+                self.send_header("Cache-Control", "no-store, must-revalidate")
+            # Окно ОС — страница из интернета (os.extella.ai), а мы живём на этом
+            # компьютере. Браузер такие запросы «наружу→внутрь» блокирует, пока
+            # местный сервер не разрешит их ЯВНО. Замер 16.08.2026: без этих двух
+            # заголовков окно ОС показывало «проба молчит» и пустую доску, хотя
+            # приложение было живо и по адресу открывалось.
+            # Допуск — ИМЕННОЙ (эхо Origin), не «*»: интерфейсы ходят с
+            # пометкой «с куками» (credentials: include), а такие запросы
+            # браузер с «*» отвергает молча. Замер 21.08.2026: tududi в окне ОС
+            # показывал форму логина при рабочем автовходе прокси. Для запросов
+            # без Origin (curl, простые) остаётся «*».
+            происхождение = self.headers.get("Origin")
+            if происхождение:
+                self.send_header("Access-Control-Allow-Origin", происхождение)
+                self.send_header("Access-Control-Allow-Credentials", "true")
+                self.send_header("Vary", "Origin")
+            else:
+                self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
+            super().end_headers()
+
+        # ── прокси на контейнер ────────────────────────────────────────────
+        def _служебный(self) -> bool:
+            путь = self.path.split("?")[0]
+            return путь in (ПУТЬ_ХРАНИЛИЩА, ПУТЬ_ВЕРСИИ, ПУТЬ_ДЕЙСТВИЯ)
+
+        def _перелить_поток(self, о):
+            """Отдать бесконечный ответ кусками, не накапливая его в памяти."""
+            self.send_response(о.status)
+            for к, з in о.getheaders():
+                if к.lower() in ("content-length", "transfer-encoding", "connection",
+                                 "content-encoding", "content-security-policy",
+                                 "x-frame-options", "set-cookie",
+                                 "access-control-allow-origin",
+                                 "access-control-allow-credentials",
+                                 "cross-origin-resource-policy",
+                                 "cross-origin-opener-policy",
+                                 "cross-origin-embedder-policy"):
+                    continue
+                self.send_header(к, з)
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            try:
+                while True:
+                    кусок = о.read1(4096)
+                    if not кусок:
+                        break
+                    self.wfile.write(кусок)
+                    self.wfile.flush()
+            except (OSError, ValueError):
+                pass                      # окно закрылось — обычное завершение
+
+        def _проксировать(self):
+            import http.client
+            путь = self.path.split("?")[0]
+            if any(путь == г or путь.startswith(г.rstrip("/") + "/") for г in ГЛУШИТЬ):
+                return self._ответ(204, b"", "text/plain")
+            # Уводим ТОЛЬКО переходы человека (запрос страницы), не запросы
+            # данных: у приложений на корне висят и свои api-вызовы.
+            if (КОРЕНЬ_НА[0] and путь in ("", "/")
+                    and self.command in ("GET", "HEAD")
+                    and "text/html" in (self.headers.get("Accept") or "")):
+                хвост = self.path[len(путь):]
+                self.send_response(302)
+                self.send_header("Location", КОРЕНЬ_НА[0] + хвост)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            длина = int(self.headers.get("Content-Length") or 0)
+            тело = self.rfile.read(длина) if длина else None
+            заг = {к: з for к, з in self.headers.items()
+                   if к.lower() not in ("host", "accept-encoding", "connection")}
+            # Сжатие просим выключить: вшивать шим в gzip-поток — себе дороже.
+            заг["Accept-Encoding"] = "identity"
+            заг["Host"] = f"127.0.0.1:{прокси_на}"
+            # ШЕСТАЯ ДВЕРЬ, грань «куки»: песочница окна ОС режет сетевые куки
+            # нацело — Set-Cookie не сохраняется, сессия логина не живёт.
+            # Куки держит САМ ПРОКСИ: банка в памяти процесса, на каждый запрос
+            # доклеивается. Контур одного пользователя на 127.0.0.1 — честно.
+            # Вход ЗАРАНЕЕ, а не по отказу: проверка «кто я» у части приложений
+            # отвечает 200 {"user": null} без всякого 401 (замер 21.08.2026,
+            # tududi /api/current_user) — интерфейс решал, что человек не вошёл,
+            # и показывал форму логина. Банка пуста → входим до первого запроса.
+            if автовход and not КУКИ:
+                self._автовход()
+            исходный_cookie = заг.get("Cookie", "")
+            # Клиент с СОБСТВЕННЫМ Authorization авторизуется сам — банку к
+            # нему не доклеиваем. Иначе приложение видит сессионную куку рядом
+            # с Bearer-токеном, принимает запрос за браузерный и требует
+            # CSRF-токен, которого у машинного клиента нет: тот же POST с тем
+            # же токеном напрямую в контейнер — 200, через прокси — 500
+            # «CSRF token missing» (замер 21.08.2026, tududi /api/v1/task).
+            своя_авторизация = "Authorization" in заг
+            for попытка in (1, 2):
+                if not своя_авторизация:
+                    if "__bearer" in КУКИ and "Authorization" not in заг:
+                        заг["Authorization"] = "Bearer " + КУКИ["__bearer"]
+                    обычные = {и: з for и, з in КУКИ.items() if и != "__bearer"}
+                    if обычные:
+                        банка = "; ".join(f"{и}={з}" for и, з in обычные.items())
+                        заг["Cookie"] = f"{исходный_cookie}; {банка}".strip("; ")
+                с = http.client.HTTPConnection("127.0.0.1", прокси_на, timeout=90)
+                try:
+                    с.request(self.command, self.path, body=тело, headers=заг)
+                    о = с.getresponse()
+                    # ПОТОК СОБЫТИЙ (text/event-stream) читать целиком НЕЛЬЗЯ:
+                    # ответ бесконечен по замыслу. Прежний код ждал его конца,
+                    # держал поток прокси до таймаута в 90 с и не отдавал
+                    # клиенту ни байта — приложение не получало ни одного
+                    # события и раз за разом открывало соединение заново
+                    # (замер 21.08.2026, Заметки: /api/v1/sse). Такие ответы
+                    # переливаем кусками, пока клиент слушает.
+                    if "text/event-stream" in (о.getheader("Content-Type") or ""):
+                        return self._перелить_поток(о)
+                    данные = о.read()
+                except OSError as е:
+                    return self._ответ(502, json.dumps(
+                        {"ошибка": f"приложение в контейнере молчит: {е}"},
+                        ensure_ascii=False).encode())
+                # Сессия умерла или её не было: прокси входит сам и повторяет
+                # запрос один раз (решение владельца о беспарольном контуре).
+                if (о.status == 401 and автовход and попытка == 1
+                        and self._автовход()):
+                    continue
+                break
+            if шим and "text/html" in (о.getheader("Content-Type") or ""):
+                данные = _вставить_шим(данные, шим)
+            self.send_response(о.status)
+            for к, з in о.getheaders():
+                # Хоп-заголовки и CSP не переносим: длину мы поменяли шимом, а
+                # CSP контейнера зарезал бы наш встроенный скрипт. Контур свой,
+                # 127.0.0.1 — ослабление честное и локальное.
+                # X-Frame-Options контейнера — убийца окна ОС: браузер скачивает
+                # документ, но ОТКАЗЫВАЕТСЯ рисовать его во вложенном окне —
+                # белое полотно без скриптов и без единой ошибки. Замер
+                # 20.08.2026, Сторож: запросы в журнале есть, рендера нет.
+                # ШЕСТАЯ ДВЕРЬ (замер 21.08.2026, tududi + helmet): семейство
+                # Cross-Origin-* — прежде всего Cross-Origin-Resource-Policy:
+                # same-origin — душит В ПЕСОЧНИЦЕ каждый скрипт и fetch: у окна
+                # происхождение null, для него всё «кросс». В обычной вкладке
+                # приложение живёт, в окне ОС — белое. Снимаем семейство и куки
+                # (их держит банка прокси, наружу не отдаём).
+                if к.lower() in ("content-length", "transfer-encoding", "connection",
+                                 "content-security-policy", "content-encoding",
+                                 "x-frame-options",
+                                 "access-control-allow-origin",
+                                 "access-control-allow-credentials",
+                                 "access-control-allow-private-network",
+                                 "cross-origin-resource-policy",
+                                 "cross-origin-opener-policy",
+                                 "cross-origin-embedder-policy",
+                                 "origin-agent-cluster",
+                                 "set-cookie", "grpc-metadata-set-cookie"):
+                    if к.lower() in ("set-cookie", "grpc-metadata-set-cookie"):
+                        # Приложения на connect-rpc ставят куку служебным
+                        # заголовком Grpc-Metadata-Set-Cookie (memos: ротация
+                        # refresh-токена). Не собирать её — значит потерять
+                        # сессию в середине работы.
+                        кусок = з.split(";", 1)[0]
+                        if "=" in кусок:
+                            и, зн = кусок.split("=", 1)
+                            КУКИ[и.strip()] = зн.strip()
+                    continue
+                self.send_header(к, з)
+            # Свой допуск (ACAO) НЕ шлём здесь: его добавляет end_headers ко
+            # всем ответам сервера — второй экземпляр даёт «multiple values»,
+            # и браузер отвергает CORS целиком. Замер 21.08.2026, tududi.
+            self.send_header("Content-Length", str(len(данные)))
+            self.end_headers()
+            self.wfile.write(данные)
+
+        def do_HEAD(self):
+            if прокси_на and self.path.split("?")[0].startswith("/_extella_page/"):
+                return super().do_HEAD()
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            super().do_HEAD()
+
+        def do_PUT(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            self._ответ(405, b'{}')
+
+        def do_DELETE(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            self._ответ(405, b'{}')
+
+        def do_PATCH(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            self._ответ(405, b'{}')
+
+        def do_OPTIONS(self):
+            # Предполёт проксируемых путей отвечаем САМИ: helmet контейнера о
+            # происхождении null может и не договориться, а нам нужен только
+            # зелёный свет для песочницы (шестая дверь, 21.08.2026, tududi).
+            if прокси_на and not self._служебный():
+                # ACAO не шлём — его добавит end_headers, дубль ломает CORS.
+                self.send_response(204)
+                self.send_header("Access-Control-Allow-Methods",
+                                 "GET, POST, PUT, DELETE, PATCH, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers",
+                                 self.headers.get("Access-Control-Request-Headers")
+                                 or "Content-Type, Authorization")
+                self.send_header("Access-Control-Max-Age", "600")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+            # Действия — только своим: чужому предполёт не отдаём, и запрос
+            # до нас просто не доедет.
+            if self.path.split("?")[0] == ПУТЬ_ДЕЙСТВИЯ and \
+               not _свой(self.headers.get("Origin", "")):
+                return self._ответ(403, '{"ошибка":"чужой адрес"}'.encode())
+            # Предполётный запрос. Без него http.server отвечает 501, и браузер
+            # считает, что местного сервера нет вовсе.
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "600")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
+        def guess_type(self, path):
+            # http.server отдаёт HTML без указания кодировки, и браузер угадывает.
+            # Для страниц с русским текстом угадывание кончается мусором.
+            тип = super().guess_type(path)
+            if тип in ("text/html", "text/plain", "application/javascript",
+                       "text/javascript", "text/css"):
+                return тип + "; charset=utf-8"
+            return тип
+
+        def do_GET(self):
+            # Свои страницы РЯДОМ с проксируемым приложением: /_окно/* отдаётся
+            # статикой из папки сервера (путь ЛАТИНИЦЕЙ — кириллица приезжает
+            # процентами и мимо проверки, грабля поймана 21.08). Панель-Календарь живёт
+            # на одном адресе с приложением — его API доступен ей без токенов
+            # в коде страницы: сессию держит автовход прокси. Замер 21.08.2026.
+            if прокси_на and self.path.split("?")[0].startswith("/_extella_page/"):
+                return super().do_GET()
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            if self.path.split("?")[0] == ПУТЬ_ВЕРСИИ:
+                # Дешёвый вопрос «изменилось ли»: приложение спрашивает его часто,
+                # и гонять всю работу туда-сюда ради этого нельзя.
+                return self._ответ(200, json.dumps({"версия": ВЕРСИЯ[0]}).encode())
+            if self.path.split("?")[0] == ПУТЬ_ХРАНИЛИЩА:
+                with ЗАМОК:
+                    д = self._прочитать_всё()
+                д["_версия"] = ВЕРСИЯ[0]
+                return self._ответ(200, json.dumps(д, ensure_ascii=False).encode())
+            return super().do_GET()
+
+        def do_POST(self):
+            if прокси_на and not self._служебный():
+                return self._проксировать()
+            if self.path.split("?")[0] == ПУТЬ_ДЕЙСТВИЯ:
+                if not _свой(self.headers.get("Origin", "")):
+                    return self._ответ(403, '{"ошибка":"чужой адрес"}'.encode())
+                длина = int(self.headers.get("Content-Length") or 0)
+                try:
+                    тело = json.loads(self.rfile.read(длина).decode() or "{}")
+                except json.JSONDecodeError:
+                    return self._ответ(400, '{"ошибка":"не json"}'.encode())
+                итог = выполнить(str(тело.get("действие") or ""), тело)
+                return self._ответ(200, json.dumps(итог, ensure_ascii=False).encode())
+            if self.path.split("?")[0] != ПУТЬ_ХРАНИЛИЩА:
+                return self._ответ(404, '{"ошибка":"нет такого адреса"}'.encode())
+            длина = int(self.headers.get("Content-Length") or 0)
+            if длина > 32 * 1024 * 1024:
+                return self._ответ(413, '{"ошибка":"слишком большая запись"}'.encode())
+            try:
+                тело = json.loads(self.rfile.read(длина).decode() or "{}")
+            except json.JSONDecodeError:
+                return self._ответ(400, '{"ошибка":"не json"}'.encode())
+
+            with ЗАМОК:
+                д = self._прочитать_всё()
+                if тело.get("очистить"):
+                    д = {}
+                elif "ключ" in тело:
+                    if тело.get("значение") is None:
+                        д.pop(тело["ключ"], None)
+                    else:
+                        д[str(тело["ключ"])] = str(тело["значение"])
+                файл_данных.parent.mkdir(parents=True, exist_ok=True)
+                # Пишем через временный файл: обрыв на записи не должен оставить
+                # человека с обрезанным файлом вместо работы.
+                врем = файл_данных.with_suffix(".пишется")
+                врем.write_text(json.dumps(д, ensure_ascii=False))
+                врем.replace(файл_данных)
+                ВЕРСИЯ[0] += 1
+            return self._ответ(200, json.dumps(
+                {"сохранено": True, "версия": ВЕРСИЯ[0]}).encode())
+
+    return Обработчик
+
+
+def main() -> int:
+    р = argparse.ArgumentParser()
+    р.add_argument("--папка", required=True)
+    р.add_argument("--порт", required=True, type=int)
+    р.add_argument("--имя", required=True)
+    р.add_argument("--данные", required=True)
+    р.add_argument("--прокси-на", dest="прокси_на", type=int, default=None,
+                   help="проксировать всё (кроме служебных путей) на этот локальный порт")
+    р.add_argument("--шим", default="", help="файл шима для вставки в проксируемый HTML")
+    р.add_argument("--вставка", default="",
+                   help="дополнительный HTML-файл, вшиваемый в страницы вместе с шимом "
+                        "(добавки конкретному приложению — например, кнопка Календаря)")
+    р.add_argument("--корень-на", dest="корень_на", default="",
+                   help="маршрут, куда уводить голый «/» (восьмая дверь окна ОС)")
+    р.add_argument("--глушить", action="append", default=[],
+                   help="путь, который не передавать в контейнер (вечные потоки)")
+    р.add_argument("--журнал", action="store_true",
+                   help="печатать каждый запрос в лог службы (диагностика окна)")
+    р.add_argument("--автовход", default="",
+                   help="json-файл {путь, тело} — прокси входит в контейнер сам "
+                        "(беспарольный локальный контур по решению владельца)")
+    а = р.parse_args()
+
+    шим = pathlib.Path(а.шим).expanduser().read_text() if а.шим else ""
+    if а.вставка:
+        шим += pathlib.Path(а.вставка).expanduser().read_text()
+    файл = pathlib.Path(а.данные).expanduser() / f"{а.имя}.json"
+    ЖУРНАЛ[0] = bool(а.журнал)
+    ГЛУШИТЬ.extend(а.глушить)
+    КОРЕНЬ_НА[0] = а.корень_на
+    сервер = http.server.ThreadingHTTPServer(
+        ("127.0.0.1", а.порт),
+        сделать_обработчик(pathlib.Path(а.папка).expanduser(), файл, а.прокси_на,
+                           шим, а.автовход))
+    сервер.serve_forever()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
