@@ -162,6 +162,9 @@ run check_manifest_copies
 run check_surface_classes
 run check_app_scopes
 run check_listing_meta
+run check_installable
+# Храповик канона: доля правил, которые охраняет машина, может только расти.
+run check_canon_coverage
 run platform_client
 run connect_mcp
 run check_toolkit

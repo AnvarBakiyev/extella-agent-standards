@@ -16,7 +16,7 @@
 
 Запуск:
   python3 tools/new_product.py <slug> "<Название>" "<кому-в-дательном>" <порт> [каталог]
-  python3 tools/new_product.py <slug> "<Название>" "<кому>" <порт> --serverless
+  python3 tools/new_product.py <slug> "<Название>" "<кому>" <порт> --thin
                                                  # тонкая панель: без порта и процесса
   python3 tools/new_product.py --selftest        # сгенерировать пробные и прогнать гейты
 
@@ -329,7 +329,7 @@ checks:
 MANIFEST_YAML_THIN = """# Манифест зависимостей «__NAME_RU__» (тонкая панель).
 #
 # Порта и своего процесса нет — проверять нечего. Осталось то, что действительно
-# нужно: приложение Extella с живым мостом (он один на машину) и вход в аккаунт.
+# нужно: приложение Extella с app_token-каналом и вход в аккаунт.
 checks:
   - kind: file
     path: "~/.extella/api_token.txt"
@@ -647,12 +647,12 @@ def __SLUG___call(route="", body_json="{}") -> str:
 '''
 
 
-# ── ТОНКИЙ РЕЖИМ (--serverless): панель без собственного сервера ───────────────
+# ── ТОНКИЙ РЕЖИМ (--thin/--serverless): панель без собственного сервера ───────
 # Восемь продуктов = восемь локальных серверов = восемь портов, автозапусков и
 # зависимостей от питона машины; практически весь бэклог 03–04.08 вырос отсюда.
 # Тонкая панель не имеет ни порта, ни процесса: страница живёт в приложении
-# (ui.type=html), работу делают эксперты НА устройстве через мост витрины
-# (etb_run_expert). Токен странице не выдаётся вовсе.
+# (ui.type=html), работу делают эксперты НА устройстве через scoped app_token.
+# Канон H106: удалённого toolbar-моста в Extella OS нет.
 #
 # ЧЕСТНО О ДАННЫХ (поправка 04.08, поймана адверсарной проверкой). «Данные не
 # покидают машину» — верно только для данных В ПОКОЕ: база, файлы и секреты
@@ -662,7 +662,8 @@ def __SLUG___call(route="", body_json="{}") -> str:
 # персональные данные или большие выгрузки, это осознанный размен, а не мелочь:
 # решать до перевода, а не после.
 
-THIN_HTML = '''<div class="wrap">
+THIN_HTML = '''<script>window.EXTELLA_APP={appToken:"{{app_token}}"};</script>
+<div class="wrap">
   <h1>__NAME_RU__</h1>
   <div class="sub" id="sub">Панель без локального сервера: работу делают эксперты на этом устройстве.</div>
 
@@ -674,6 +675,14 @@ THIN_HTML = '''<div class="wrap">
       <button class="btn" onclick="ping()" id="pingBtn">Проверить связь</button>
     </div>
     <div class="err" id="out"></div>
+    <div class="device-fix" id="deviceFix" hidden>
+      <b>Выбери этот компьютер</b>
+      <p>Extella отправила первый запрос на устройство из другого аккаунта. Нажми строку Device ID в нижней панели Extella и вставь значение сюда. При следующем открытии окна его потребуется ввести снова.</p>
+      <label for="deviceInput">Device ID</label>
+      <input class="device-input mono" id="deviceInput" maxlength="36" autocomplete="off" placeholder="00000000-0000-0000-0000-000000000000">
+      <button class="btn" type="button" id="deviceUse" onclick="useDevice()">Работать через это устройство</button>
+      <div class="device-status" id="deviceStatus" aria-live="polite"></div>
+    </div>
   </div>
 </div>
 <style>
@@ -690,90 +699,171 @@ h1{font-size:20px;font-weight:700;margin-bottom:4px}
 .pill{display:inline-block;border:1px solid var(--divider);border-radius:999px;padding:4px 12px;font-size:13px;margin-right:8px}
 .err{color:#8A2D2D;font-size:13px;margin-top:12px;min-height:16px}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px}
+.device-fix{margin-top:12px;border:1px solid #C9A227;border-radius:8px;padding:12px;background:#FFFCF1}
+.device-fix[hidden]{display:none}.device-fix p{color:var(--muted);font-size:13px;margin:8px 0 12px}
+.device-fix label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}
+.device-input{width:100%;border:1px solid var(--divider);border-radius:8px;padding:8px;background:#fff;color:var(--ink)}
+.device-fix .btn{width:100%;margin-top:8px}.device-status{font-size:13px;margin-top:8px;color:var(--muted)}
 </style>
 <script>
-// Двуязычно с рождения — паспорт заявляет ru+en, заявка обязана быть правдой.
+// H106: страница общается с агентом только через app_token. Первый вызов
+// определяет устройство, каждый следующий закрепляется targets:[device].
 var T={ru:{none:'не выбран',check:'проверяю…',ans:'ответ агента: ',fail:'не получилось',
- nodev:'устройство не найдено — открой приложение Extella и войди в аккаунт',
+ nodev:'Extella не сообщила устройство. Перезапусти Extella на нужном компьютере и повтори.',
  pick:'Вставь id агента (список — в приложении, вкладка «Агенты»):',bound:'агент привязан: '},
  en:{none:'not selected',check:'checking…',ans:'agent answered: ',fail:'did not work',
- nodev:'device not found — open the Extella app and sign in',
+ nodev:'Extella did not report a device. Restart Extella on the required computer and retry.',
  pick:'Paste the agent id (see the Agents tab in the app):',bound:'agent bound: '}};
 var L=(navigator.language||'ru').indexOf('ru')===0?'ru':'en';
 function tr(k){return T[L][k];}
-// Язык берём У ПРИЛОЖЕНИЯ: браузерная локаль показывала англоязычный интерфейс
-// русскоязычному человеку (поймано на живом экране 04.08).
-window.addEventListener('message',function(e){
-  var d=e.data||{};
-  if(d.type!=='etb_init')return;
-  if(d.lang)L=(String(d.lang).indexOf('ru')===0)?'ru':'en';
-  DEVICE=String(d.device||'');
-  refresh();
-});
 function $(id){return document.getElementById(id);}
-
-// Мост экспертов витрины: страница НИКОГДА не держит токен и не ходит в сеть сама.
-var _seq=0,_waiting={};
-window.addEventListener('message',function(e){
-  var d=e.data||{};
-  if(d.type==='etb_expert_result'&&_waiting[d.reqId]){var f=_waiting[d.reqId];delete _waiting[d.reqId];f(d);}
-});
-function runExpert(name,params){
-  return new Promise(function(res){
-    var id='r'+(++_seq);
-    _waiting[id]=function(d){res(d);};
-    var msg={type:'etb_run_expert',reqId:id,name:name,params:params||{}};
-    // Устройство шлём ОБОИМИ полями: установленная сборка витрины читает строковое
-    // target, исходники — массив targets. Проверять надо против СБОРКИ на машине,
-    // а не против репозитория: первая версия слала только targets, и работа молча
-    // уходила на устройство по умолчанию (поймано адверсарной проверкой 04.08).
-    if(DEVICE){msg.target=DEVICE;msg.targets=[DEVICE];}
-    parent.postMessage(msg,'*');
-    setTimeout(function(){if(_waiting[id]){delete _waiting[id];
-      res({ok:false,error:'нет ответа от моста за 120с — это не провал, задача могла уйти дальше'});}},120000);
-  });
-}
-// Своё устройство приходит В ПРИВЕТСТВИИ от приложения (etb_init.device).
-// Раньше панель спрашивала его у моста по http://127.0.0.1:8765 — то есть ради
-// одной строки тянула за собой локальный сервер, ровно то, от чего тонкий режим
-// уходит. Ни одного обращения к localhost в этой странице больше нет.
-var DEVICE='';
+var APP_TOKEN=String((window.EXTELLA_APP||{}).appToken||'');
+var API='https://os.extella.ai/api/app-agent/run';
+var DEVICE='',DISCOVERY=null,CALLS=[];
+var H106_ACCEPTANCE={requests:[],discovery:null,verified:null};
+window.__H106_ACCEPTANCE__=H106_ACCEPTANCE;
 function say(t){$('out').textContent=t||'';}
-function unwrap(d){
-  // Причина отказа обязана быть на экране: «не получилось» без причины — это день
-  // слепой переписки (урок недели). Показываем, что реально ответил мост.
-  if(!d||!d.ok)return {status:'error',message:(d&&d.error)||(tr('fail')+': '+JSON.stringify(d||{}).slice(0,160))};
-  // Сборка витрины кладёт результат в res, исходники — в result. Читаем оба:
-  // иначе каждый успешный вызов выглядел бы пустым ответом.
-  var r=(d.res!==undefined&&d.res!==null)?d.res:d.result;
-  if(r===undefined||r===null)return {status:'error',
-    message:tr('fail')+': мост ответил без результата — '+JSON.stringify(d).slice(0,160)};
-  if(typeof r==='string'){try{r=JSON.parse(r);}catch(_){return {status:'error',message:String(r).slice(0,200)};}}
-  return r||{status:'error',message:tr('fail')};
+function configured(){return APP_TOKEN&&!APP_TOKEN.startsWith('{{');}
+function isDevice(v){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||'').trim());}
+function coded(message,code){var error=new Error(message);error.code=code;return error;}
+function executionError(v,depth){
+  depth=depth||0;if(!v||depth>8)return '';
+  if(typeof v==='string'){
+    if(v.indexOf('[Execution Error]')===0)return v;
+    try{return executionError(JSON.parse(v),depth+1);}catch(_){return '';}
+  }
+  if(typeof v!=='object')return '';
+  for(var i=0;i<4;i++){var found=executionError(v[['result','data','response','payload'][i]],depth+1);if(found)return found;}
+  return '';
+}
+function showDeviceFix(error){
+  var visible=error&&error.code==='DEVICE_REQUIRED';$('deviceFix').hidden=!visible;
+  if(visible){$('deviceStatus').textContent=error.message||'';$('deviceInput').focus();}
+}
+function targetFrom(v,depth){
+  depth=depth||0;if(!v||depth>8)return '';
+  if(typeof v==='string'){try{return targetFrom(JSON.parse(v),depth+1);}catch(_){return '';}}
+  if(typeof v!=='object')return '';
+  var direct=(v.pageRoute&&v.pageRoute.targetId)||v.device||v.device_id||v.targetId;
+  if(typeof direct==='string'&&direct.trim())return direct.trim();
+  for(var i=0;i<4;i++){var found=targetFrom(v[['result','data','response','payload'][i]],depth+1);if(found)return found;}
+  return '';
+}
+function unwrap(v){
+  var r=v;
+  for(var i=0;i<8;i++){
+    if(typeof r==='string'){try{r=JSON.parse(r);continue;}catch(_){return {status:'error',message:r.slice(0,240)};}}
+    if(!r||typeof r!=='object')return r;
+    var platform=('expert_name'in r)||('execution_log'in r)||('agent_id'in r);
+    if(platform&&r.result!==undefined){r=r.result;continue;}
+    if(typeof r.result==='string'){r=r.result;continue;}
+    return r;
+  }
+  return r;
+}
+async function requestExpert(name,params,targets){
+  if(!configured())throw new Error('Открой приложение с рабочего стола Extella и обнови окно.');
+  var now=Date.now();CALLS=CALLS.filter(function(at){return now-at<60000;});
+  if(CALLS.length>=30)throw new Error('Слишком много действий за минуту. Подожди и повтори.');
+  var body={app_token:APP_TOKEN,expert_name:name,params:params||{}};
+  if(targets&&targets.length)body.targets=targets;
+  var encoded=JSON.stringify(body);
+  if(new TextEncoder().encode(encoded).length>65536)throw new Error('Запрос больше 64 КБ. Уменьши объём данных.');
+  CALLS.push(now);
+  H106_ACCEPTANCE.requests.push({expert:name,targets:(targets||[]).slice(),at:new Date(now).toISOString()});
+  var response=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:encoded});
+  var payload={};try{payload=await response.json();}catch(_){}
+  if(!response.ok){
+    if(response.status===401)throw new Error('Ключ приложения истёк. Обнови окно Extella и повтори.');
+    if(response.status===403)throw new Error('Разреши приложению запуск экспертов на устройстве.');
+    throw new Error(payload.message||payload.detail||('Extella вернула HTTP '+response.status));
+  }
+  var failed=executionError(payload);
+  if(failed){
+    if(/^\\[Execution Error\\][\\s\\S]*\\(<container>, line 1\\)/.test(failed)){
+      throw coded('Extella отправила задание на компьютер, который вошёл в другой аккаунт. Скопируй Device ID нужного компьютера из нижней панели Extella.','DEVICE_REQUIRED');
+    }
+    throw coded('Код не выполнился на устройстве: '+failed.replace('[Execution Error]','').trim().slice(0,200),'EXECUTION_ERROR');
+  }
+  return payload;
+}
+async function ensureDevice(){
+  if(DEVICE)return DEVICE;
+  if(!DISCOVERY)DISCOVERY=(async function(){
+    var first=await requestExpert('__SLUG___where',{},null);
+    var target=targetFrom(first);
+    if(!target)throw new Error(tr('nodev'));
+    DEVICE=target;
+    H106_ACCEPTANCE.discovery={target:target,result:unwrap(first)};
+    $('devId').textContent=DEVICE.slice(0,8);return DEVICE;
+  })().catch(function(error){DISCOVERY=null;throw error;});
+  return DISCOVERY;
+}
+async function runExpert(name,params){
+  var target=await ensureDevice();
+  return unwrap(await requestExpert(name,params,[target]));
 }
 async function refresh(){
-  $('devId').textContent=DEVICE?DEVICE.slice(0,8):'—';
-  // Без устройства работать нельзя: задача уйдёт в общий пул аккаунта и исполнится
-  // на чужой машине. Молчать и делать вид, что всё хорошо, — худший вариант.
-  $('pingBtn').disabled=!DEVICE;$('bindBtn').disabled=!DEVICE;
-  if(!DEVICE){say(tr('nodev'));return;}
-  var st=unwrap(await runExpert('__SLUG___state',{}));
-  $('agentName').textContent=(st&&st.agent)?st.agent.slice(0,18):tr('none');
+  $('devId').textContent=DEVICE?DEVICE.slice(0,8):'…';say(tr('check'));
+  try{await ensureDevice();var proof=await runExpert('__SLUG___where',{});
+    showDeviceFix(null);
+    H106_ACCEPTANCE.verified={target:DEVICE,host:proof.host||'',platform:proof.platform||''};
+    var st=await runExpert('__SLUG___state',{});
+    $('agentName').textContent=(st&&st.agent)?st.agent.slice(0,18):tr('none');say('');}
+  catch(error){showDeviceFix(error);say(error.message||tr('fail'));}
+}
+async function useDevice(){
+  var candidate=String($('deviceInput').value||'').trim();
+  if(!isDevice(candidate)){$('deviceStatus').textContent='Device ID должен быть UUID из 36 символов.';return;}
+  var button=$('deviceUse');button.disabled=true;button.textContent='Проверяю устройство…';
+  try{
+    var payload=await requestExpert('__SLUG___where',{},[candidate]);
+    var reported=targetFrom(payload);
+    if(reported!==candidate)throw coded(reported?'Эксперт ответил с другого устройства. Проверь Device ID.':'Устройство не подтвердило свой Device ID.','DEVICE_MISMATCH');
+    DEVICE=candidate;DISCOVERY=Promise.resolve(candidate);
+    H106_ACCEPTANCE.discovery={target:candidate,result:unwrap(payload),manual:true};
+    $('devId').textContent=candidate.slice(0,8);$('deviceStatus').textContent='Устройство подтверждено. Оно выбрано только до закрытия окна.';
+    await refresh();
+  }catch(error){
+    if(error&&error.code==='DEVICE_REQUIRED')error=coded('Указанный компьютер вошёл в другой аккаунт Extella. Войди на нём тем же аккаунтом, что и в этом окне.','DEVICE_REQUIRED');
+    $('deviceStatus').textContent=error.message||String(error);
+  }finally{button.disabled=false;button.textContent='Работать через это устройство';}
 }
 async function bindAgent(){
   var id=prompt(tr('pick'));if(!id)return;
-  var r=unwrap(await runExpert('__SLUG___bind',{agent_id:id.trim()}));
+  var r=await runExpert('__SLUG___bind',{agent_id:id.trim()});
   say(r.status==='success'?tr('bound')+r.agent:(r.message||tr('fail')));
   refresh();
 }
 async function ping(){
   say(tr('check'));
-  var r=unwrap(await runExpert('__SLUG___ping',{}));
+  var r=await runExpert('__SLUG___where',{});
   // «running» и «failed» — не успех: недожатое не имеет права выглядеть сделанным.
-  say(r.status==='success'?tr('ans')+(r.answer||''):(r.message||r.error||tr('fail')));
+  say(r.status==='success'?tr('ans')+(r.host||r.answer||''):(r.message||r.error||tr('fail')));
 }
 refresh();
+$('deviceInput').addEventListener('keydown',function(event){if(event.key==='Enter')useDevice();});
 </script>
+'''
+
+THIN_WHERE_EXPERT = '''# expert: __SLUG___where
+# description: __NAME_RU__: диспетчер H106 — сообщает устройство и имя машины. Параметры: нет.
+
+def __SLUG___where() -> str:
+    import json, os, platform, re, socket
+    device = str(os.environ.get("EXTELLA_DEVICE_ID", "") or "").strip()
+    if not device:
+        try:
+            with open(os.path.expanduser("~/.extella/device.txt"), encoding="utf-8") as fh:
+                device = fh.read().strip()
+        except Exception:
+            device = ""
+    if not re.match(r"^[0-9a-fA-F-]{36}$", device):
+        device = ""
+    value = {"status": "success", "device": device,
+             "pageRoute": {"targetId": device} if device else None,
+             "host": socket.gethostname(), "platform": platform.system()}
+    return json.dumps(value, ensure_ascii=False)
 '''
 
 THIN_STATE_EXPERT = '''# expert: __SLUG___state
@@ -819,8 +909,9 @@ THIN_CARD = '''{
   "category": "work",
   "type": "custom",
   "version": "0.1.0",
-  "ui": {"type": "html", "tokenless": true},
-  "experts": ["__SLUG___state", "__SLUG___bind", "__SLUG___ping"]
+  "ui": {"type": "html"},
+  "app_scopes": ["expert.run", "device.run"],
+  "experts": ["__SLUG___where", "__SLUG___state", "__SLUG___bind", "__SLUG___ping"]
 }'''
 
 THIN_INSTALL = '''#!/usr/bin/env python3
@@ -919,6 +1010,7 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
         (dest / "card.json").write_text(fill(THIN_CARD), encoding="utf-8")
         (dest / "install.py").write_text(fill(THIN_INSTALL), encoding="utf-8")
         (dest / "experts" / (slug + "_state.py")).write_text(fill(THIN_STATE_EXPERT), encoding="utf-8")
+        (dest / "experts" / (slug + "_where.py")).write_text(fill(THIN_WHERE_EXPERT), encoding="utf-8")
         (dest / "experts" / (slug + "_bind.py")).write_text(fill(THIN_BIND_EXPERT), encoding="utf-8")
         (dest / "experts" / (slug + "_ping.py")).write_text(fill(PING_EXPERT), encoding="utf-8")
         # Таблица маршрутов и диспетчер поверх неё — с рождения: продукт растёт
@@ -936,8 +1028,11 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
         (dest / "README.md").write_text(fill(README_MD).replace(
             "## Что уже правильно с рождения",
             "**Тонкий режим:** у продукта НЕТ своего сервера, порта и автозапуска — "
-            "страница живёт в приложении, работу делают эксперты на устройстве через мост "
-            "витрины. Токен в страницу не попадает вовсе.\n\n## Что уже правильно с рождения"),
+            "страница живёт в приложении, работу делают эксперты на устройстве через "
+            "короткоживущий app_token (H106). Первый вызов находит устройство, следующие "
+            "закрепляются за ним. Если платформа выбрала компьютер другого аккаунта (H104), "
+            "страница объясняет причину и временно просит Device ID; он проверяется целевым "
+            "вызовом и хранится только до закрытия окна.\n\n## Что уже правильно с рождения"),
             encoding="utf-8")
         shutil.copy(CANON_APP / "platform_client.py", dest / "app" / "platform_client.py")
         shutil.copy(CANON_APP / "agent_onboarding.py", dest / "app" / "agent_onboarding.py")
@@ -1059,18 +1154,31 @@ def selftest() -> int:
     if card.get("ui", {}).get("type") != "html" or card.get("ui", {}).get("port") or card.get("service"):
         print("  ✗ тонкий: карточка не бессерверная:", card.get("ui"))
         bad += 1
-    if not card.get("ui", {}).get("tokenless"):
-        print("  ✗ тонкий: карточка не помечена tokenless — странице выдадут токен аккаунта")
-        bad += 1
-
     page = (tmp2 / "panel.html").read_text(encoding="utf-8")
-    leaks = [m for m in ("api.extella.ai", "X-Auth-Token", "auth_token") if m in page]
+    # H106: живой контракт ОС — app_token + app-agent/run. Старый postMessage
+    # мост удалён из desktop-сборки; etb_init несёт только тему и язык.
+    leaks = [m for m in ("api.extella.ai", "X-Auth-Token", "auth_token", "parent.extellaDesktop") if m in page]
     if leaks:
-        print("  ✗ тонкий: страница ходит в платформу сама:", leaks)
+        print("  ✗ H106: тонкая страница содержит запрещённый канал:", leaks)
         bad += 1
-    if "msg.target=" not in page.replace(" ", ""):
-        print("  ✗ тонкий: мост зовётся без строкового target — установленная сборка "
-              "витрины читает именно его, работа уедет на устройство по умолчанию")
+    if "{{app_token}}" not in page or "app-agent/run" not in page:
+        print("  ✗ H106: страница обязана содержать {{app_token}} и app-agent/run")
+        bad += 1
+    if "etb_" in page:
+        print("  ✗ H106: страница содержит удалённый etb_* протокол")
+        bad += 1
+    if "body.targets=targets" not in page.replace(" ", ""):
+        print("  ✗ H106: последующие вызовы не закрепляются targets:[device]")
+        bad += 1
+    for marker in ("DEVICE_REQUIRED", "Работать через это устройство", "useDevice()"):
+        if marker not in page:
+            print("  ✗ H106/H104: нет временного выбора устройства:", marker)
+            bad += 1
+    if "localStorage" in page:
+        print("  ✗ H106: Device ID нельзя хранить в localStorage песочного окна")
+        bad += 1
+    if card.get("app_scopes") != ["expert.run", "device.run"]:
+        print("  ✗ H106: карточка не запрашивает expert.run + device.run")
         bad += 1
     # Ищем ОБРАЩЕНИЕ, а не упоминание: первая версия гейта краснела на комментарии,
     # который объясняет, что localhost убран. Ложный запрет обходят целиком.
@@ -1079,24 +1187,10 @@ def selftest() -> int:
                   and not ln.lstrip().startswith(("//", "*", "/*", "#"))]
     if live_calls:
         print("  ✗ тонкий: страница обращается к localhost — это и есть то, от чего "
-              "тонкий режим уходит (устройство приходит в etb_init):")
+              "тонкий режим уходит:")
         for ln in live_calls[:3]:
             print("      " + ln.strip()[:100])
         bad += 1
-    if "d.res" not in page:
-        print("  ✗ тонкий: панель не читает поле res — в установленной сборке витрины "
-              "каждый успешный вызов выглядел бы пустым")
-        bad += 1
-    # Контракт сверяем с ЖИВОЙ сборкой витрины, а не с исходниками: на машине
-    # человека работает именно она (урок 04.08).
-    art = Path.home() / "Library/Application Support/extella-desktop/toolbar.js"
-    if art.exists():
-        blob = art.read_text(encoding="utf-8", errors="replace")
-        if "e.data.target" not in blob:
-            print("  ~ в установленной витрине нет чтения e.data.target — контракт моста изменился")
-        if "etb_expert_result" not in blob:
-            print("  ✗ установленная витрина не знает моста экспертов — тонкий режим не заработает")
-            bad += 1
 
     # Эксперты исполняются как их зовёт листенер — на ЧУЖОМ HOME.
     import tempfile as _tf
@@ -1104,7 +1198,8 @@ def selftest() -> int:
     env_home = os.environ.get("HOME")
     os.environ["HOME"] = fake_home
     try:
-        for name, kwargs, expect in (("probethin_state", {}, "success"),
+        for name, kwargs, expect in (("probethin_where", {}, "success"),
+                                     ("probethin_state", {}, "success"),
                                      ("probethin_bind", {"agent_id": "agent_extella_default"}, "error"),
                                      ("probethin_bind", {"agent_id": "agent_qwen_x"}, "success"),
                                      ("probethin_ping", {}, "success")):
@@ -1119,7 +1214,7 @@ def selftest() -> int:
         if env_home:
             os.environ["HOME"] = env_home
     if not bad:
-        print("  ✓ тонкий режим: без порта и процесса, токена нет, работа закреплена, эксперты живы")
+        print("  ✓ H106: без порта и процесса, app_token scoped, работа закреплена, эксперты живы")
 
     if manifest_problems("тонкий", tmp2):
         bad += 1
@@ -1148,7 +1243,7 @@ def main(argv) -> int:
     if len(argv) < 4:
         print(__doc__)
         return 1
-    thin = "--serverless" in argv
+    thin = "--serverless" in argv or "--thin" in argv
     argv = [a for a in argv if not a.startswith("--")]
     slug, name_ru, dat_ru, port = argv[0], argv[1], argv[2], int(argv[3])
     dest = Path(argv[4]).expanduser() if len(argv) > 4 else Path.home() / "Documents" / ("extella-" + slug)

@@ -6,6 +6,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OS = 'https://os.extella.ai'
+# Без прав страница получает ключ окна, но не может звать экспертов. device.run НЕ входит
+# в expert.run — просить оба (замер Рекрутёра 13.08.2026, канон H106).
+SCOPES = ['expert.run', 'device.run']
 
 def multipart(fields: dict[str,str], page: Path) -> tuple[bytes,str]:
     boundary = '----extella' + uuid.uuid4().hex
@@ -36,7 +39,7 @@ def main() -> None:
     page=ROOT/'dist'/'extella-app.zip'
     if not page.is_file(): raise SystemExit('Сначала запусти python3 tools/build.py')
     card=json.loads((ROOT/'listing.json').read_text())
-    fields={'name':card['name'],'description':card['description'],'version':card['version'],'price_credits':'0','source_type':'agent','source_id':args.source_agent,'attach_agent':'1','app_scopes':'[]','tags':json.dumps(card.get('tags',[])),'allowed_origins':json.dumps(['null',OS])}
+    fields={'name':card['name'],'description':card['description'],'version':card['version'],'price_credits':'0','source_type':'agent','source_id':args.source_agent,'attach_agent':'1','app_scopes':json.dumps(SCOPES),'tags':json.dumps(card.get('tags',[])),'allowed_origins':json.dumps(['null',OS])}
     body, content_type=multipart(fields,page)
     # Важно: этот endpoint создаёт черновик. Не добавляй публичный Publish без отдельного решения владельца.
     result=sse_done(request('/api/publish-stream',token,body,content_type))
