@@ -1,6 +1,6 @@
 (() => {
   const el = id => document.getElementById(id);
-  const bridge = new ExtellaBridge({ allowedExperts:['my_app_expert'] });
+  const bridge = new ExtellaBridge({ routeExpert:'my_app_where', allowedExperts:['my_app_expert'] });
   let lastTask = '', scenario = 'base';
 
   const scenarios = { base:['Базовый',100,'Текущие условия'], risk:['Риск',64,'Спрос ниже, затраты выше'], upside:['Рост',145,'Спрос выше ожиданий'] };

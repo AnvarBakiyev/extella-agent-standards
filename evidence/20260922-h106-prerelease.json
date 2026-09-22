@@ -1,0 +1,18 @@
+{
+  "listing_id": "40cf6ccf-10fe-4cd2-989f-702e5ddc8e8b",
+  "version_id": "c45ad1ed-b71f-4341-a61f-edeb8bb076e9",
+  "source_agent": "agent_nz1ZRgpDnDKdAXLBABFOJ",
+  "published": false,
+  "url": "https://os.extella.ai/listing/40cf6ccf-10fe-4cd2-989f-702e5ddc8e8b",
+  "purchase": {
+    "deployed_id": "agent_nz1ZRgpDnDKdAXLBABFOJ",
+    "deployed_type": "agent",
+    "reinstall": true,
+    "stats": {
+      "rules": 6,
+      "concepts": 0,
+      "experts": 20
+    }
+  },
+  "version": "0.1.0-pre.3"
+}
