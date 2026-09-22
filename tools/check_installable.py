@@ -56,15 +56,25 @@ def отказ(беды: list) -> int:
 
 def _состав(папка: pathlib.Path) -> dict:
     """Что продукт заявил о себе и что реально лежит рядом."""
+    # УСТАНОВЩИК ОБЪЯВЛЯЮТ В ДВУХ РАЗНЫХ ФАЙЛАХ, И ИСКАТЬ НАДО В ОБОИХ.
+    # Замер 18.09.2026: у editions/board он лежит в app.json, а
+    # tools/deploy_page_product.py читает его из listing.json — и гейт,
+    # знавший только app.json, забраковал правильно собранное издание
+    # Human Atlas. Один источник истины тут завести нельзя, пока оба формата
+    # живы; проверять надо оба, иначе гейт врёт на половине продуктов.
     установщик = ""
-    app = папка / "app.json"
-    if app.exists():
+    for имя_файла in ("app.json", "listing.json"):
+        ф = папка / имя_файла
+        if not ф.exists():
+            continue
         try:
-            d = json.loads(app.read_text(encoding="utf-8"))
-            установщик = str(d.get("установщик") or d.get("installer")
-                             or d.get("installer_expert") or "").strip()
+            d = json.loads(ф.read_text(encoding="utf-8"))
         except Exception:                                    # noqa: BLE001
-            pass
+            continue
+        установщик = str(d.get("установщик") or d.get("installer")
+                         or d.get("installer_expert") or "").strip()
+        if установщик:
+            break
     # СПОСОБНОСТЬ — ОТДЕЛЬНЫЙ КАНАЛ, И ТРЕБОВАТЬ С НЕЁ СТРАНИЦУ НЕЛЬЗЯ.
     # Первая редакция гейта дала пять ложных красных на editions/2gis,
     # read-page, kz-listings, to-apps, data-privacy: у них `kind: source`,
@@ -192,6 +202,8 @@ def _selftest() -> int:
     случай("битый zip — ловится", True, битый=True)
     случай("пусто: ни страницы, ни архива — ловится", True,
            установщик="", архив=False, страница=False)
+    случай("установщик объявлен в listing.json, а не app.json — тоже виден", False,
+           установщик="", карточка={"name": "Проба", "установщик": "atlas_setup"})
     случай("способность kind=source — НЕ краснеет", False, установщик="", архив=False,
            страница=False, карточка={"name": "2GIS", "kind": "source",
                                      "инструмент": "источник_2gis.py"})
