@@ -26,6 +26,14 @@
         <textarea id="task" data-testid="task-input" placeholder="Например: собери список рисков запуска"></textarea>
         <div class="row"><button id="run" class="primary" type="button" data-testid="run-button">Сделать</button><button id="example" class="secondary" type="button">Подставить пример</button></div>
         <p id="status" class="status" aria-live="polite" data-testid="status">Готов к работе.</p>
+        <section id="device-connect" class="device-connect hidden" aria-labelledby="device-connect-title">
+          <strong id="device-connect-title">Выбери этот компьютер</strong>
+          <p>Extella отправила первый запрос на устройство из другого аккаунта. Нажми строку Device ID в нижней панели Extella и вставь значение сюда. При следующем открытии окна его потребуется ввести снова.</p>
+          <label for="device-id">Device ID</label>
+          <input id="device-id" inputmode="text" autocomplete="off" maxlength="36" placeholder="00000000-0000-0000-0000-000000000000">
+          <button id="device-use" class="primary" type="button">Работать через это устройство</button>
+          <p id="device-status" class="status" aria-live="polite"></p>
+        </section>
       </aside>
 
       <section class="stack">

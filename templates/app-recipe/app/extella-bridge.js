@@ -18,28 +18,42 @@ class ExtellaBridge {
 
   get embedded() { return Boolean(this.appToken) && !this.appToken.startsWith('{{'); }
 
-  static isDevice(v) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || '')); }
-
-  // A "syntax error" on line 1 of <container> is not syntax: the machine is logged into another
-  // Extella account and the expert code arrives unreadable (H104). Wording floats between runs.
-  static explain(text) {
-    if (/\(<container>, line 1\)/.test(text)) {
-      return 'Extella отправила задание на компьютер, который вошёл в другой аккаунт Extella. ' +
-             'Открой Extella на нужном компьютере тем же аккаунтом, что и это окно, или отвяжи лишний компьютер от аккаунта.';
-    }
-    return 'Код не выполнился на компьютере: ' + String(text).replace('[Execution Error]', '').trim().slice(0, 200);
+  static isDevice(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(value || '').trim());
   }
 
-  // Platform-level failures hidden inside a 200 answer become errors, not data.
-  static failure(value, depth = 0) {
-    if (depth > 8 || value == null) return '';
+  static executionError(value, depth = 0) {
+    if (!value || depth > 8) return '';
     if (typeof value === 'string') {
-      if (value.startsWith('[Execution Error]')) return ExtellaBridge.explain(value);
-      if (value.startsWith('deferred')) return 'Работа идёт дольше обычного и продолжается в фоне. Подожди минуту и нажми ещё раз.';
-      try { return ExtellaBridge.failure(JSON.parse(value), depth + 1); } catch { return ''; }
+      if (value.startsWith('[Execution Error]')) return value;
+      try { return ExtellaBridge.executionError(JSON.parse(value), depth + 1); } catch { return ''; }
     }
     if (typeof value !== 'object') return '';
-    return ExtellaBridge.failure(value.result, depth + 1);
+    for (const key of ['result', 'data', 'response', 'payload']) {
+      const found = ExtellaBridge.executionError(value[key], depth + 1);
+      if (found) return found;
+    }
+    return '';
+  }
+
+  static accountMismatch(text) {
+    return /^\[Execution Error\][\s\S]*\(<container>, line 1\)/.test(String(text || ''));
+  }
+
+  static codedError(message, code) {
+    const error = new Error(message);
+    error.code = code;
+    return error;
+  }
+
+  static deferred(value, depth = 0) {
+    if (!value || depth > 8) return false;
+    if (typeof value === 'string') {
+      if (value.startsWith('deferred')) return true;
+      try { return ExtellaBridge.deferred(JSON.parse(value), depth + 1); } catch { return false; }
+    }
+    if (typeof value !== 'object') return false;
+    return ['result', 'data', 'response', 'payload'].some(key => ExtellaBridge.deferred(value[key], depth + 1));
   }
 
   targetFrom(value, depth = 0) {
@@ -102,8 +116,23 @@ class ExtellaBridge {
         }
         throw new Error(text || `Extella вернула HTTP ${response.status}`);
       }
-      const failed = ExtellaBridge.failure(payload);
-      if (failed) throw new Error(failed);
+      const executionError = ExtellaBridge.executionError(payload);
+      if (executionError) {
+        if (ExtellaBridge.accountMismatch(executionError)) {
+          throw ExtellaBridge.codedError(
+            'Extella отправила задание на компьютер, который вошёл в другой аккаунт. ' +
+            'Скопируй Device ID нужного компьютера из нижней панели Extella.',
+            'DEVICE_REQUIRED',
+          );
+        }
+        throw ExtellaBridge.codedError(
+          `Код не выполнился на устройстве: ${executionError.replace('[Execution Error]', '').trim().slice(0, 200)}`,
+          'EXECUTION_ERROR',
+        );
+      }
+      if (ExtellaBridge.deferred(payload)) {
+        throw new Error('Работа идёт дольше обычного и продолжается в фоне. Подожди минуту и нажми ещё раз.');
+      }
       return payload;
     } catch (error) {
       if (error?.name === 'AbortError') throw new Error('Extella не подтвердила выполнение за отведённое время.');
@@ -124,6 +153,39 @@ class ExtellaBridge {
     return this.discovery;
   }
 
+  async connectDevice(value) {
+    const target = String(value || '').trim();
+    if (!ExtellaBridge.isDevice(target)) {
+      throw ExtellaBridge.codedError(
+        'Device ID должен быть UUID из 36 символов. Нажми строку Device ID в нижней панели Extella, чтобы скопировать его.',
+        'INVALID_DEVICE',
+      );
+    }
+    if (!this.routeExpert) throw new Error('В приложении не задан эксперт-диспетчер устройства.');
+    try {
+      const payload = await this.request(this.routeExpert, {}, [target]);
+      const reported = this.targetFrom(payload);
+      if (reported !== target) {
+        throw ExtellaBridge.codedError(
+          reported ? 'Эксперт ответил с другого устройства. Проверь Device ID и повтори.'
+                   : 'Устройство ответило, но не подтвердило свой Device ID. Повтори или выбери другой компьютер.',
+          'DEVICE_MISMATCH',
+        );
+      }
+      this.device = target;
+      this.discovery = Promise.resolve(target);
+      return { device:target, data:this.unwrap(payload) };
+    } catch (error) {
+      if (error?.code === 'DEVICE_REQUIRED') {
+        throw ExtellaBridge.codedError(
+          'Указанный компьютер вошёл в другой аккаунт Extella. Войди на нём тем же аккаунтом, что и в этом окне.',
+          'DEVICE_REQUIRED',
+        );
+      }
+      throw error;
+    }
+  }
+
   async run(expert, params = {}, { timeoutMs = this.timeoutMs } = {}) {
     if (!this.allowedExperts.has(expert)) return { ok:false, error:'Этот маршрут не разрешён приложению.' };
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -136,7 +198,7 @@ class ExtellaBridge {
       } catch (error) {
         // The machine was removed or went offline: forget it and ask the dispatcher once more.
         if (error?.deviceGone && attempt === 0) { this.device = null; this.discovery = null; continue; }
-        return { ok:false, error:error?.message || String(error) };
+        return { ok:false, error:error?.message || String(error), code:error?.code || '' };
       }
     }
     return { ok:false, error:'Не удалось найти компьютер для работы.' };
