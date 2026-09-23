@@ -675,6 +675,14 @@ THIN_HTML = '''<script>window.EXTELLA_APP={appToken:"{{app_token}}"};</script>
       <button class="btn" onclick="ping()" id="pingBtn">Проверить связь</button>
     </div>
     <div class="err" id="out"></div>
+    <div class="device-fix" id="deviceFix" hidden>
+      <b>Выбери этот компьютер</b>
+      <p>Extella отправила первый запрос на устройство из другого аккаунта. Нажми строку Device ID в нижней панели Extella и вставь значение сюда. При следующем открытии окна его потребуется ввести снова.</p>
+      <label for="deviceInput">Device ID</label>
+      <input class="device-input mono" id="deviceInput" maxlength="36" autocomplete="off" placeholder="00000000-0000-0000-0000-000000000000">
+      <button class="btn" type="button" id="deviceUse" onclick="useDevice()">Работать через это устройство</button>
+      <div class="device-status" id="deviceStatus" aria-live="polite"></div>
+    </div>
   </div>
 </div>
 <style>
@@ -691,6 +699,11 @@ h1{font-size:20px;font-weight:700;margin-bottom:4px}
 .pill{display:inline-block;border:1px solid var(--divider);border-radius:999px;padding:4px 12px;font-size:13px;margin-right:8px}
 .err{color:#8A2D2D;font-size:13px;margin-top:12px;min-height:16px}
 .mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px}
+.device-fix{margin-top:12px;border:1px solid #C9A227;border-radius:8px;padding:12px;background:#FFFCF1}
+.device-fix[hidden]{display:none}.device-fix p{color:var(--muted);font-size:13px;margin:8px 0 12px}
+.device-fix label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}
+.device-input{width:100%;border:1px solid var(--divider);border-radius:8px;padding:8px;background:#fff;color:var(--ink)}
+.device-fix .btn{width:100%;margin-top:8px}.device-status{font-size:13px;margin-top:8px;color:var(--muted)}
 </style>
 <script>
 // H106: страница общается с агентом только через app_token. Первый вызов
@@ -711,6 +724,22 @@ var H106_ACCEPTANCE={requests:[],discovery:null,verified:null};
 window.__H106_ACCEPTANCE__=H106_ACCEPTANCE;
 function say(t){$('out').textContent=t||'';}
 function configured(){return APP_TOKEN&&!APP_TOKEN.startsWith('{{');}
+function isDevice(v){return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||'').trim());}
+function coded(message,code){var error=new Error(message);error.code=code;return error;}
+function executionError(v,depth){
+  depth=depth||0;if(!v||depth>8)return '';
+  if(typeof v==='string'){
+    if(v.indexOf('[Execution Error]')===0)return v;
+    try{return executionError(JSON.parse(v),depth+1);}catch(_){return '';}
+  }
+  if(typeof v!=='object')return '';
+  for(var i=0;i<4;i++){var found=executionError(v[['result','data','response','payload'][i]],depth+1);if(found)return found;}
+  return '';
+}
+function showDeviceFix(error){
+  var visible=error&&error.code==='DEVICE_REQUIRED';$('deviceFix').hidden=!visible;
+  if(visible){$('deviceStatus').textContent=error.message||'';$('deviceInput').focus();}
+}
 function targetFrom(v,depth){
   depth=depth||0;if(!v||depth>8)return '';
   if(typeof v==='string'){try{return targetFrom(JSON.parse(v),depth+1);}catch(_){return '';}}
@@ -749,6 +778,13 @@ async function requestExpert(name,params,targets){
     if(response.status===403)throw new Error('Разреши приложению запуск экспертов на устройстве.');
     throw new Error(payload.message||payload.detail||('Extella вернула HTTP '+response.status));
   }
+  var failed=executionError(payload);
+  if(failed){
+    if(/^\\[Execution Error\\][\\s\\S]*\\(<container>, line 1\\)/.test(failed)){
+      throw coded('Extella отправила задание на компьютер, который вошёл в другой аккаунт. Скопируй Device ID нужного компьютера из нижней панели Extella.','DEVICE_REQUIRED');
+    }
+    throw coded('Код не выполнился на устройстве: '+failed.replace('[Execution Error]','').trim().slice(0,200),'EXECUTION_ERROR');
+  }
   return payload;
 }
 async function ensureDevice(){
@@ -770,10 +806,28 @@ async function runExpert(name,params){
 async function refresh(){
   $('devId').textContent=DEVICE?DEVICE.slice(0,8):'…';say(tr('check'));
   try{await ensureDevice();var proof=await runExpert('__SLUG___where',{});
+    showDeviceFix(null);
     H106_ACCEPTANCE.verified={target:DEVICE,host:proof.host||'',platform:proof.platform||''};
     var st=await runExpert('__SLUG___state',{});
     $('agentName').textContent=(st&&st.agent)?st.agent.slice(0,18):tr('none');say('');}
-  catch(error){say(error.message||tr('fail'));}
+  catch(error){showDeviceFix(error);say(error.message||tr('fail'));}
+}
+async function useDevice(){
+  var candidate=String($('deviceInput').value||'').trim();
+  if(!isDevice(candidate)){$('deviceStatus').textContent='Device ID должен быть UUID из 36 символов.';return;}
+  var button=$('deviceUse');button.disabled=true;button.textContent='Проверяю устройство…';
+  try{
+    var payload=await requestExpert('__SLUG___where',{},[candidate]);
+    var reported=targetFrom(payload);
+    if(reported!==candidate)throw coded(reported?'Эксперт ответил с другого устройства. Проверь Device ID.':'Устройство не подтвердило свой Device ID.','DEVICE_MISMATCH');
+    DEVICE=candidate;DISCOVERY=Promise.resolve(candidate);
+    H106_ACCEPTANCE.discovery={target:candidate,result:unwrap(payload),manual:true};
+    $('devId').textContent=candidate.slice(0,8);$('deviceStatus').textContent='Устройство подтверждено. Оно выбрано только до закрытия окна.';
+    await refresh();
+  }catch(error){
+    if(error&&error.code==='DEVICE_REQUIRED')error=coded('Указанный компьютер вошёл в другой аккаунт Extella. Войди на нём тем же аккаунтом, что и в этом окне.','DEVICE_REQUIRED');
+    $('deviceStatus').textContent=error.message||String(error);
+  }finally{button.disabled=false;button.textContent='Работать через это устройство';}
 }
 async function bindAgent(){
   var id=prompt(tr('pick'));if(!id)return;
@@ -788,6 +842,7 @@ async function ping(){
   say(r.status==='success'?tr('ans')+(r.host||r.answer||''):(r.message||r.error||tr('fail')));
 }
 refresh();
+$('deviceInput').addEventListener('keydown',function(event){if(event.key==='Enter')useDevice();});
 </script>
 '''
 
@@ -975,7 +1030,9 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
             "**Тонкий режим:** у продукта НЕТ своего сервера, порта и автозапуска — "
             "страница живёт в приложении, работу делают эксперты на устройстве через "
             "короткоживущий app_token (H106). Первый вызов находит устройство, следующие "
-            "закрепляются за ним.\n\n## Что уже правильно с рождения"),
+            "закрепляются за ним. Если платформа выбрала компьютер другого аккаунта (H104), "
+            "страница объясняет причину и временно просит Device ID; он проверяется целевым "
+            "вызовом и хранится только до закрытия окна.\n\n## Что уже правильно с рождения"),
             encoding="utf-8")
         shutil.copy(CANON_APP / "platform_client.py", dest / "app" / "platform_client.py")
         shutil.copy(CANON_APP / "agent_onboarding.py", dest / "app" / "agent_onboarding.py")
@@ -1112,6 +1169,13 @@ def selftest() -> int:
         bad += 1
     if "body.targets=targets" not in page.replace(" ", ""):
         print("  ✗ H106: последующие вызовы не закрепляются targets:[device]")
+        bad += 1
+    for marker in ("DEVICE_REQUIRED", "Работать через это устройство", "useDevice()"):
+        if marker not in page:
+            print("  ✗ H106/H104: нет временного выбора устройства:", marker)
+            bad += 1
+    if "localStorage" in page:
+        print("  ✗ H106: Device ID нельзя хранить в localStorage песочного окна")
         bad += 1
     if card.get("app_scopes") != ["expert.run", "device.run"]:
         print("  ✗ H106: карточка не запрашивает expert.run + device.run")
