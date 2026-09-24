@@ -320,7 +320,7 @@ checks:
   - kind: file
     path: "~/.extella/api_token.txt"
     level: warn            # без него панель честно попросит войти в Extella
-    fix_ru: "открой приложение Extella и войди в аккаунт — файл появится сам"
+    fix_ru: "в приложении Extella открой Library → System → Tokens, создай токен и сохрани в ~/.extella/api_token.txt (права 600)"
   - kind: port
     port: __PORT__
     fix_ru: "порт занят другим процессом — закрой его или поменяй порт продукта"
@@ -334,7 +334,7 @@ checks:
   - kind: file
     path: "~/.extella/api_token.txt"
     level: warn            # без него панель честно попросит войти в Extella
-    fix_ru: "открой приложение Extella и войди в аккаунт — файл появится сам"
+    fix_ru: "в приложении Extella открой Library → System → Tokens, создай токен и сохрани в ~/.extella/api_token.txt (права 600)"
   - kind: python
     min_version: "3.10"
     fix_ru: "поставь Python 3.10+ (нужен только установщику, не панели)"
