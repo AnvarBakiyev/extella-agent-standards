@@ -164,6 +164,7 @@ run check_app_scopes
 run check_listing_meta
 run check_installable
 # Храповик канона: доля правил, которые охраняет машина, может только расти.
+run_command "правила разложены по одному файлу" python3 "$ROOT/tools/split_rules.py" --check
 run check_assistant_onboarding
 run check_device_pinning
 run check_canon_coverage
