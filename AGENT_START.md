@@ -8,11 +8,11 @@
 **Бери сырые ссылки, а не страницы GitHub.** Замер 25.09.2026: страница репозитория —
 497 КБ оформления, сырой README — 31 КБ. Свод правил `DEPLOY_REQUIREMENTS.md` — 369 КБ:
 веб-чтение его обрезает, и до правил агент не доезжает. Поэтому правила разложены
-по одному на файл, по 2–11 КБ:
+по одному на файл — каждое читается целиком:
 
     https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/rules/H106.md
 
-Оглавление всех правил (около 10 КБ): `rules/INDEX.md` — там номер, тема и ссылка.
+Оглавление всех правил: `rules/INDEX.md` — там номер, тема и ссылка.
 
 **`extella.ai/api.html` — не источник правды.** Это публичная справка, она неполна:
 рабочие пути (вызов эксперта со страницы, публикация, закрепление за машиной) в ней
@@ -23,9 +23,9 @@
 | Задача | Читать (по порядку) |
 |---|---|
 | Подключиться к Extella на этой машине | `rules/H108.md`, `rules/H110.md`, затем `tools/connect_mcp.py` |
-| Построить агента и его способности | `AGENT_BUILD_GUIDE.md`, `rules/H5.md` |
+| Построить агента и его способности | `rules/H5.md`, затем `AGENT_BUILD_GUIDE.md` — он крупный, бери разделами |
 | Страничное приложение в окне ОС | `rules/H106.md`, `rules/H107.md`, `rules/H54.md`, `rules/H17.md` |
-| Выложить в магазин | `RUNBOOK_STORE_PUBLISH.md` (10 КБ), `rules/H109.md`, `rules/H20.md` |
+| Выложить в магазин | `RUNBOOK_STORE_PUBLISH.md`, `rules/H109.md`, `rules/H20.md` |
 | Установщик и доставка на устройство | `INSTALLER_CANON.md`, `rules/H98.md`, `rules/H103.md` |
 | Интерфейс, тексты, бренд | `WRITING_RULES.md`, `BRAND_FOR_AGENTS.md`, `DESIGN_CODE.md` |
 | Двуязычие продукта (RU+EN) | `rules/H95.md`, `rules/H111.md` |
