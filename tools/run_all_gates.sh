@@ -169,6 +169,8 @@ run check_file_size_claims
 run check_assistant_onboarding
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
+run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
+run check_counted_claims
 run check_device_pinning
 run check_canon_coverage
 run platform_client
