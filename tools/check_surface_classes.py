@@ -19,9 +19,17 @@
   python3 tools/check_surface_classes.py --selftest
 
 Коды выхода: 0 — порядок, 1 — есть карточки без класса или без паспорта.
+
+ПРИЁМКА 25.09.2026: прогон по живому реестру дал 12 попаданий. Одно ложное —
+служебный `_ports.json` требовался как карточка, стало пробой. Одиннадцать
+настоящих: установленные приложения без объявленного класса. Вторая редакция
+починки объявляла расхождение копий паспорта отказом и краснела на одиннадцати
+продуктах — снято до заметки, отказ остался за устаревшей канонной копией.
 """
+import hashlib
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,6 +74,11 @@ def installed_cards(registry=DEFAULT_REGISTRY):
     for path in sorted(Path(registry).glob("*.json")):
         if ".bak" in path.name:
             continue
+        # Служебные файлы реестра карточками не являются: `_ports.json` — это таблица
+        # занятых портов. Первая редакция гейта требовала для неё класс поверхности,
+        # то есть врала на живом дереве (замер 25.09.2026).
+        if path.name.startswith("_"):
+            continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except Exception:
@@ -75,10 +88,60 @@ def installed_cards(registry=DEFAULT_REGISTRY):
     return cards
 
 
-def passports_by_id(roots=None):
-    """Паспорта автоматизаций из git — источник правды первого уровня."""
-    found = {}
-    for path in find_passports([str(r) for r in (roots or PASSPORT_ROOTS) if Path(r).is_dir()]):
+
+def _общий_репозиторий(путь: str) -> str:
+    """Хранилище, к которому принадлежит рабочее дерево.
+
+    Замер 25.09.2026: «семь клонов» продукта оказались рабочими деревьями ОДНОГО
+    репозитория, и их общий `.git` лежал в каталоге, который по дате HEAD выглядел
+    самым мёртвым. Чат Агента 1С был в шаге от того, чтобы удалить его как мёртвый
+    клон — вместе с историей и пятнадцатью ветками всех остальных деревьев.
+    Поэтому сначала спрашиваем git, дерево это или отдельная копия.
+    """
+    каталог = Path(путь).parent
+    for _ in range(6):
+        if (каталог / ".git").exists():
+            try:
+                из_git = subprocess.run(["git", "-C", str(каталог), "rev-parse", "--git-common-dir"],
+                                        capture_output=True, text=True, timeout=20)
+                общий = (из_git.stdout or "").strip()
+                if общий:
+                    путь_общий = Path(общий)
+                    return str((каталог / путь_общий).resolve() if not путь_общий.is_absolute()
+                               else путь_общий.resolve())
+            except Exception:                                      # noqa: BLE001
+                return str(каталог)
+            return str(каталог)
+        каталог = каталог.parent
+    return ""
+
+
+def passports_by_id(roots=None, таблица=None):
+    """Паспорта автоматизаций из git — источник правды первого уровня.
+
+    ДВА ЗАМЕРА 25.09.2026, оба меняли вердикт гейта на чужой предмет:
+
+    1. Имя файла сверялось с учётом регистра, и паспорт, названный
+       `AUTOMATION_PASSPORT.yaml`, был невидим: гейт продолжал ругаться «паспорта
+       нет», когда паспорт написан и лежит рядом.
+    2. На машине владельца пять копий одного паспорта в разных клонах продукта.
+       Прежняя редакция брала первую попавшуюся и «не спорила» — и читала копию из
+       мёртвого legacy-клона, то есть выносила вердикт не о том файле. Теперь
+       неоднозначность — это отказ (H70), а разрешается она объявлением
+       `passport:` в surface_classes.yaml.
+    """
+    найдено = {}
+    дубли = {}
+    корни = [str(r) for r in (roots or PASSPORT_ROOTS) if Path(r).is_dir()]
+    пути = list(find_passports(корни))
+    # Регистр имени файла не должен решать судьбу паспорта.
+    for корень in корни:
+        for путь in Path(корень).rglob("*"):
+            if (путь.is_file() and путь.name.lower() in ("automation_passport.yaml", "automation_passport.yml")
+                    and str(путь) not in пути
+                    and not any(ч in str(путь) for ч in (".git/", "node_modules", "__pycache__"))):
+                пути.append(str(путь))
+    for path in sorted(set(пути)):
         try:
             doc = load_passport(str(path))
         except Exception:
@@ -86,16 +149,57 @@ def passports_by_id(roots=None):
         aid = str(((doc or {}).get("automation") or {}).get("automation_id") or "").strip()
         if not aid:
             continue
-        # Рабочие копии (worktrees) объявляют тот же id — берём первый и не спорим:
-        # дубли id отдельно ловит сборщик реестра.
-        if aid not in found or "worktrees" in str(found[aid]["path"]):
-            found[aid] = {"path": path, "doc": doc}
-    return found
+        дубли.setdefault(aid, []).append(str(path))
+        if aid not in найдено:
+            найдено[aid] = {"path": path, "doc": doc}
+    # Канонная копия выбирается по ЖИЗНИ репозитория, а не по месту и имени.
+    #
+    # Замер 25.09.2026, семь клонов Агента 1С на машине владельца: живой ровно один
+    # (HEAD от 25.09), остальные шесть стоят с июля-августа. Прежняя редакция брала
+    # первую по алфавиту и читала клон, мёртвый с 27.07; следующая — копию из
+    # ~/Documents/Extella, мёртвую с 12.08. Оба признака — место и имя — не связаны
+    # с тем, жив ли репозиторий, и гейт уверенно судил о трупах.
+    #
+    # Порядок: объявленная строкой passport: → самый свежий HEAD → если два самых
+    # свежих клона разошлись содержимым и датой почти не отличаются, вердикт не
+    # выносится: требуется объявление (H70 — неоднозначность это стоп).
+    общий_репозиторий = _общий_репозиторий
+
+    def свежесть(путь: str) -> int:
+        каталог = Path(путь).parent
+        for _ in range(6):
+            if (каталог / ".git").exists():
+                try:
+                    из_git = subprocess.run(["git", "-C", str(каталог), "log", "-1", "--format=%ct"],
+                                            capture_output=True, text=True, timeout=20)
+                    return int((из_git.stdout or "0").strip() or 0)
+                except Exception:                                  # noqa: BLE001
+                    return 0
+            каталог = каталог.parent
+        return 0
+
+    for aid, копии in дубли.items():
+        объявлен = str(((таблица or {}).get(aid) or {}).get("passport") or "").strip()
+        выбор = [к for к in копии if объявлен and объявлен in к]
+        if not выбор:
+            выбор = sorted(копии, key=свежесть, reverse=True)
+        try:
+            найдено[aid] = {"path": выбор[0], "doc": load_passport(выбор[0]), "копии": копии,
+                            "свежесть": свежесть(выбор[0]),
+                            **{"хранилище_%s" % к: общий_репозиторий(к) for к in копии}}
+        except Exception:                                          # noqa: BLE001
+            найдено[aid] = {"path": выбор[0], "doc": найдено.get(aid, {}).get("doc") or {},
+                            "копии": копии, "свежесть": свежесть(выбор[0])}
+    return найдено
 
 
 def audit(table, cards, passports):
     """Что не так. Пустой список = порядок."""
     problems = []
+    # Расхождение копий — ЗАМЕТКА, а не отказ. Клонов репозитория у нас много, и
+    # рабочая ветка законно отличается от канона; красная стена на одиннадцати
+    # продуктах отключила бы гейт целиком. Отказ остаётся там, где он был: канонная
+    # копия не проходит гейт паспорта. Замер 25.09.2026.
     for card in cards:
         cid = card["id"]
         entry = table.get(cid)
@@ -143,6 +247,90 @@ def selftest():
     if "known_system" in problems:
         print("FAIL: платформенная поверхность зря потребовала паспорт")
         return 1
+
+    # Приёмка 25.09.2026: живой прогон дал две ложные тревоги — служебный `_ports.json`
+    # (проба ниже) и расхождение копий паспорта в одиннадцати продуктах. Второе оказалось
+    # не дефектом продуктов, а следствием того, что клонов репозитория много: расхождение
+    # стало заметкой, а выбор канонной копии — явным.
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as вр2:
+        к = Path(вр2)
+        (к / "Extella").mkdir(); (к / "Codex").mkdir()
+        (к / "Extella" / "automation_passport.yaml").write_text(
+            "automation:\n  automation_id: проба\n  hosting_profile: local\n", encoding="utf-8")
+        (к / "Codex" / "automation_passport.yaml").write_text(
+            "automation:\n  automation_id: проба\n  hosting_profile: cloud\n", encoding="utf-8")
+        найдено = passports_by_id([к / "Codex", к / "Extella"],
+                                  {"проба": {"passport": "Extella"}})
+        сведения = найдено.get("проба", {})
+        if "Extella" not in str(сведения.get("path")):
+            print("FAIL: объявленная канонная копия паспорта не выбрана")
+            return 1
+        if len(сведения.get("копии") or []) != 2:
+            print("FAIL: расхождение копий не замечено")
+            return 1
+        if "проба" in dict(audit({}, [], найдено)):
+            print("FAIL: расхождение копий в клонах объявлено отказом — это заметка")
+            return 1
+
+        # Выбор по жизни репозитория, а не по месту: мёртвый клон не должен побеждать
+        # только потому, что лежит в «нашем» каталоге (замер 25.09.2026 — семь клонов
+        # Агента 1С, живой один).
+        import subprocess as _sp, time as _t
+        def _репо(путь, когда):
+            путь.mkdir(parents=True, exist_ok=True)
+            _sp.run(["git", "init", "-q", str(путь)], check=True)
+            (путь / "docs").mkdir(exist_ok=True)
+            (путь / "docs" / "automation_passport.yaml").write_text(
+                "automation:\n  automation_id: живость\n  hosting_profile: local\n", encoding="utf-8")
+            окружение = {"GIT_AUTHOR_DATE": когда, "GIT_COMMITTER_DATE": когда,
+                         "GIT_AUTHOR_NAME": "п", "GIT_AUTHOR_EMAIL": "п@п",
+                         "GIT_COMMITTER_NAME": "п", "GIT_COMMITTER_EMAIL": "п@п",
+                         "PATH": os.environ.get("PATH", "")}
+            _sp.run(["git", "-C", str(путь), "add", "-A"], check=True, env=окружение)
+            _sp.run(["git", "-C", str(путь), "commit", "-qm", "п"], check=True, env=окружение)
+
+        with _tf.TemporaryDirectory() as вр3:
+            корень = Path(вр3)
+            _репо(корень / "Extella" / "мёртвый", "2026-07-01T10:00:00")
+            _репо(корень / "Codex" / "живой", "2026-09-25T10:00:00")
+            выбрано = passports_by_id([корень], {})
+            if "живой" not in str(выбрано.get("живость", {}).get("path")):
+                print("FAIL: выбран мёртвый клон вместо живого")
+                return 1
+
+            # Рабочее дерево — не копия: у них общее хранилище, и каталог со старым
+            # HEAD может оказаться тем самым хранилищем (замер 25.09.2026).
+            основной = корень / "Extella" / "мёртвый"
+            дерево = корень / "дерево"
+            окружение = {"PATH": os.environ.get("PATH", ""), "HOME": str(корень)}
+            _sp.run(["git", "-C", str(основной), "worktree", "add", "-q", "--detach", str(дерево)],
+                    check=True, env=окружение)
+            from check_surface_classes import passports_by_id as _сам   # noqa: F401
+            общие = {_общий_репозиторий(str(основной / "docs" / "automation_passport.yaml")),
+                     _общий_репозиторий(str(дерево / "docs" / "automation_passport.yaml"))}
+            if len(общие) != 1:
+                print("FAIL: рабочее дерево принято за отдельную копию")
+                return 1
+    одна = {"один": {"копии": ["/а/docs/automation_passport.yaml"], "doc": {}}}
+    if "один" in dict(audit({}, [], одна)):
+        print("FAIL: единственная копия паспорта объявлена проблемой")
+        return 1
+
+    # Приёмка 25.09.2026: живой прогон дал одну ложную тревогу — служебный
+    # `_ports.json` (таблица портов) требовался как карточка. Проба держит это.
+    import tempfile
+    with tempfile.TemporaryDirectory() as вр:
+        реестр = Path(вр)
+        (реестр / "_ports.json").write_text('{"robin": 45103}', encoding="utf-8")
+        (реестр / "robin.json").write_text('{"id": "robin", "name": "Robin"}', encoding="utf-8")
+        найденные = {к["id"] for к in installed_cards(реестр)}
+        if "_ports" in найденные:
+            print("FAIL: служебный файл реестра посчитан карточкой")
+            return 1
+        if "robin" not in найденные:
+            print("FAIL: настоящая карточка потеряна")
+            return 1
     print("селфтест: карточка без класса и automation без паспорта ловятся")
     return 0
 
@@ -173,6 +361,22 @@ def main(argv):
     print("")
 
     problems = audit(table, cards, passports)
+    for aid, сведения in sorted(passports.items()):
+        копии = sorted(set(сведения.get("копии") or []))
+        разные = set()
+        for к in копии:
+            try:
+                разные.add(hashlib.sha256(Path(к).read_bytes()).hexdigest())
+            except OSError:
+                разные.add(к)
+        if len(разные) > 1:
+            хранилища = {сведения.get("хранилище_%s" % к, "") for к in копии}
+            общее = len({х for х in хранилища if х}) == 1
+            print("  ~ %-26s паспорт расходится в %d %s; канонной считаю %s"
+                  % (aid, len(копии),
+                     "рабочих деревьях ОДНОГО репозитория (снимать только git worktree remove)"
+                     if общее else "рабочих копиях",
+                     сведения.get("path")))
     if not problems:
         print("У каждой карточки объявлен класс; у каждой автоматизации есть паспорт.")
         return 0

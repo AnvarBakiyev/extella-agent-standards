@@ -90,3 +90,18 @@ surfaces:
   thindemo:
     class: probe
     why: "Проба тонкой панели, оставшаяся от проверки моста; в парке клиента ей не место"
+
+  # Приложения, установленные владельцем через витрину и GitHub-трек (объявлено
+  # интегратором 25.09.2026 после живого прогона гейта: карточки были на устройстве,
+  # класса не имели, и Console показывала бы их как автоматизации без паспорта).
+  # Это чужие продукты: мы их не сопровождаем и паспорта автоматизации им не заводим.
+  gods_eye_view:           {class: installed_app, why: "стороннее приложение с GitHub"}
+  hermes-agent:            {class: installed_app, why: "стороннее приложение с GitHub"}
+  human_atlas:             {class: installed_app, why: "стороннее приложение: 3D-анатомия"}
+  inventree_stock:         {class: installed_app, why: "стороннее приложение: складской учёт"}
+  marketplace_analytics_lab: {class: installed_app, why: "локальное приложение аналитики каталога"}
+  openmaic:                {class: installed_app, why: "стороннее приложение: учебный класс"}
+  osint_kazakhstan:        {class: installed_app, why: "стороннее приложение с GitHub"}
+  osiris:                  {class: installed_app, why: "стороннее приложение с GitHub"}
+  robin:                   {class: installed_app, why: "стороннее приложение с GitHub"}
+  rock_paper_scissors_yolo: {class: installed_app, why: "стороннее приложение: игра с камерой"}
