@@ -18,6 +18,10 @@
 «Русский и английский сразу», H95). Раздел без английского — нарушение; начатый
 перевод обязан быть полным и не отставать от русского.
 
+ПРИЁМКА 25.09.2026: прогон по content.json ложных тревог не дал; настоящих
+находок 2 — английский текст ушёл вперёд русского и эксперт был переименован
+в переводе (dev_connect_agent вместо dev_connect_assistant).
+
     python3 tools/check_translation.py store_app/content.json
     python3 tools/check_translation.py --selftest
     python3 tools/check_translation.py --отпечатки store_app/content.json  # проставить
