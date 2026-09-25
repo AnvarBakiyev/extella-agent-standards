@@ -165,6 +165,11 @@ run check_listing_meta
 run check_installable
 # Храповик канона: доля правил, которые охраняет машина, может только расти.
 run_command "правила разложены по одному файлу" python3 "$ROOT/tools/split_rules.py" --check
+# Живой прогон обязателен отдельно от самопроверки: `run` спрашивает у гейта
+# «исправен ли ты» на рукотворных пробах, а грязь в репозитории видит только
+# обычный запуск. Гейт размеров стоял в наборе без живого прогона — то есть
+# самопроверялся, но текст не сверял (замер 25.09.2026).
+run_command "размеры файлов совпадают с диском" python3 "$ROOT/tools/check_file_size_claims.py"
 run check_file_size_claims
 run check_assistant_onboarding
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
