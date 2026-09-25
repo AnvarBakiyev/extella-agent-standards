@@ -170,14 +170,16 @@ run_command "правила разложены по одному файлу" pyt
 # «исправен ли ты» на рукотворных пробах, а грязь в репозитории видит только
 # обычный запуск. Гейт размеров стоял в наборе без живого прогона — то есть
 # самопроверялся, но текст не сверял (замер 25.09.2026).
-run_command "размеры файлов совпадают с диском" python3 "$ROOT/tools/check_file_size_claims.py"
-run check_file_size_claims
 run_command "размеры файлов в тексте правдивы" python3 "$ROOT/tools/check_file_size_claims.py"
+run check_file_size_claims
+run_command "подключение ассистента закрыто продуктом" python3 "$ROOT/tools/check_assistant_onboarding.py"
 run check_assistant_onboarding
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
 run check_counted_claims
+run_command "гейты приняты прогоном по предмету" python3 "$ROOT/tools/check_gate_acceptance.py"
+run check_gate_acceptance
 run check_device_pinning
 run_command "закрепление за машиной массивом" python3 "$ROOT/tools/check_device_pinning.py"
 run check_canon_coverage
