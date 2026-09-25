@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+# Рельсы репозитория: четыре проверки ДО коммита, каждая — из живой аварии.
+#
+# Установка в своём репозитории, одна команда:
+#   cp .../extella-agent-standards/templates/repo-starter/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# Самопроверка, без коммита:
+#   bash templates/repo-starter/pre-commit --selftest
+#
+# ИМЕНА ПЕРЕМЕННЫХ И ФУНКЦИЙ — ЛАТИНИЦЕЙ, НАМЕРЕННО. В нашем коде принято писать
+# по-русски, но bash 3.2 (штатный на macOS) кириллические идентификаторы не
+# поддерживает: `local имя=...` отвечает «not a valid identifier», а
+# `> "$каталог/файл"` не раскрывает переменную вовсе. Поймано на этом самом файле
+# 25.09.2026: первая редакция «работала» и молча пропускала две пробы из семи.
+# Сообщения человеку остаются русскими.
+#
+# Откуда взялась каждая проверка (аудит команды 25.09.2026):
+#  1. СИНТАКСИС — сломанный Python доехал до прода; три коммита из пяти были
+#     попытками поправить одну скобку в течение тринадцати часов.
+#  2. СЕКРЕТЫ — ключ полного доступа к базе лежал в публичном репозитории с июля,
+#     срок годности до 2036 года; за ним телефоны, участки и договоры людей.
+#  3. ПЕРСОНАЛЬНЫЕ ДАННЫЕ — файл с именами и датами рождения 19 сотрудников
+#     опубликован ботом, который дописывает его при каждой команде.
+#  4. МУСОР СБОРКИ — скомпилированные файлы и кэш попадали в историю.
+#
+# Отказ называет, ЧТО и ГДЕ, и как обойти осознанно: git commit --no-verify.
+# Запрет, который нельзя обойти, обходят целиком.
+
+set -uo pipefail
+
+red() { printf '  ✗ %s\n' "$1"; }
+yel() { printf '  ~ %s\n' "$1"; }
+
+staged_files() {
+  git diff --cached --name-only --diff-filter=ACM 2>/dev/null
+}
+
+check_syntax() {
+  f="$1"
+  case "$f" in
+    *.py)
+      python3 -m py_compile "$f" 2>/dev/null || {
+        red "$f: синтаксическая ошибка Python — выкладка сломает прод"; return 1; } ;;
+    *.js|*.mjs)
+      if command -v node >/dev/null 2>&1; then
+        node --check "$f" 2>/dev/null || { red "$f: синтаксическая ошибка JavaScript"; return 1; }
+      fi ;;
+    *.json)
+      python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f" 2>/dev/null || {
+        red "$f: сломанный JSON"; return 1; } ;;
+  esac
+  return 0
+}
+
+# Ключи ищем по ФОРМЕ, а не по имени переменной: имя переименовывают, форма остаётся.
+check_secrets() {
+  f="$1"
+  if grep -Eq 'eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}' "$f" 2>/dev/null; then
+    red "$f: похоже на ключ JWT (Supabase, Firebase) прямо в коде"; return 1; fi
+  if grep -Eq '(sk-[A-Za-z0-9]{20,}|gsk_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,})' "$f" 2>/dev/null; then
+    red "$f: похоже на ключ провайдера (OpenAI, Groq, GitHub, Slack) в коде"; return 1; fi
+  if grep -Eq '[0-9]{8,10}:AA[A-Za-z0-9_-]{30,}' "$f" 2>/dev/null; then
+    red "$f: похоже на токен Telegram-бота в коде"; return 1; fi
+  return 0
+}
+
+check_personal() {
+  f="$1"
+  case "$f" in
+    *.json|*.csv|*.yaml|*.yml)
+      if grep -Eqi '(birthday|birth_date|дата_рождения|день_рождения)' "$f" 2>/dev/null; then
+        red "$f: похоже на список людей с датами рождения — это персональные данные"; return 1; fi
+      phones="$(grep -Eco '(\+7|8)[0-9]{10}' "$f" 2>/dev/null || echo 0)"
+      if [ "${phones:-0}" -ge 3 ]; then
+        red "$f: три и больше телефонов в файле — это персональные данные"; return 1; fi ;;
+  esac
+  return 0
+}
+
+check_junk() {
+  f="$1"
+  case "$f" in
+    *__pycache__*|*.pyc|*/node_modules/*|*.DS_Store)
+      yel "$f: мусор сборки в коммите — добавь в .gitignore"; return 1 ;;
+  esac
+  return 0
+}
+
+run_checks() {
+  bad=0
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    [ -f "$f" ] || continue
+    check_syntax   "$f" || bad=$((bad + 1))
+    check_secrets  "$f" || bad=$((bad + 1))
+    check_personal "$f" || bad=$((bad + 1))
+    check_junk     "$f" || bad=$((bad + 1))
+  done <<EOF
+$1
+EOF
+  return $bad
+}
+
+probe() {                 # имя пробы, файл, ждём ли красноту (yes|no)
+  name="$1"; file="$2"; expect_red="$3"
+  if run_checks "$file" >/dev/null 2>&1; then green="yes"; else green="no"; fi
+  if [ "$expect_red" = "yes" ] && [ "$green" = "yes" ]; then
+    echo "  ✗ $name — не пойман"; fails=1; return; fi
+  if [ "$expect_red" = "no" ] && [ "$green" = "no" ]; then
+    echo "  ✗ $name — ложная тревога"; fails=1; return; fi
+  echo "  ✓ $name"
+}
+
+selftest() {
+  echo "Самопроверка рельсов:"
+  tmp="$(mktemp -d)"
+  fails=0
+
+  printf 'x = (1\n' > "$tmp/broken.py"
+  probe "сломанный Python ловится" "$tmp/broken.py" yes
+
+  printf 'k = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0"\n' > "$tmp/key.py"
+  probe "ключ JWT ловится" "$tmp/key.py" yes
+
+  printf 'k = "sk-abcdefghijklmnopqrstuvwxyz0123"\n' > "$tmp/key2.py"
+  probe "ключ провайдера ловится" "$tmp/key2.py" yes
+
+  printf '[{"name":"Иван","birthday":"1990-01-01"}]\n' > "$tmp/people.json"
+  probe "список с датами рождения ловится" "$tmp/people.json" yes
+
+  printf 'print("привет")\n' > "$tmp/good.py"
+  probe "исправный Python проходит молча" "$tmp/good.py" no
+
+  printf 'const a = 1;\n' > "$tmp/good.js"
+  probe "исправный JavaScript проходит" "$tmp/good.js" no
+
+  printf '{"ключ": "значение"}\n' > "$tmp/plain.json"
+  probe "обычный JSON не считается персональными данными" "$tmp/plain.json" no
+
+  rm -rf "$tmp"
+  if [ "$fails" = "0" ]; then echo "ИТОГ: все проверки прошли"; return 0; fi
+  echo "ИТОГ: есть провалы"; return 1
+}
+
+if [ "${1:-}" = "--selftest" ]; then
+  selftest
+  exit $?
+fi
+
+list="$(staged_files)"
+[ -z "$list" ] && exit 0
+if ! run_checks "$list"; then
+  cat <<'END'
+
+Коммит остановлен. Это не придирка: каждая проверка выше стоит здесь из-за
+настоящей аварии — сломанный прод, опубликованный ключ, открытые данные людей.
+
+Что делать:
+  · синтаксис — поправить файл;
+  · ключ — убрать из кода, читать из переменной окружения, старый ОТОЗВАТЬ;
+  · персональные данные — в приватное хранилище, не в репозиторий;
+  · мусор сборки — добавить в .gitignore.
+
+Осознанно пропустить: git commit --no-verify
+END
+  exit 1
+fi
+exit 0
