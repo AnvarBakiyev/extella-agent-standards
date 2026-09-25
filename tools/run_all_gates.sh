@@ -160,6 +160,7 @@ run register_new_agents
 run check_agent_repo
 run check_manifest_copies
 run check_surface_classes
+run_command "классы поверхностей на устройстве" python3 "$ROOT/tools/check_surface_classes.py"
 run check_app_scopes
 run check_listing_meta
 run check_installable
@@ -171,13 +172,16 @@ run_command "правила разложены по одному файлу" pyt
 # самопроверялся, но текст не сверял (замер 25.09.2026).
 run_command "размеры файлов совпадают с диском" python3 "$ROOT/tools/check_file_size_claims.py"
 run check_file_size_claims
+run_command "размеры файлов в тексте правдивы" python3 "$ROOT/tools/check_file_size_claims.py"
 run check_assistant_onboarding
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
 run check_counted_claims
 run check_device_pinning
+run_command "закрепление за машиной массивом" python3 "$ROOT/tools/check_device_pinning.py"
 run check_canon_coverage
+run_command "покрытие канона не упало" python3 "$ROOT/tools/check_canon_coverage.py"
 run platform_client
 run connect_mcp
 run check_toolkit
