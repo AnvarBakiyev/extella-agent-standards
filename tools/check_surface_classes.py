@@ -29,6 +29,7 @@
 import hashlib
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -123,22 +124,41 @@ def passports_by_id(roots=None, таблица=None):
         дубли.setdefault(aid, []).append(str(path))
         if aid not in найдено:
             найдено[aid] = {"path": path, "doc": doc}
-    # Канонная копия выбирается явно, а не «первая попавшаяся»: объявленная строкой
-    # passport: в surface_classes.yaml, иначе — лежащая в ~/Documents/Extella (наш
-    # канонный каталог), иначе первая. Прежняя редакция читала копию из мёртвой
-    # ветки Codex и выносила вердикт не о том файле.
-    канон = str(Path.home() / "Documents" / "Extella")
+    # Канонная копия выбирается по ЖИЗНИ репозитория, а не по месту и имени.
+    #
+    # Замер 25.09.2026, семь клонов Агента 1С на машине владельца: живой ровно один
+    # (HEAD от 25.09), остальные шесть стоят с июля-августа. Прежняя редакция брала
+    # первую по алфавиту и читала клон, мёртвый с 27.07; следующая — копию из
+    # ~/Documents/Extella, мёртвую с 12.08. Оба признака — место и имя — не связаны
+    # с тем, жив ли репозиторий, и гейт уверенно судил о трупах.
+    #
+    # Порядок: объявленная строкой passport: → самый свежий HEAD → если два самых
+    # свежих клона разошлись содержимым и датой почти не отличаются, вердикт не
+    # выносится: требуется объявление (H70 — неоднозначность это стоп).
+    def свежесть(путь: str) -> int:
+        каталог = Path(путь).parent
+        for _ in range(6):
+            if (каталог / ".git").exists():
+                try:
+                    из_git = subprocess.run(["git", "-C", str(каталог), "log", "-1", "--format=%ct"],
+                                            capture_output=True, text=True, timeout=20)
+                    return int((из_git.stdout or "0").strip() or 0)
+                except Exception:                                  # noqa: BLE001
+                    return 0
+            каталог = каталог.parent
+        return 0
+
     for aid, копии in дубли.items():
         объявлен = str(((таблица or {}).get(aid) or {}).get("passport") or "").strip()
         выбор = [к for к in копии if объявлен and объявлен in к]
         if not выбор:
-            выбор = [к for к in копии if к.startswith(канон)]
-        if not выбор:
-            выбор = копии
+            выбор = sorted(копии, key=свежесть, reverse=True)
         try:
-            найдено[aid] = {"path": выбор[0], "doc": load_passport(выбор[0]), "копии": копии}
-        except Exception:
-            найдено[aid] = {"path": выбор[0], "doc": найдено.get(aid, {}).get("doc") or {}, "копии": копии}
+            найдено[aid] = {"path": выбор[0], "doc": load_passport(выбор[0]), "копии": копии,
+                            "свежесть": свежесть(выбор[0])}
+        except Exception:                                          # noqa: BLE001
+            найдено[aid] = {"path": выбор[0], "doc": найдено.get(aid, {}).get("doc") or {},
+                            "копии": копии, "свежесть": свежесть(выбор[0])}
     return найдено
 
 
@@ -221,6 +241,32 @@ def selftest():
         if "проба" in dict(audit({}, [], найдено)):
             print("FAIL: расхождение копий в клонах объявлено отказом — это заметка")
             return 1
+
+        # Выбор по жизни репозитория, а не по месту: мёртвый клон не должен побеждать
+        # только потому, что лежит в «нашем» каталоге (замер 25.09.2026 — семь клонов
+        # Агента 1С, живой один).
+        import subprocess as _sp, time as _t
+        def _репо(путь, когда):
+            путь.mkdir(parents=True, exist_ok=True)
+            _sp.run(["git", "init", "-q", str(путь)], check=True)
+            (путь / "docs").mkdir(exist_ok=True)
+            (путь / "docs" / "automation_passport.yaml").write_text(
+                "automation:\n  automation_id: живость\n  hosting_profile: local\n", encoding="utf-8")
+            окружение = {"GIT_AUTHOR_DATE": когда, "GIT_COMMITTER_DATE": когда,
+                         "GIT_AUTHOR_NAME": "п", "GIT_AUTHOR_EMAIL": "п@п",
+                         "GIT_COMMITTER_NAME": "п", "GIT_COMMITTER_EMAIL": "п@п",
+                         "PATH": os.environ.get("PATH", "")}
+            _sp.run(["git", "-C", str(путь), "add", "-A"], check=True, env=окружение)
+            _sp.run(["git", "-C", str(путь), "commit", "-qm", "п"], check=True, env=окружение)
+
+        with _tf.TemporaryDirectory() as вр3:
+            корень = Path(вр3)
+            _репо(корень / "Extella" / "мёртвый", "2026-07-01T10:00:00")
+            _репо(корень / "Codex" / "живой", "2026-09-25T10:00:00")
+            выбрано = passports_by_id([корень], {})
+            if "живой" not in str(выбрано.get("живость", {}).get("path")):
+                print("FAIL: выбран мёртвый клон вместо живого")
+                return 1
     одна = {"один": {"копии": ["/а/docs/automation_passport.yaml"], "doc": {}}}
     if "один" in dict(audit({}, [], одна)):
         print("FAIL: единственная копия паспорта объявлена проблемой")
