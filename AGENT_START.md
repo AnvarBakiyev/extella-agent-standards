@@ -22,12 +22,13 @@
 
 | Задача | Читать (по порядку) |
 |---|---|
-| Подключиться к Extella на этой машине | `rules/H108.md`, затем `tools/connect_mcp.py` |
+| Подключиться к Extella на этой машине | `rules/H108.md`, `rules/H110.md`, затем `tools/connect_mcp.py` |
 | Построить агента и его способности | `AGENT_BUILD_GUIDE.md`, `rules/H5.md` |
 | Страничное приложение в окне ОС | `rules/H106.md`, `rules/H107.md`, `rules/H54.md`, `rules/H17.md` |
 | Выложить в магазин | `RUNBOOK_STORE_PUBLISH.md` (10 КБ), `rules/H109.md`, `rules/H20.md` |
 | Установщик и доставка на устройство | `INSTALLER_CANON.md`, `rules/H98.md`, `rules/H103.md` |
 | Интерфейс, тексты, бренд | `WRITING_RULES.md`, `BRAND_FOR_AGENTS.md`, `DESIGN_CODE.md` |
+| Двуязычие продукта (RU+EN) | `rules/H95.md`, `rules/H111.md` |
 | **Что-то не работает** | `SYMPTOMS.md` — вход по симптому: что видно на экране → куда смотреть |
 | Что доказано, а что лаборатория | `README.md`, раздел статусов; `LAB.md` — читать, не выполнять |
 
