@@ -12,7 +12,7 @@
 
     https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/rules/H106.md
 
-Оглавление всех 116 правил (9 КБ): `rules/INDEX.md`.
+Оглавление всех правил (около 10 КБ): `rules/INDEX.md` — там номер, тема и ссылка.
 
 **`extella.ai/api.html` — не источник правды.** Это публичная справка, она неполна:
 рабочие пути (вызов эксперта со страницы, публикация, закрепление за машиной) в ней
