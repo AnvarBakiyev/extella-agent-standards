@@ -24,6 +24,8 @@
     python3 tools/check_assistant_onboarding.py --selftest
 
 Коды выхода: 0 — цело, 1 — что-то из трёх сломано или пропало.
+
+ПРИЁМКА 25.09.2026: прогон по репозиторию зелёный, ложных тревог нет.
 """
 
 from __future__ import annotations
