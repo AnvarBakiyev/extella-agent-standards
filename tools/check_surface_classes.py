@@ -66,6 +66,11 @@ def installed_cards(registry=DEFAULT_REGISTRY):
     for path in sorted(Path(registry).glob("*.json")):
         if ".bak" in path.name:
             continue
+        # Служебные файлы реестра карточками не являются: `_ports.json` — это таблица
+        # занятых портов. Первая редакция гейта требовала для неё класс поверхности,
+        # то есть врала на живом дереве (замер 25.09.2026).
+        if path.name.startswith("_"):
+            continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except Exception:
@@ -143,6 +148,21 @@ def selftest():
     if "known_system" in problems:
         print("FAIL: платформенная поверхность зря потребовала паспорт")
         return 1
+
+    # Приёмка 25.09.2026: живой прогон дал одну ложную тревогу — служебный
+    # `_ports.json` (таблица портов) требовался как карточка. Проба держит это.
+    import tempfile
+    with tempfile.TemporaryDirectory() as вр:
+        реестр = Path(вр)
+        (реестр / "_ports.json").write_text('{"robin": 45103}', encoding="utf-8")
+        (реестр / "robin.json").write_text('{"id": "robin", "name": "Robin"}', encoding="utf-8")
+        найденные = {к["id"] for к in installed_cards(реестр)}
+        if "_ports" in найденные:
+            print("FAIL: служебный файл реестра посчитан карточкой")
+            return 1
+        if "robin" not in найденные:
+            print("FAIL: настоящая карточка потеряна")
+            return 1
     print("селфтест: карточка без класса и automation без паспорта ловятся")
     return 0
 
