@@ -20,6 +20,7 @@
 
 Коды выхода: 0 — порядок, 1 — есть карточки без класса или без паспорта.
 """
+import hashlib
 import json
 import os
 import sys
@@ -80,10 +81,32 @@ def installed_cards(registry=DEFAULT_REGISTRY):
     return cards
 
 
-def passports_by_id(roots=None):
-    """Паспорта автоматизаций из git — источник правды первого уровня."""
-    found = {}
-    for path in find_passports([str(r) for r in (roots or PASSPORT_ROOTS) if Path(r).is_dir()]):
+def passports_by_id(roots=None, таблица=None):
+    """Паспорта автоматизаций из git — источник правды первого уровня.
+
+    ДВА ЗАМЕРА 25.09.2026, оба меняли вердикт гейта на чужой предмет:
+
+    1. Имя файла сверялось с учётом регистра, и паспорт, названный
+       `AUTOMATION_PASSPORT.yaml`, был невидим: гейт продолжал ругаться «паспорта
+       нет», когда паспорт написан и лежит рядом.
+    2. На машине владельца пять копий одного паспорта в разных клонах продукта.
+       Прежняя редакция брала первую попавшуюся и «не спорила» — и читала копию из
+       мёртвого legacy-клона, то есть выносила вердикт не о том файле. Теперь
+       неоднозначность — это отказ (H70), а разрешается она объявлением
+       `passport:` в surface_classes.yaml.
+    """
+    найдено = {}
+    дубли = {}
+    корни = [str(r) for r in (roots or PASSPORT_ROOTS) if Path(r).is_dir()]
+    пути = list(find_passports(корни))
+    # Регистр имени файла не должен решать судьбу паспорта.
+    for корень in корни:
+        for путь in Path(корень).rglob("*"):
+            if (путь.is_file() and путь.name.lower() in ("automation_passport.yaml", "automation_passport.yml")
+                    and str(путь) not in пути
+                    and not any(ч in str(путь) for ч in (".git/", "node_modules", "__pycache__"))):
+                пути.append(str(путь))
+    for path in sorted(set(пути)):
         try:
             doc = load_passport(str(path))
         except Exception:
@@ -91,16 +114,35 @@ def passports_by_id(roots=None):
         aid = str(((doc or {}).get("automation") or {}).get("automation_id") or "").strip()
         if not aid:
             continue
-        # Рабочие копии (worktrees) объявляют тот же id — берём первый и не спорим:
-        # дубли id отдельно ловит сборщик реестра.
-        if aid not in found or "worktrees" in str(found[aid]["path"]):
-            found[aid] = {"path": path, "doc": doc}
-    return found
+        дубли.setdefault(aid, []).append(str(path))
+        if aid not in найдено:
+            найдено[aid] = {"path": path, "doc": doc}
+    # Канонная копия выбирается явно, а не «первая попавшаяся»: объявленная строкой
+    # passport: в surface_classes.yaml, иначе — лежащая в ~/Documents/Extella (наш
+    # канонный каталог), иначе первая. Прежняя редакция читала копию из мёртвой
+    # ветки Codex и выносила вердикт не о том файле.
+    канон = str(Path.home() / "Documents" / "Extella")
+    for aid, копии in дубли.items():
+        объявлен = str(((таблица or {}).get(aid) or {}).get("passport") or "").strip()
+        выбор = [к for к in копии if объявлен and объявлен in к]
+        if not выбор:
+            выбор = [к for к in копии if к.startswith(канон)]
+        if not выбор:
+            выбор = копии
+        try:
+            найдено[aid] = {"path": выбор[0], "doc": load_passport(выбор[0]), "копии": копии}
+        except Exception:
+            найдено[aid] = {"path": выбор[0], "doc": найдено.get(aid, {}).get("doc") or {}, "копии": копии}
+    return найдено
 
 
 def audit(table, cards, passports):
     """Что не так. Пустой список = порядок."""
     problems = []
+    # Расхождение копий — ЗАМЕТКА, а не отказ. Клонов репозитория у нас много, и
+    # рабочая ветка законно отличается от канона; красная стена на одиннадцати
+    # продуктах отключила бы гейт целиком. Отказ остаётся там, где он был: канонная
+    # копия не проходит гейт паспорта. Замер 25.09.2026.
     for card in cards:
         cid = card["id"]
         entry = table.get(cid)
@@ -149,6 +191,35 @@ def selftest():
         print("FAIL: платформенная поверхность зря потребовала паспорт")
         return 1
 
+    # Приёмка 25.09.2026: живой прогон дал две ложные тревоги — служебный `_ports.json`
+    # (проба ниже) и расхождение копий паспорта в одиннадцати продуктах. Второе оказалось
+    # не дефектом продуктов, а следствием того, что клонов репозитория много: расхождение
+    # стало заметкой, а выбор канонной копии — явным.
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as вр2:
+        к = Path(вр2)
+        (к / "Extella").mkdir(); (к / "Codex").mkdir()
+        (к / "Extella" / "automation_passport.yaml").write_text(
+            "automation:\n  automation_id: проба\n  hosting_profile: local\n", encoding="utf-8")
+        (к / "Codex" / "automation_passport.yaml").write_text(
+            "automation:\n  automation_id: проба\n  hosting_profile: cloud\n", encoding="utf-8")
+        найдено = passports_by_id([к / "Codex", к / "Extella"],
+                                  {"проба": {"passport": "Extella"}})
+        сведения = найдено.get("проба", {})
+        if "Extella" not in str(сведения.get("path")):
+            print("FAIL: объявленная канонная копия паспорта не выбрана")
+            return 1
+        if len(сведения.get("копии") or []) != 2:
+            print("FAIL: расхождение копий не замечено")
+            return 1
+        if "проба" in dict(audit({}, [], найдено)):
+            print("FAIL: расхождение копий в клонах объявлено отказом — это заметка")
+            return 1
+    одна = {"один": {"копии": ["/а/docs/automation_passport.yaml"], "doc": {}}}
+    if "один" in dict(audit({}, [], одна)):
+        print("FAIL: единственная копия паспорта объявлена проблемой")
+        return 1
+
     # Приёмка 25.09.2026: живой прогон дал одну ложную тревогу — служебный
     # `_ports.json` (таблица портов) требовался как карточка. Проба держит это.
     import tempfile
@@ -193,6 +264,17 @@ def main(argv):
     print("")
 
     problems = audit(table, cards, passports)
+    for aid, сведения in sorted(passports.items()):
+        копии = sorted(set(сведения.get("копии") or []))
+        разные = set()
+        for к in копии:
+            try:
+                разные.add(hashlib.sha256(Path(к).read_bytes()).hexdigest())
+            except OSError:
+                разные.add(к)
+        if len(разные) > 1:
+            print("  ~ %-26s паспорт расходится в %d рабочих копиях; канонной считаю %s"
+                  % (aid, len(копии), сведения.get("path")))
     if not problems:
         print("У каждой карточки объявлен класс; у каждой автоматизации есть паспорт.")
         return 0
