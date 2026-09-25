@@ -167,6 +167,8 @@ run check_installable
 run_command "правила разложены по одному файлу" python3 "$ROOT/tools/split_rules.py" --check
 run check_file_size_claims
 run check_assistant_onboarding
+run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
+run check_entry_app_agreement
 run check_device_pinning
 run check_canon_coverage
 run platform_client
