@@ -109,6 +109,7 @@ run check_self_check
 run extella_doctor
 run check_user_onboarding
 run check_release_license
+run audit_repo
 # Не только селфтест: разбираем ЖИВОЙ файл допуска-образца. Гейт, ни к чему не
 # применённый, ничего не охраняет (H114).
 run_command "допуск-образец" python3 "$ROOT/tools/check_release_license.py" --допуск "$ROOT/templates/РАЗРЕШЁН_ВЫПУСК.yaml"
