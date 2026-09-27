@@ -155,6 +155,13 @@ run_command "латиница в проводе" python3 "$ROOT/tools/check_wire
   "$ROOT/store_app/index.html"
 run check_wire_ascii
 run check_symptom_index
+
+# Английское зеркало en/: каждая переведённая страница несёт хэш русского источника, и гейт
+# краснеет, когда источник ушёл вперёд без перевода. Две версии одного текста расходятся в
+# первый же день правок — так уже было с текстами писем 25.09.2026, где «одобренная»
+# редакция оказалась прошлой недели.
+run check_en_sync
+run_command "английское зеркало" python3 "$ROOT/tools/check_en_sync.py"
 run_command "вход по симптому" python3 "$ROOT/tools/check_symptom_index.py"
 run_command "перевод не отстал" python3 "$ROOT/tools/check_translation.py" "$ROOT/store_app/content.json"
 run check_translation
