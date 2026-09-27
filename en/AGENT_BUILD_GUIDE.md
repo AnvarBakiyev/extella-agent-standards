@@ -1,3 +1,5 @@
+<!-- source: AGENT_BUILD_GUIDE.md sha256:9ea27de00f4114481c31d2fd565b78f1721030d72d0ff5d8302001df2f482dc9 -->
+
 # How to build an Extella agent
 
 **This document is written for a machine.** It is read by Claude, Codex or any app that
@@ -857,3 +859,167 @@ hides the ambiguity that caused the rule to appear. The self-check has been test
 failure.
 
 ### After every edit — an invariants gate
+
+The artifact has a machine integrity check, and it is run **after every edit**:
+tag balance, navigation order, integrity of internal links, validity of embedded
+JSON. An edit without a green gate does not count as done.
+
+An example from the build: `verify_vitrina.py` — div balance, tab order equal to navigation,
+881 "figure → dialogue" links with none broken.
+
+### The build is deterministic and reproducible
+
+Generators run from a fixed seed and give byte-for-byte identical output.
+A published artifact can be restored with one command from git, and the check is a rebuild and a
+comparison of hashes with the published one. Without this, "it built differently for me" can be neither
+confirmed nor refuted.
+
+**Determinism of content is not yet determinism of the artifact.** The author of the rule
+checked it at our request and found a divergence in his own work: 94 files matched file by file, while the
+zip archives of two runs diverged (`5ddfce19…` versus `e7e69ce3…`). Containers carry
+timestamps. After the timestamp was fixed to a constant, two independent runs gave one hash:
+
+```
+845e4033ade7b96ebb2ca57a7f46e0a9c6fe4b565fac7e4ad1cd028b566fa10d  демо «Астра», прогон 3
+845e4033ade7b96ebb2ca57a7f46e0a9c6fe4b565fac7e4ad1cd028b566fa10d  демо «Астра», прогон 4
+d05b627f2e6fab1de332f7f79f961cd27d20f87497f1bf5c87320485555eb150  КТ-бандл, прогон 1
+d05b627f2e6fab1de332f7f79f961cd27d20f87497f1bf5c87320485555eb150  КТ-бандл, прогон 2
+```
+
+**A clarification of the mechanics — measured on our side on 13 Aug 2026, because the phrasing
+"zipfile writes the current time" leads the wrong way.** Python takes the timestamp **from the source file**,
+not from the clock, so not every build breaks:
+
+| How we write | Two runs | Why |
+|---|---|---|
+| `z.write(файл, имя)` with unchanged sources | **match** | the timestamp is taken from the file's `mtime` |
+| `z.writestr("имя", данные)` | **diverge** | a new entry's timestamp = now |
+| `z.write()` over a **re-created** file | **diverge** | the generator updated `mtime` |
+| `ZipInfo(date_time=константа)` | **match** always | the timestamp depends neither on the clock nor on the files |
+
+The practical conclusion: our own archive builder for the Recruiter turned out to be reproducible
+(`ee911fae…` twice) — but **by lucky accident**, because it packs unchanged files
+from disk. Add generation of even one file to it — and reproducibility will vanish
+silently. That is why the timestamp is fixed in advance, not after things have diverged.
+
+A ready implementation: **`templates/det_zip.py`** — a fixed timestamp, fixed permissions,
+sorted write order, refusal on an incomplete build.
+
+**And a separate finding about the checks themselves, from the same pass.** The first version of the
+`det_zip` self-check proved "two runs gave one hash" — and **passed even with the timestamp fixing
+removed**: for a `ZipInfo` without a date the default is also a constant (the year 1980). A repeatability check
+does not check the fixing.
+
+The cure is to check **the property, not the consequence**: re-read the archive and make sure that every
+entry's timestamp equals the given one, and its permissions equal the given ones. After that both deliberate breakages fail:
+removed the timestamp — "timestamp (1980,1,1), not (2026,1,1)"; removed the permissions — "permissions 0o600".
+
+A second detail from the same place: the control check "a naive build diverges" was flaky, because
+**DOS time in zip is a multiple of two seconds**, while the pause was 1.1 s. Two builds landed on the same
+timestamp, and the check sometimes "proved" the opposite.
+
+### The rest is already in the standards — do not rewrite it
+
+| Rule of the method | Where it lives | Do not set up a second time |
+|---|---|---|
+| "Done" = "checked that it is done" | the principle above + "a reconciliation can fail" (`DEPLOY_REQUIREMENTS`, H5-quater) | ✅ |
+| Diagnosis before action | §5a "compare with the old, not with the expectation" | ✅ |
+| Customer data — inside the customer's perimeter | stop rule 2 (`BUILD_STAGES`) + gate `check_masking_policy` | ✅ |
+| Reversibility always | stop rule 4 + versions instead of overwriting (H8, H10) | ✅ |
+| a platform refusal — straight into the canon | §4.6 and gate `check_findings_log` | ✅ |
+| Acceptance by facts, a report without smoothing | the report "closed / not mine / honestly not closed" (`PROMPT_UPDATE_AGENT`) | ✅ |
+
+### Why in the end this is about speed, not neatness
+
+The KT builder chat — the fastest of ours at deploying — answered the question "what is the secret" like this,
+and the answer deserves a place in the method:
+
+> **The one who deploys fast is not the one who deploys fast, but the one who, between "changed" and "deployed",
+> has not a single manual step, not a single unrecorded piece of knowledge and not a single risk
+> unchecked by automation.**
+
+Broken down into five components, each a direct consequence of the rules above:
+
+1. **A rollout is code, not actions.** There is no step "go into the interface and click": build,
+   publication, reinstall — scripts. What is done by hand goes at the speed of hands.
+2. **One reference, three surfaces.** Not three products, but one reference folder from which
+   the derivatives are produced by pipelines. Slow teams make one edit three times.
+3. **Refusals are paid for once.** Every pitfall is recorded in the canon **on the day of the failure** — that is why
+   the calls are right the first time. Speed today is the discipline of recording yesterday.
+4. **Gates instead of manual checking.** Not a hundred pages by eye, but seconds of machine checks.
+   Confidence from automation is exactly time.
+5. **Absence of fear.** A backup, versions instead of overwriting, a one-step rollback, a reproducible
+   build. When you cannot break something irreversibly, "let's re-check everything once more just
+   in case" falls away — and that is exactly where teams lose hours.
+
+**The first assembly of the pipeline costs a day. Each subsequent rollout — minutes.** Teams that
+"do it quickly by hand" win the first day and lose all the others.
+
+### The cycle of one iteration
+
+```
+reconnaissance (what is actually there)
+  → a migration script with unique anchors
+  → the invariants gate
+  → a live check of the result (render / click / request against prod)
+  → the leak gate, if the surface is public
+  → a commit with a trail
+  → acceptance by checklist + an honest report
+```
+
+---
+
+## 6. Anti-patterns — your work will be turned back for these
+
+- one giant prompt instead of an architecture;
+- "full access to everything" for the sake of convenience;
+- an LLM where there is code;
+- "success" on partial execution;
+- quiet self-modification of a production system;
+- a token in the interface, in an iframe or in the model;
+- personal data and keys in knowledge (Concepts);
+- a capability available only from a hidden chat command;
+- a demonstration of a possibility without a working user path;
+- a change to a shared handler without a run of the whole class;
+- a second route map next to the one that already exists in the product;
+- a heavy page inside a plugin card;
+- "fixed" by the code, without proving that the app shows precisely this file;
+- **a check that does real work**: a run with an "empty body" is not safe
+  everywhere — a route that sends outward or creates entities will do it even from
+  an empty body. Such routes are verified only on REFUSALS (a foreign Origin, a wrong
+  identifier), and the successful path on a test perimeter. On 04 Aug my own probe
+  sent two messages to Telegram and created five agents on a live account;
+- **comparing two versions without checking that both are alive**: twice in a day a "match"
+  meant that both servers had not come up or a foreign process was answering on the port.
+  Before comparing — make sure the port is free and that it is precisely your code answering.
+
+---
+
+## 7. References — read them only if you need them
+
+This guide is self-contained. Below is what is loaded as needed, not always:
+
+| File | When it is needed |
+|---|---|
+| `AGENT_CABINET_STANDARD.md` | you are making an automation of several agents or a cabinet |
+| `EXTELLA_AI_ONBOARDING.md` | you need details of how the platform works and its traps |
+| `BRAND_FOR_AGENTS.md` | you are writing interface texts |
+| `NAMING.md` | you are unsure what to call a part of the system |
+| `EVOLUTION_PHILOSOPHY.md` | you need to make a decision that is not described here |
+| `AGENT_ARCHITECTURE.md` | you need the full phrasing of a principle with all its caveats |
+| `CHANGELOG.md` | you need to understand why a rule is exactly the way it is |
+
+---
+
+## 8. What the standard deliberately does not require
+
+So that you do not invent things. On 28 Jul 2026, 30 fields out of 66 were removed from the passports: eight had never been read by anyone
+ever, the rest became optional.
+
+The standard **does not require**: execution budgets (the runtime does not apply them), an on-call person and a success metric
+(the agent is built by a machine — assigning a human on its behalf is an invention), input and output schemas,
+data classification, an evidence schema, a retention policy.
+
+The criterion by which a field stays in the passport: **the product reads it OR a gate stands on it
+that has already caught a live breakage.** Everything else is a waste of your context and a reason to write
+an untruth.

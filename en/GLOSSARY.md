@@ -83,7 +83,38 @@ When a term is missing here, add it here first, then use it.
 | полка (модулей) | shelf | `build_modules_shelf` |
 | белое окно | white window | the blank-window failure state of an app; keep literal, it is a named symptom |
 
+## Terms from the build guide
+
+| Russian | English | Notes |
+|---|---|---|
+| скоуп | scope | |
+| обработчик класса | class handler | |
+| контракт состояния | state contract | `check_state_contract` |
+| заморозка | freeze | |
+| стоп-правила | stop rules | |
+| закрепление (за устройством) | pinning (to a device) | `check_device_pinning` |
+| эксперт-диспетчер | dispatcher expert | |
+| эксперт-обёртка | wrapper expert | |
+| таблица / карта маршрутов | route table / route map | |
+| список допуска / сплошной допуск | allow list / blanket allowance | |
+| оболочка (панели) | shell | |
+| мост | bridge | |
+| выкладка | rollout | |
+| приёмка | acceptance | `gate_acceptance.json` |
+| находки | findings | `findings.yaml`, `check_findings_log` |
+| немой отказ / немое действие | mute refusal / mute action | a refusal with no message — the corpus's named anti-pattern |
+| молчаливая поломка | silent breakage | |
+| тихая подмена | quiet substitution | |
+| якорь | anchor | |
+| эталон | reference | "reference set", "reference folder" |
+| негативный контроль | negative control | a check that must fail, to prove the check works |
+| отпечаток | fingerprint | |
+| слоёный реюз | layered reuse | |
+| навык (устройства) | skill | "skill" is allowed for device skills; it is never used for эксперт |
+
 ## Rules of use
+
+- **Section labels with Cyrillic letters become Latin:** 0а/0б → 0a/0b, 4.2в → 4.2c, 4.2г → 4.2d, 5а–5в → 5a–5c. Cross-references (§0a, §5a) use the same mapping in every document, so links between translated documents keep working.
 
 - Product names from `NAMING.md` stay exactly as written there (Extella Evolution, Agent Passport, Agent Cabinet, Evolution Console, Evolution Lab, Evolution Loop, Evolution Receipt, Shared Gene).
 - Rule identifiers `H<n>` and gate script names are never translated.
