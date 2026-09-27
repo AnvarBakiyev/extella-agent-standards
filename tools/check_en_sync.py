@@ -101,7 +101,9 @@ def stamp(ru: str, en: str):
 def coverage(pairs):
     in_scope = {ru for ru, _ in pairs}
     skip = {"CHANGELOG.md"}
-    ru_docs = sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("*.md") if p.name not in skip)
+    # *.en.md are already English (README.en.md) — nothing to mirror.
+    ru_docs = sorted(str(p.relative_to(ROOT)) for p in ROOT.glob("*.md")
+                     if p.name not in skip and not p.name.endswith(".en.md"))
     for d in ("rules", "docs", "checklists", "skills", "templates"):
         ru_docs += sorted(str(p.relative_to(ROOT)) for p in (ROOT / d).rglob("*.md"))
     missing = [d for d in ru_docs if d not in in_scope and not d.startswith("en/")]

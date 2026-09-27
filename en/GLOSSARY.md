@@ -159,6 +159,19 @@ When a term is missing here, add it here first, then use it.
 | запасной выход | fallback exit | |
 | самоповтор | self-repeat | |
 | разыменование | dereference | |
+| Конструктор | Builder | the app-building surface; never "Constructor" |
+| стол (ОС) | desktop | the OS desktop surface |
+| Библиотека | Library | |
+| страж / сторож / дозор | watcher | one concept, three spellings |
+| общий контур (команды) | shared channel | the team's channel, not a perimeter |
+| прогон-лист | run-sheet | |
+| грабли | pitfalls | "чужие грабли" may stay literal as a rake |
+| петроль | petrol | design-code colour name |
+| ЭСФ | ESF | Kazakhstan e-invoice |
+| Пульт (CEO, агента, прав) | Remote | "CEO Remote"; not Console, not Panel |
+| Заметки / Таблица / Доска / Документы / Задачи / Диаграммы | Notes / Table / Board / Documents / Tasks / Diagrams | Extella's own office apps |
+| область (CSPL, предметная) | domain | distinct from область → scope |
+| Баға | Баға | agent name, keep |
 | мнемоника | mnemonic | |
 | панель | panel | the on-device local admin UI; distinct from cabinet and console |
 

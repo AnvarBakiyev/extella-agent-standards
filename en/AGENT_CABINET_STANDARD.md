@@ -114,7 +114,7 @@ that is our live failure class, not a hypothesis:
 7. **An Evolution Receipt for every creation:** what was created, in which scope, by whom, and how to
    return to the state before the creation.
 8. **A new agent is not created in the cabinet:** the cabinet is about one agent, a new one is born in
-   Evolution Console or in the Constructor (anti-duplication of surfaces, §2.4).
+   Evolution Console or in the Builder (anti-duplication of surfaces, §2.4).
 
 The contract is machine-checkable: the generator `tools/build_agent_cabinet.py` issues an
 `evolution.creation` block (kinds, guarantees, default scope, prohibitions), and the self-check verifies it.
@@ -306,7 +306,7 @@ Not everything installed is a client's automation. The class is declared once in
 | Class | What it is | Does it need an Automation Passport |
 |---|---|---|
 | `automation` | what the client bought and installed | **yes**, and it must pass the gate |
-| `system` | Extella's own platform surface (Constructor, Connections, Workspace, Copilot, Studios, Team, the de-identification service) | no — it is part of the tool |
+| `system` | Extella's own platform surface (Builder, Connections, Workspace, Copilot, Studios, Team, the de-identification service) | no — it is part of the tool |
 | `installed_app` | a third-party app the user installed via the storefront | no — we are not responsible for it |
 | `probe` | our temporary probe | no — it has no place in the client's fleet |
 
