@@ -1,0 +1,9 @@
+# English mirror of the Russian corpus. Checked by tools/check_en_sync.py.
+# Each pair: the Russian source and its translation under en/. The translation's first line
+# is a stamp with the sha256 of the source it was made from; the gate fails when the source
+# moves on without the translation. Add a pair here only when the translation exists.
+docs:
+  - {ru: START_HERE.md, en: en/START_HERE.md}
+  - {ru: CONTRIBUTING.md, en: en/CONTRIBUTING.md}
+  - {ru: AGENTS.md, en: en/AGENTS.md}
+  - {ru: README.md, en: en/README.md}
