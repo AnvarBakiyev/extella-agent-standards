@@ -99,6 +99,254 @@
     "всё.готово": {
       "ru": "Скопировано — снимок, он устареет",
       "en": "Copied — a snapshot, it will go stale"
+    },
+    "отказ.403": {
+      "ru": "Разреши приложению запуск Expert на устройстве и повтори. Право выдаётся в карточке приложения в магазине.",
+      "en": "Allow the application to run an Expert on this device, then try again. The permission is granted on the application's card in the store."
+    },
+    "отказ.устройство": {
+      "ru": "Extella на этом компьютере не отвечает — работать некому. Полностью закрой Extella (⌘Q), открой снова и подожди, пока внизу окна загорится «Running». Потом повтори.",
+      "en": "Extella on this computer is not responding — there is nobody to do the work. Quit Extella completely (⌘Q), open it again and wait until «Running» lights up at the bottom of the window. Then try again."
+    },
+    "отказ.нет_шага": {
+      "ru": "Этот шаг не найден на твоём устройстве. Нажми кнопку обновления в шапке окна: продукт обновился, а окно осталось на старой версии.",
+      "en": "This step was not found on your device. Press the refresh button in the window header: the product has been updated while the window stayed on the old version."
+    },
+    "отказ.нет_установщика": {
+      "ru": "Установщик не найден на этом устройстве. Удали продукт с рабочего стола и добавь заново из магазина — это переустановит установщик. Обновления страницы для этого недостаточно.",
+      "en": "The installer was not found on this device. Remove the product from the desktop and add it again from the store — that reinstalls the installer. Refreshing the page is not enough."
+    },
+    "отказ.401": {
+      "ru": "Продукт обновился, а окно открыто со старой страницей. Нажми кнопку обновления в шапке окна и повтори — ничего переустанавливать не нужно.",
+      "en": "The product has been updated while this window still shows the old page. Press the refresh button in the window header and try again — nothing needs reinstalling."
+    },
+    "отказ.429": {
+      "ru": "Слишком много запросов подряд. Подожди минуту и повтори — это не поломка, предел снимается сам.",
+      "en": "Too many requests in a row. Wait a minute and try again — this is not a failure, the limit lifts by itself."
+    },
+    "отказ.500": {
+      "ru": "Extella не смогла выполнить шаг и не назвала причину, которую можно исправить отсюда. Подожди минуту и повтори. Если повторится — пришли в поддержку снимок этого экрана.",
+      "en": "Extella could not perform the step and named no cause that can be fixed from here. Wait a minute and try again. If it happens again, send support a screenshot of this screen."
+    },
+    "отказ.прочее": {
+      "ru": "Шаг не выполнен: Extella отклонила запрос. Нажми кнопку обновления в шапке окна и повтори.",
+      "en": "The step did not run: Extella rejected the request. Press the refresh button in the window header and try again."
+    },
+    "дп.метка": {
+      "ru": "EXTELLA&nbsp;·&nbsp;ДЕНЬ&nbsp;ПЕРВЫЙ",
+      "en": "EXTELLA&nbsp;·&nbsp;DAY&nbsp;ONE"
+    },
+    "дп.заголовок": {
+      "ru": "У тебя в&nbsp;Загрузках беспорядок",
+      "en": "Your&nbsp;Downloads folder is a mess"
+    },
+    "дп.лид": {
+      "ru": "Extella разберёт его прямо сейчас: на этом компьютере, ничего не отправляя наружу. Файлы не покидают папку — порядок наводится подпапками внутри, и у каждого шага есть откат.",
+      "en": "Extella will sort it out right now: on this computer, sending nothing outside. The files never leave the folder — order is made with subfolders inside it, and every step can be undone."
+    },
+    "дп.старт": {
+      "ru": "Показать, какой",
+      "en": "Show me how bad"
+    },
+    "дп.низ": {
+      "ru": "ДАЛЬШЕ — ВНИЗ",
+      "en": "KEEP SCROLLING"
+    },
+    "дп.станция.1": {
+      "ru": "I · Загрузки",
+      "en": "I · Downloads"
+    },
+    "дп.станция.2": {
+      "ru": "II · память",
+      "en": "II · memory"
+    },
+    "дп.станция.3": {
+      "ru": "III · кто отвечает",
+      "en": "III · who answers"
+    },
+    "дп.станция.4": {
+      "ru": "IV · правило",
+      "en": "IV · the rule"
+    },
+    "дп.станция.5": {
+      "ru": "V · раскладка",
+      "en": "V · sorting"
+    },
+    "дп.станция.6": {
+      "ru": "VI · Доска схем",
+      "en": "VI · Diagram board"
+    },
+    "дп.станция.7": {
+      "ru": "VII · черновик",
+      "en": "VII · the draft"
+    },
+    "дп.1.метка": {
+      "ru": "ЭКСПЕРТ",
+      "en": "EXPERT"
+    },
+    "дп.1.заголовок": {
+      "ru": "Работу делает эксперт — код на твоём компьютере",
+      "en": "An Expert does the work — code on your own computer"
+    },
+    "дп.1.текст": {
+      "ru": "Ни модели, ни интернета, ни оплаты это не потребовало. Эксперт — исполняемый код с параметрами; машина, где он исполняется, зовётся устройством и выбирается при запуске.",
+      "en": "No model, no internet and no payment were needed. An Expert is executable code with parameters; the machine it runs on is called a device and is chosen at launch."
+    },
+    "дп.1.пусто": {
+      "ru": "Нажми кнопку наверху — цифры появятся здесь.",
+      "en": "Press the button above — the numbers will appear here."
+    },
+    "дп.2.метка": {
+      "ru": "КОНЦЕПТ",
+      "en": "CONCEPT"
+    },
+    "дп.2.заголовок": {
+      "ru": "У Extella есть память, и она ищет по смыслу",
+      "en": "Extella has a memory, and it searches by meaning"
+    },
+    "дп.2.текст": {
+      "ru": "Концепт — запись знания, которую агент находит <b>по смыслу</b>, а не по совпадению слов. Спросим память обычной фразой и посмотрим, сколько слов из вопроса встретилось в найденной записи.",
+      "en": "A concept is a piece of knowledge the agent finds <b>by meaning</b>, not by matching words. We will ask the memory in a plain sentence and see how many words from the question appear in what it found."
+    },
+    "дп.2.тихо": {
+      "ru": "Правило и концепт — разное. Правило действует всегда, концепт находится, когда подходит. Поэтому в правило кладут запреты, в концепт — знание.",
+      "en": "A rule and a concept are different things. A rule always applies; a concept is found when it fits. So prohibitions go into rules, and knowledge goes into concepts."
+    },
+    "дп.2.кнопка": {
+      "ru": "Спросить память о порядке в файлах",
+      "en": "Ask the memory about tidy files"
+    },
+    "дп.3.метка": {
+      "ru": "КТО ОТВЕЧАЕТ",
+      "en": "WHO ANSWERS"
+    },
+    "дп.3.заголовок": {
+      "ru": "Отвечает тот, кто у тебя есть",
+      "en": "Whoever you have is who answers"
+    },
+    "дп.3.текст": {
+      "ru": "Сначала агент Extella, если на аккаунте есть кредиты. Нет кредитов — модель на твоём диске: бесплатно и без выхода наружу. Нет и её — скажем прямо и пойдём дальше: остальные шаги работают без модели.",
+      "en": "First the Extella agent, if the account has credits. No credits — a model on your own disk: free and with nothing leaving the machine. Neither one — we will say so plainly and move on: the remaining steps work without a model."
+    },
+    "дп.3.кнопка": {
+      "ru": "Назвать темы моих файлов",
+      "en": "Name the topics in my files"
+    },
+    "дп.4.метка": {
+      "ru": "ПРАВИЛО",
+      "en": "THE RULE"
+    },
+    "дп.4.заголовок": {
+      "ru": "Сейчас Extella откажется делать то, что ты просишь",
+      "en": "Extella is about to refuse what you ask"
+    },
+    "дп.4.текст": {
+      "ru": "Попроси навести порядок — раскладка не начнётся. Эксперта остановит правило, и ты прочтёшь его дословно. Правило читается всегда и имеет высший приоритет: даже твоя кнопка ему не указ.",
+      "en": "Ask it to tidy up and the sorting will not start. A rule stops the Expert, and you will read that rule word for word. A rule is always read and always wins: even your own button does not override it."
+    },
+    "дп.4.кнопка": {
+      "ru": "Навести порядок",
+      "en": "Tidy it up"
+    },
+    "дп.4.остановило": {
+      "ru": "ПРАВИЛО ОСТАНОВИЛО РАБОТУ",
+      "en": "A RULE STOPPED THE WORK"
+    },
+    "дп.4.разрешаю": {
+      "ru": "Разрешаю",
+      "en": "I allow it"
+    },
+    "дп.5.метка": {
+      "ru": "РАБОТА СДЕЛАНА",
+      "en": "THE WORK IS DONE"
+    },
+    "дп.5.заголовок": {
+      "ru": "Открой Finder — там уже порядок",
+      "en": "Open Finder — it is already tidy"
+    },
+    "дп.5.текст": {
+      "ru": "Раскладка выполнена внутри Загрузок, папка открылась сама. Рядом лёг файл отката: одно нажатие — и всё как было. Работа без отката здесь считается дефектом.",
+      "en": "The sorting happened inside Downloads and the folder opened by itself. An undo file was written next to it: one press and everything is back. Work without an undo counts as a defect here."
+    },
+    "дп.5.откат": {
+      "ru": "Вернуть как было",
+      "en": "Put it back"
+    },
+    "дп.6.метка": {
+      "ru": "ВТОРОЕ ПРИЛОЖЕНИЕ",
+      "en": "A SECOND APPLICATION"
+    },
+    "дп.6.заголовок": {
+      "ru": "Одно приложение зовёт другое",
+      "en": "One application calls another"
+    },
+    "дп.6.текст": {
+      "ru": "Эксперт нарисует карту твоих Загрузок прямо в «Доске схем» — соседнем приложении на этом столе. Твоих рисунков он не касается: пишет только своё, со своей меткой.",
+      "en": "The Expert will draw a map of your Downloads straight into the Diagram board — a neighbouring application on this desktop. It never touches your own drawings: it writes only its own, under its own label."
+    },
+    "дп.6.кнопка": {
+      "ru": "Нарисовать карту в Доске схем",
+      "en": "Draw the map in the Diagram board"
+    },
+    "дп.7.метка": {
+      "ru": "ТВОЁ ПРИЛОЖЕНИЕ",
+      "en": "YOUR APPLICATION"
+    },
+    "дп.7.заголовок": {
+      "ru": "Всё, что ты прошёл, — уже приложение",
+      "en": "Everything you just did is already an application"
+    },
+    "дп.7.текст": {
+      "ru": "Шесть шагов выше ты сделал вживую, на своих файлах. Extella умеет собрать их в приложение — не рассказ о нём, а рабочую страницу, которая встанет рядом с остальными на твоём рабочем столе.",
+      "en": "You did the six steps above for real, on your own files. Extella can assemble them into an application — not a description of one, but a working page that takes its place beside the others on your desktop."
+    },
+    "дп.7.что_будет": {
+      "ru": "<b>Что произойдёт, когда нажмёшь.</b> В магазине Extella появится <b>черновик приложения</b>, и он сам встанет плиткой на твой рабочий стол — жать «Buy &amp; Deploy» руками не нужно. Внутри страницы: твои сегодняшние цифры, чек-лист порядка с отметками и правило дома дословно. Черновик <b>не опубликован</b> — его видишь только ты, никто в магазине его не найдёт. Кредиты за это не тратятся. Убрать потом — плитку в корзину рабочего стола, черновик в магазине: это две разные вещи, и одна без другой оставляет след.",
+      "en": "<b>What happens when you press it.</b> A <b>draft application</b> appears in the Extella store, and it places itself as a tile on your desktop — you do not have to press «Buy &amp; Deploy» by hand. Inside the page: today's numbers from your own files, the tidiness checklist with its marks, and the house rule word for word. The draft is <b>not published</b> — only you can see it, nobody in the store will find it. No credits are spent. To remove it later: the tile into the desktop bin, and the draft in the store — these are two separate things, and one without the other leaves a trace."
+    },
+    "дп.7.кубик.1": {
+      "ru": "Осмотреть папку",
+      "en": "Look at the folder"
+    },
+    "дп.7.кубик.2": {
+      "ru": "Спросить память",
+      "en": "Ask the memory"
+    },
+    "дп.7.кубик.3": {
+      "ru": "Разобрать по смыслу",
+      "en": "Sort by meaning"
+    },
+    "дп.7.кубик.4": {
+      "ru": "Спросить разрешение",
+      "en": "Ask permission"
+    },
+    "дп.7.кубик.5": {
+      "ru": "Разложить с откатом",
+      "en": "Sort it with an undo"
+    },
+    "дп.7.кубик.6": {
+      "ru": "Нарисовать карту",
+      "en": "Draw the map"
+    },
+    "дп.7.сборка": {
+      "ru": "Нажимай части — встанут по порядку работы.",
+      "en": "Press the parts — they line up in the order the work runs."
+    },
+    "дп.7.подпись_поля": {
+      "ru": "Как назвать приложение",
+      "en": "What to call the application"
+    },
+    "дп.7.имя": {
+      "ru": "Порядок в Загрузках",
+      "en": "Tidy Downloads"
+    },
+    "дп.7.кнопка": {
+      "ru": "Создать черновик приложения",
+      "en": "Create the draft application"
+    },
+    "дп.7.пусто": {
+      "ru": "Собери хотя бы две части — и кнопка оживёт. Здесь появится имя приложения и путь к нему.",
+      "en": "Put at least two parts together and the button comes alive. The application's name and the path to it will appear here."
     }
   }
 }
