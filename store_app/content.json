@@ -1,5 +1,5 @@
 {
-  "версия_содержимого": "2026-09-25.1",
+  "версия_содержимого": "2026-09-27.1",
   "шапка": {
     "метка": "руководство",
     "заголовок": "Разработка на Extella",
@@ -103,15 +103,15 @@
       "номер": "07",
       "тема": "Что строить",
       "заголовок": "Что такое ИИ-приложение",
-      "тело": "<p><strong>ИИ-приложение</strong> — это программа, в которой часть логики выполняет модель,\nа не только обычный код. У такого продукта есть интерфейс, как у приложения, и способность\nрассуждать, как у агента. Данные хранятся там, где им место, — чаще всего на компьютере\nпользователя. <strong>Листинг</strong> — это карточка продукта в магазине.</p>\n<table>\n<tr><th>форма</th><th>что покупает человек</th><th>пример</th></tr>\n<tr><td><strong>Приложение</strong></td><td>одну задачу целиком: интерфейс и способность</td><td>журнал решений, рекрутинг, продажи</td></tr>\n<tr><td><strong>Отдел</strong></td><td>несколько агентов в одном листинге</td><td>коммерческий отдел вместо одного агента</td></tr>\n</table>\n<p>Любую форму можно опубликовать бесплатно или продавать. Цена указывается при публикации.\nПри покупке платформа списывает деньги у покупателя и зачисляет их автору. Это руководство —\nбесплатное ИИ-приложение и единая точка входа для тех, кто создаёт продукты.</p>",
+      "тело": "<p><strong>ИИ-приложение</strong> — это программа, в которой часть логики выполняет модель,\nа не только обычный код. У такого продукта есть интерфейс, как у приложения, и способность\nрассуждать, как у агента. Данные хранятся там, где им место, — чаще всего на компьютере\nпользователя. <strong>Листинг</strong> — это карточка продукта в магазине.</p>\n<table>\n<tr><th>форма</th><th>что покупает человек</th><th>пример</th></tr>\n<tr><td><strong>Приложение</strong></td><td>одну задачу целиком: интерфейс и способность</td><td>журнал решений, рекрутинг, продажи</td></tr>\n<tr><td><strong>Отдел</strong></td><td>несколько агентов в одном листинге</td><td>коммерческий отдел вместо одного агента</td></tr>\n</table>\n<p>Любую форму можно опубликовать бесплатно или продавать. Цена указывается при публикации.\nПлатформа списывает деньги у покупателя после успешной установки.\nАвтору деньги пока выплачиваются вручную: продажи выгружаются и переводятся автору,\nавтоматическое зачисление в работе. Это руководство —\nбесплатное ИИ-приложение и единая точка входа для тех, кто создаёт продукты.</p>",
       "заголовок_en": "What an AI application is",
       "тема_en": "What to build",
-      "тело_en": "<p>An <strong>AI application</strong> is a program in which part of the logic is carried\nout by a model, not by ordinary code alone. Such a product has an interface, like an application,\nand the ability to reason, like an agent. Data is kept where it belongs — most often on the\nuser's own computer. A <strong>listing</strong> is the product card in the store.</p>\n<table>\n<tr><th>form</th><th>what a person buys</th><th>example</th></tr>\n<tr><td><strong>Application</strong></td><td>one whole task: the interface and the capability</td><td>a decisions log, recruiting, sales</td></tr>\n<tr><td><strong>Department</strong></td><td>several agents in one listing</td><td>a commercial department instead of a single agent</td></tr>\n</table>\n<p>Any form may be published free or sold. The price is set at publication. On purchase the\nplatform charges the buyer and credits the author. This guide is itself a free AI application and\nthe single entry point for those who build products.</p>",
+      "тело_en": "<p>An <strong>AI application</strong> is a program in which part of the logic is carried\nout by a model, not by ordinary code alone. Such a product has an interface, like an application,\nand the ability to reason, like an agent. Data is kept where it belongs — most often on the\nuser's own computer. A <strong>listing</strong> is the product card in the store.</p>\n<table>\n<tr><th>form</th><th>what a person buys</th><th>example</th></tr>\n<tr><td><strong>Application</strong></td><td>one whole task: the interface and the capability</td><td>a decisions log, recruiting, sales</td></tr>\n<tr><td><strong>Department</strong></td><td>several agents in one listing</td><td>a commercial department instead of a single agent</td></tr>\n</table>\n<p>Any form may be published free or sold. The price is set at publication. The platform charges\nthe buyer after a successful install. Payouts to authors are manual for now: sales are exported\nand transferred to the author; automatic payouts are in progress. This guide is itself a free AI application and\nthe single entry point for those who build products.</p>",
       "перевод_от": {
         "заголовок": "66aafb558124bbf7",
         "заголовок_en": "9a64e143f8bb7e3d",
-        "тело": "efdd29080afbf6e7",
-        "тело_en": "90fb3f3522d48544"
+        "тело": "3993bf40bb3a9d41",
+        "тело_en": "c7b293ea338fa4f7"
       }
     },
     {
@@ -300,6 +300,11 @@
   ],
   "оболочка_минимум": 4,
   "что_нового": [
+    {
+      "версия": "2026-09-27.1",
+      "текст": "Уточнено, как автор получает деньги: платформа списывает у покупателя после установки, а выплата автору пока ручная — продажи выгружаются и переводятся автору. Автоматическое зачисление в работе.",
+      "текст_en": "Clarified how authors get paid: the platform charges the buyer after installation, while payouts to authors are manual for now — sales are exported and transferred to the author. Automatic payouts are in progress."
+    },
     {
       "версия": "2026-09-25.1",
       "текст": "Новый раздел «Ловушки, на которых встают все»: ключ один, а заголовки разные; права приложения выдаются отдельно; «выполняется» — не результат; сколько влезает в один вызов. Промпт переписан: сырые ссылки, вход на одну страницу и требование назвать правила до стройки. Промпт теперь хранится в одном месте, и кнопка берёт его оттуда.",
