@@ -8,3 +8,5 @@ docs:
   - {ru: AGENTS.md, en: en/AGENTS.md}
   - {ru: README.md, en: en/README.md}
   - {ru: AGENT_BUILD_GUIDE.md, en: en/AGENT_BUILD_GUIDE.md}
+  - {ru: NAMING.md, en: en/NAMING.md}
+  - {ru: CSPL_GUIDE.md, en: en/CSPL_GUIDE.md}

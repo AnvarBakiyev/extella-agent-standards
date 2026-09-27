@@ -1,3 +1,5 @@
+<!-- source: CSPL_GUIDE.md sha256:3e93c4bec635d05db77f7a740c369bd11a0c54b200c406004f4934895dab9720 -->
+
 # CSPL: when to use it and how
 
 Verified by live runs on 27–28 Aug 2026. Everything called "working" ran on the platform,

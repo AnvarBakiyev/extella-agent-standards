@@ -1,3 +1,5 @@
+<!-- source: NAMING.md sha256:30cda9a60bb4abe78125653d3990d1ff675e8a7855ecad7131d8f6023e8221b1 -->
+
 # Extella Evolution Naming Architecture
 
 Owner: the owner · Date: 26 Jul 2026 · Version: 1.0
