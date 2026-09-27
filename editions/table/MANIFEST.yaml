@@ -1,4 +1,0 @@
-имя: Таблица
-slug: table
-вид: приложение
-самопроверка: python3 payload/install.py --selftest
