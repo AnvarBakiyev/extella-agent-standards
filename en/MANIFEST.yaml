@@ -10,3 +10,5 @@ docs:
   - {ru: AGENT_BUILD_GUIDE.md, en: en/AGENT_BUILD_GUIDE.md}
   - {ru: NAMING.md, en: en/NAMING.md}
   - {ru: CSPL_GUIDE.md, en: en/CSPL_GUIDE.md}
+  - {ru: AGENT_ARCHITECTURE.md, en: en/AGENT_ARCHITECTURE.md}
+  - {ru: BUILD_STAGES.md, en: en/BUILD_STAGES.md}
