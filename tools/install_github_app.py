@@ -248,7 +248,7 @@ def работа(папка: pathlib.Path, slug: str, имя: str, лиценз�
     else:
         издание.mkdir(parents=True, exist_ok=True)
         if not (издание / "icon.png").exists():
-            # Стиль всех плиток — Bronze Engraved (спека Анвара 20.08.2026),
+            # Стиль всех плиток — Bronze Engraved (спека владельца 20.08.2026),
             # глиф строго из Lucide; старый геометрический генератор — история.
             print("  " + прогнать("bronze_icon.py", глиф, str(издание / "icon.png")).strip())
         (издание / "app.json").write_text(json.dumps({

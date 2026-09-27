@@ -1,4 +1,4 @@
-<!-- source: BUILD_STAGES.md sha256:403107318a862bdeb7208669b543bb26875af70ad49e4e7516f9570794fae9a1 -->
+<!-- source: BUILD_STAGES.md sha256:d77dca70e57c8f369aa8a384a78f0154df3e398ec4d62bd913ad2fa0521f849e -->
 
 # Build stages: build → prod
 
@@ -16,7 +16,7 @@ Stages must not be recited from memory: the checker determines scope, not the te
 
 ---
 
-## There are two stages (Anvar's decision, 12 Aug 2026)
+## There are two stages (the owner's decision, 12 Aug 2026)
 
 The first edition had three stages — demo, pilot, prod. Discussion with the owner showed
 that the demo/pilot boundary was artificial: the client already hands over their data for
@@ -94,7 +94,7 @@ what applies is needed right now).**
 
 ## The agent lives one life — there's no freeze
 
-Anvar's decision, 12 Aug 2026: there is no such thing as a "demo agent" and a "prod agent"
+the owner's decision, 12 Aug 2026: there is no such thing as a "demo agent" and a "prod agent"
 as two different creatures. An agent is born during build and grows up into prod without
 changing identity. The old rule "prod agents are frozen" is repealed and replaced with:
 
@@ -142,7 +142,7 @@ any stage.
 
 ## Rights over platform objects: your own namespace is free rein
 
-Anvar's decision, 12 Aug 2026, born of irritation at "permit writing an expert, permit
+the owner's decision, 12 Aug 2026, born of irritation at "permit writing an expert, permit
 deleting one": an expert is a disposable entity — created fast, reused, deleted without
 regret.
 

@@ -7,7 +7,7 @@ def pkg_install(package: str = "", **extra) -> dict:
     (brew on macOS, winget on Windows, apt on Linux) and prove the install by
     finding the binary afterwards. Params: package — the package name.
 
-    Проба гипотезы Тимура 28.08.2026: эксперт-установщик может ставить не
+    Проба гипотезы CTO 28.08.2026: эксперт-установщик может ставить не
     только наши приложения, а ЛЮБОЙ софт — dmg, exe, пакеты. Это делает
     канал «магазин → устройство» универсальной доставкой.
 

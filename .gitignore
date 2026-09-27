@@ -3,3 +3,7 @@ __pycache__/
 
 # Собираемые архивы изданий: пересобираются из payload/
 editions/*/*.zip
+
+# Локальные реестры путей этой машины — не для публичного репозитория
+product_registry.local.txt
+config_registry_roots.local.txt

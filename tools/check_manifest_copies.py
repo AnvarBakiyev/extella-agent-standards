@@ -24,15 +24,18 @@ from pathlib import Path
 
 CANON = Path(__file__).resolve().parents[1] / "templates" / "manifest_check.py"
 
-PRODUCTS = [
-    ("Подключения", Path.home() / "Documents/Codex/extella-connectors"),
-    ("Predictive Sales", Path.home() / "Documents/Codex/extella-predictive-sales-pack"),
-    ("Таргетолог AI", Path.home() / "Documents/Codex/extella-targetologist"),
-    ("Юрист по договорам", Path.home() / "Documents/kazakh-lawyer"),
-    ("Travel Agency", Path.home() / "Documents/Extella/extella-core-portal/"
-                                    "extella-travel-agency-pack"),
-    ("Агент-рекрутёр", Path.home() / "Documents/Extella/extella-recruiting-agent"),
-]
+PRODUCTS = []  # продукты на этой машине задаются локально, см. product_registry.local.txt
+
+# Локальный реестр: один путь к репозиторию продукта на строку. Файл не попадает в git —
+# в нём пути конкретной машины и имена продуктов, которым в публичном репозитории
+# стандартов не место. Без файла гейт сверяет только product_registry.txt и не падает.
+_local = Path(__file__).resolve().parents[1] / "product_registry.local.txt"
+if _local.exists():
+    for _line in _local.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#"):
+            _p = Path(_line).expanduser()
+            PRODUCTS.append((_p.name, _p))
 
 # Продукты, порождённые каркасом, встают под гейт сами — через реестр. Без этого
 # изменение канона гнило бы в них молча (класс «машина отката», уже проходили).

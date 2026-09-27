@@ -107,7 +107,7 @@ with tempfile.TemporaryDirectory() as врем:
     с = sqlite3.connect(база)
     с.execute("CREATE TABLE clients (name TEXT, amount REAL)")
     с.executemany("INSERT INTO clients VALUES (?,?)",
-                  [("ТОО Астра",1250000),("ИП Ким",340000),("ТОО Байт",90000),("ТОО Ноль",0)])
+                  [("ТОО источник А",1250000),("ИП Ким",340000),("ТОО Байт",90000),("ТОО Ноль",0)])
     с.commit(); с.close()
 
     полная = copy.deepcopy(NATIVE_POLICY)

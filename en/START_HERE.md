@@ -1,4 +1,4 @@
-<!-- source: START_HERE.md sha256:f94831cdd4226a37a055c6c885b8cce35af787c5658cff143a51dfdb3eaa4c06 -->
+<!-- source: START_HERE.md sha256:51b35c0a3f5851db026d0aaa19127e86de1ee6b96f3e6fe6cf5a7f6431ef69ad -->
 
 # One entry point — README
 
@@ -12,7 +12,7 @@ Below is the former text, kept for the sake of existing links.
 
 # START_HERE — where to start
 
-**Repository:** extella-agent-standards · **Company:** Extella (Chariot Technologies Lab) · **Owner:** Anvar (CEO)
+**Repository:** extella-agent-standards · **Company:** Extella (Chariot Technologies Lab) · **Owner:** the owner (CEO)
 
 ## 1. Who reads this repository
 
@@ -138,11 +138,11 @@ Shared Genes are declared with stable `gene_id`; consumers are not counted by di
 
 ## 5. Repository rules
 
-- Documents can only be changed through a change Anvar approves. No one writes directly to the
+- Documents can only be changed through a change the owner approves. No one writes directly to the
   main branch.
 - Every document has a version and a date; both are updated on any change.
-- All questions go to Anvar.
+- All questions go to the owner.
 
 ---
 
-Version 1.1 · 26 Jul 2026 · Document owner: Anvar
+Version 1.1 · 26 Jul 2026 · Document owner: the owner

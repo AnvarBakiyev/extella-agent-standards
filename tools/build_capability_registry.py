@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Сборка ЕДИНОГО РЕЕСТРА способностей из паспортов (решение Анвара 28.07.2026).
+"""Сборка ЕДИНОГО РЕЕСТРА способностей из паспортов (решение владельца 28.07.2026).
 
 Почему так, а не в KV. Реестр можно хранить только там, откуда его можно пересобрать.
 Если потеря хранилища = потеря данных, это не реестр, а единственная копия. 28.07 выяснилось,
@@ -180,7 +180,7 @@ def build(roots, now=None):
 
     not_ready = [e["automation_id"] or e["source_path"] for e in entries if not e["passport_ok"]]
 
-    # Подсказка, а не запрет (решение Анвара 28.07): семейство из четырёх и более похожих
+    # Подсказка, а не запрет (решение владельца 28.07): семейство из четырёх и более похожих
     # способностей — повод взвесить обработчик класса вместо N-го эксперта. Жёсткого правила
     # нет намеренно: абстракция раньше времени вредна не меньше, чем копипаста.
     families = {}
@@ -211,7 +211,7 @@ def build(roots, now=None):
 
 SELFTEST_GOOD = {
     "automation": {
-        "automation_id": "demo_one", "name": {"ru": "Демо", "en": "Demo"}, "owner": "Анвар",
+        "automation_id": "demo_one", "name": {"ru": "Демо", "en": "Demo"}, "owner": "CEO",
         "business_goal": "проверка сборки", "version": "1.0.0", "languages": ["ru", "en"],
         "hosting_profile": "local",
         "service": {"port": 1, "health": "/api/health", "state": "/api/state"},
@@ -223,7 +223,7 @@ SELFTEST_GOOD = {
         "experts": [{"name": "shared_send", "required": True}, {"name": "only_mine", "required": True}],
     },
     "budgets": {"max_duration_ms": 1, "max_llm_tokens": 1, "max_external_actions": 0},
-    "operations": {"owner_on_call": "Анвар", "rollback": "версия -1", "success_metric": "ok"},
+    "operations": {"owner_on_call": "владелец", "rollback": "версия -1", "success_metric": "ok"},
 }
 
 

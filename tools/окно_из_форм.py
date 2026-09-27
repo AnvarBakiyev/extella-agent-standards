@@ -133,7 +133,7 @@ h2{font:600 20px/1.3 'Source Serif 4',Georgia,serif;margin-bottom:12px}
 var APP_TOKEN = '{{app_token}}';
 var DEVICE = '';
 // Язык по умолчанию — первый язык плана (ru). Браузер внутри ОС отвечает «en» даже у
-// русского приложения (замер 05.09.2026 на Mac Анвара), поэтому на него не смотрим:
+// русского приложения (замер 05.09.2026 на Mac владельца), поэтому на него не смотрим:
 // переключает только хост сообщением etb_init.
 var WLANG = 'ru';
 function el(id){ return document.getElementById(id); }
