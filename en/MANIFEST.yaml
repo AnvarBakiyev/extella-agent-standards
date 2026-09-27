@@ -7,3 +7,4 @@ docs:
   - {ru: CONTRIBUTING.md, en: en/CONTRIBUTING.md}
   - {ru: AGENTS.md, en: en/AGENTS.md}
   - {ru: README.md, en: en/README.md}
+  - {ru: AGENT_BUILD_GUIDE.md, en: en/AGENT_BUILD_GUIDE.md}
