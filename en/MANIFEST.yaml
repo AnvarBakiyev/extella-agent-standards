@@ -141,3 +141,35 @@ docs:
   - {ru: rules/H19-квинта.md, en: en/rules/H19-квинта.md}
   - {ru: rules/H19-секста.md, en: en/rules/H19-секста.md}
   - {ru: rules/H19-тер.md, en: en/rules/H19-тер.md}
+  - {ru: EXTELLA_AI_ONBOARDING.md, en: en/EXTELLA_AI_ONBOARDING.md}
+  - {ru: DOCTOR_STANDARD.md, en: en/DOCTOR_STANDARD.md}
+  - {ru: AGENT_START.md, en: en/AGENT_START.md}
+  - {ru: USER_ONBOARDING_CANON.md, en: en/USER_ONBOARDING_CANON.md}
+  - {ru: docs/DOCKER_APP_TRACK.md, en: en/docs/DOCKER_APP_TRACK.md}
+  - {ru: docs/DESKTOP_STATE.md, en: en/docs/DESKTOP_STATE.md}
+  - {ru: docs/ICON_STYLE_BRONZE.md, en: en/docs/ICON_STYLE_BRONZE.md}
+  - {ru: DESIGN_CODE.md, en: en/DESIGN_CODE.md}
+  - {ru: NO_AI_LOOK.md, en: en/NO_AI_LOOK.md}
+  - {ru: BRAND_FOR_AGENTS.md, en: en/BRAND_FOR_AGENTS.md}
+  - {ru: BRAND_SURFACES.md, en: en/BRAND_SURFACES.md}
+  - {ru: skills/extella-ui/SKILL.md, en: en/skills/extella-ui/SKILL.md}
+  - {ru: skills/extella-ui/УСТАНОВКА.md, en: en/skills/extella-ui/УСТАНОВКА.md}
+  - {ru: templates/app-recipe/README.md, en: en/templates/app-recipe/README.md}
+  - {ru: templates/app-recipe/qa-checklist.md, en: en/templates/app-recipe/qa-checklist.md}
+  - {ru: templates/help_card.md, en: en/templates/help_card.md}
+  - {ru: EVOLUTION_PHILOSOPHY.md, en: en/EVOLUTION_PHILOSOPHY.md}
+  - {ru: OS_CAPABILITIES.md, en: en/OS_CAPABILITIES.md}
+  - {ru: FAILURE_CLASSES.md, en: en/FAILURE_CLASSES.md}
+  - {ru: LAB.md, en: en/LAB.md}
+  - {ru: TEAM_PROTOCOL.md, en: en/TEAM_PROTOCOL.md}
+  - {ru: PUBLISH_YOUR_AGENT.md, en: en/PUBLISH_YOUR_AGENT.md}
+  - {ru: RUNBOOK_STORE_PUBLISH.md, en: en/RUNBOOK_STORE_PUBLISH.md}
+  - {ru: PROMPT_FOR_EXTERNAL_AGENT.md, en: en/PROMPT_FOR_EXTERNAL_AGENT.md}
+  - {ru: PROMPT_UPDATE_AGENT.md, en: en/PROMPT_UPDATE_AGENT.md}
+  - {ru: WRITING_RULES.md, en: en/WRITING_RULES.md}
+  - {ru: КОНТРАКТ_ПЯТИ_ФОРМ.md, en: en/КОНТРАКТ_ПЯТИ_ФОРМ.md}
+  - {ru: ЧТО_ОБЯЗАН_УМЕТЬ_ПРОДУКТ.md, en: en/ЧТО_ОБЯЗАН_УМЕТЬ_ПРОДУКТ.md}
+  - {ru: templates/cspl/ИДЕЯ_CSPL.md, en: en/templates/cspl/ИДЕЯ_CSPL.md}
+  - {ru: docs/PROMPT_BAGA_APPS.md, en: en/docs/PROMPT_BAGA_APPS.md}
+  - {ru: checklists/DoD.md, en: en/checklists/DoD.md}
+  - {ru: checklists/DoR.md, en: en/checklists/DoR.md}
