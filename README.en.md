@@ -7,6 +7,8 @@ real incident: a product that could delete the buyer's agent, a task that ran on
 laptop with someone else's data, a verification step that could never fail and therefore
 verified nothing. Where a rule exists, the incident behind it is written down next to it.
 
+**Full English mirror:** the documents are translated one by one under [`en/`](en/) — start with [`en/START_HERE.md`](en/START_HERE.md) and [`en/README.md`](en/README.md). Each translated page is stamped with the exact Russian source it was made from, and a CI gate (`tools/check_en_sync.py`) fails when the source moves on without the translation, so what you read in `en/` is never silently stale. Terms are fixed in [`en/GLOSSARY.md`](en/GLOSSARY.md).
+
 The corpus is in Russian — that is our working language. This page tells you what is here and
 how to start; the documents themselves you can read with any translator, and the machine-readable
 parts (gates, stage definitions) are language-independent.
