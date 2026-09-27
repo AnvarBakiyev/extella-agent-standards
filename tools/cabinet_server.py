@@ -69,12 +69,6 @@ import time
 ПУТЬ_ДЕЙСТВИЯ = "/_extella_action"
 ИНСТРУМЕНТЫ = pathlib.Path.home() / "Documents/Extella/extella-agent-standards/tools"
 ДЕЙСТВИЯ = {
-    "схема":       ("board_to_app.py", ["--нарисовать-схему", "{название}"]),
-    "приложение":  ("board_to_app.py", ["--собрать", "--slug", "{slug}", "--имя", "{название}"]),
-    "отток":       ("astra_churn_to_board.py", ["--топ", "8"]),
-    "правила":     ("board_rules_to_astra.py", []),
-    "правила_в_платформу": ("board_rules_to_astra.py", ["--в-правила", "--сухой"]),
-    "пример_правила": ("board_rules_to_astra.py", ["--пример"]),
     "витрина":     ("check_listing_meta.py", ["{издание}"]),
     "выложить":    ("deploy_page_product.py", ["{издание}"]),
     # Главный вход. Не кнопка на каждое приложение, а одна строка: что умеет

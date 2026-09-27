@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:9ea27de00f4114481c31d2fd565b78f1721030d72d0ff5d8302001df2f482dc9 -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:4315be141073ad3c3f46c8a6d53503ee3fe3f8afa6082138be055920341543ef -->
 
 # How to build an Extella agent
 

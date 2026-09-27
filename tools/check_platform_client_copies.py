@@ -26,11 +26,20 @@ from maintainers import ведут_другие
 
 CANON = Path.home() / "Documents/Extella/extella-recruiting-agent/app/platform_client.py"
 
-COPIES = [
-    ("Юрист по договорам", Path.home() / "Documents/product-repo/app/platform_client.py"),
-    ("Travel Agency", Path.home() / "Documents/Extella/extella-core-portal/"
-                                    "extella-travel-agency-pack/app/platform_client.py"),
-]
+COPIES = []  # копии на этой машине задаются локально, см. product_registry.local.txt
+
+# Локальный реестр копий: один путь к репозиторию продукта на строку. Файл не попадает
+# в git (.gitignore) — в нём пути с конкретной машины и имена продуктов, которым
+# в публичном репозитории стандартов не место. Без файла гейт сверяет только то,
+# что найдёт через product_registry.txt, и не падает.
+_local = Path(__file__).resolve().parents[1] / "product_registry.local.txt"
+if _local.exists():
+    for _line in _local.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#"):
+            _p = Path(_line).expanduser()
+            COPIES.append((_p.name, _p / "app" / ("platform_client.py" if "platform_client" in CANON.name
+                                                 else "agent_onboarding.py")))
 
 # Продукты, порождённые каркасом new_product.py, встают под гейт сами — через реестр.
 # Без этого изменение канона гнило бы в них молча (класс «машина отката»).
