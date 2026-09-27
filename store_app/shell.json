@@ -347,6 +347,82 @@
     "дп.7.пусто": {
       "ru": "Собери хотя бы две части — и кнопка оживёт. Здесь появится имя приложения и путь к нему.",
       "en": "Put at least two parts together and the button comes alive. The application's name and the path to it will appear here."
+    },
+    "дп.щит.кредиты": {
+      "ru": "кредиты: {n}",
+      "en": "credits: {n}"
+    },
+    "дп.щит.кредитов_нет": {
+      "ru": "кредитов нет",
+      "en": "no credits"
+    },
+    "дп.щит.модель": {
+      "ru": "модель на диске",
+      "en": "a model on disk"
+    },
+    "дп.щит.модели_нет": {
+      "ru": "модели на диске нет",
+      "en": "no model on disk"
+    },
+    "дп.щит.доска": {
+      "ru": "Доска схем",
+      "en": "Diagram board"
+    },
+    "дп.щит.доски_нет": {
+      "ru": "Доски схем нет",
+      "en": "no Diagram board"
+    },
+    "дп.лестница.кредиты": {
+      "ru": "У тебя есть кредиты — ответит агент Extella. Не было бы их, спросили бы модель на твоём диске; не было бы и её — сказали бы прямо и пошли дальше.",
+      "en": "You have credits, so the Extella agent will answer. Without them we would ask the model on your disk; without that one too we would say so plainly and move on."
+    },
+    "дп.лестница.модель": {
+      "ru": "Кредитов нет, зато есть модель на твоём диске: ответит она — бесплатно и не выходя наружу.",
+      "en": "No credits, but there is a model on your disk: it will answer — free, and without anything leaving the machine."
+    },
+    "дп.лестница.ничего": {
+      "ru": "Ни кредитов, ни модели на диске. Это не остановка: шаг пропустим, а всё остальное работает и без модели.",
+      "en": "No credits and no model on disk. This is not a stop: we will skip that step, and everything else works without a model."
+    },
+    "дп.1.ждём": {
+      "ru": "Эксперт считает файлы на твоём компьютере…",
+      "en": "The Expert is counting the files on your computer…"
+    },
+    "дп.1.занят": {
+      "ru": "смотрю…",
+      "en": "looking…"
+    },
+    "дп.1.цифры": {
+      "ru": "{всего} файлов<br>{гб} ГБ",
+      "en": "{всего} files<br>{гб} GB"
+    },
+    "дп.1.цена": {
+      "ru": "{сек} с · на этом компьютере · бесплатно · наружу ничего не ушло",
+      "en": "{сек} s · on this computer · free · nothing left the machine"
+    },
+    "дп.2.ждём": {
+      "ru": "Ищу в памяти по смыслу…",
+      "en": "Searching the memory by meaning…"
+    },
+    "дп.2.занят": {
+      "ru": "ищу…",
+      "en": "searching…"
+    },
+    "дп.2.вопрос": {
+      "ru": "как навести порядок в файлах",
+      "en": "how to tidy up files"
+    },
+    "дп.2.спросили": {
+      "ru": "спросили: «{вопрос}»",
+      "en": "we asked: «{вопрос}»"
+    },
+    "дп.2.цена": {
+      "ru": "{сек} с · найдено записей: {найдено} · слов из вопроса встретилось в записи: <b>{совпало}</b> из {слов} — нашлось по смыслу, а не по совпадению",
+      "en": "{сек} s · records found: {найдено} · words from the question present in the record: <b>{совпало}</b> of {слов} — found by meaning, not by matching"
+    },
+    "дп.сек": {
+      "ru": "{сек} с",
+      "en": "{сек} s"
     }
   }
 }
