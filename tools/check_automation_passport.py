@@ -638,7 +638,7 @@ GOOD = {
     "automation": {
         "automation_id": "extella_travel_agency",
         "name": {"ru": "Турагентство: лиды и подогрев базы", "en": "Travel agency: leads and nurture"},
-        "owner": "Анвар", "business_goal": "возвращать спящую базу туристов без ручного обзвона",
+        "owner": "CEO", "business_goal": "возвращать спящую базу туристов без ручного обзвона",
         "version": "1.0.0", "languages": ["ru", "en"], "hosting_profile": "local",
         "service": {"port": 8766, "health": "/api/health", "state": "/api/state"},
         "limits": ["не отправляет сообщения без человека", "не обещает наличие тура без Tourvisor"],
@@ -664,7 +664,7 @@ GOOD = {
 GOOD_THIN = {
     "automation": {
         "automation_id": "extella_probe_thin", "name": {"ru": "Проба", "en": "Probe"},
-        "owner": "Анвар", "business_goal": "проверка стандарта", "version": "0.1.0",
+        "owner": "CEO", "business_goal": "проверка стандарта", "version": "0.1.0",
         "languages": ["ru", "en"], "hosting_profile": "local",
         "state_reader": {
             "expert": "probe_call", "method": "state",
@@ -696,7 +696,7 @@ GOOD_THIN = {
 BAD_STATE = {
     "automation": {
         "automation_id": "extella_probe_bad", "name": {"ru": "Проба", "en": "Probe"},
-        "owner": "Анвар", "business_goal": "проверка стандарта", "version": "0.1.0",
+        "owner": "CEO", "business_goal": "проверка стандарта", "version": "0.1.0",
         "languages": ["ru", "en"], "hosting_profile": "local",
         "state_reader": {"expert": "", "schema": "",
                          "params": {"secret": "нет такого параметра",
@@ -719,7 +719,7 @@ GOOD_MODULE = {
     "automation": {
         "kind": "module", "automation_id": "toolkit_probe_read",
         "name": {"ru": "Модуль «проба»", "en": "Probe module"},
-        "owner": "Анвар", "business_goal": "проверка стандарта модуля", "version": "0.1.0",
+        "owner": "CEO", "business_goal": "проверка стандарта модуля", "version": "0.1.0",
         "languages": ["ru", "en"], "hosting_profile": "local",
         "limits": ["наружу не пишет"],
     },

@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:9ea27de00f4114481c31d2fd565b78f1721030d72d0ff5d8302001df2f482dc9 -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:4315be141073ad3c3f46c8a6d53503ee3fe3f8afa6082138be055920341543ef -->
 
 # How to build an Extella agent
 
@@ -6,7 +6,7 @@
 builds agents. A human does not read it and fills nothing in from it: they say what they need,
 and you do everything else.
 
-Owner: Anvar (CEO Extella). Version: 3.0, 12 Aug 2026 — two stages instead of three, add-ons by facts, agent freeze lifted (§0a).
+Owner: the owner (CEO Extella). Version: 3.0, 12 Aug 2026 — two stages instead of three, add-ons by facts, agent freeze lifted (§0a).
 
 ---
 
@@ -499,7 +499,7 @@ when the rule arrived as text.
 
 ### 4.4b. The card on the storefront: icon, description, tags are part of the product
 
-Anvar's decision of 14 Aug 2026: **"icons, description and tags are mandatory, otherwise there will be a mess
+the owner's decision of 14 Aug 2026: **"icons, description and tags are mandatory, otherwise there will be a mess
 later".** The reason is measurable — of our ten listings **four went out without an icon, three without a
 description**.
 
@@ -528,7 +528,7 @@ wish that would be more honest not to write down.
 
 ## 4.5. The shortest path to the product is an SLA, not a wish
 
-Anvar's decision of 29 Jul 2026. The rule is mandatory, it has no gate and cannot have one:
+the owner's decision of 29 Jul 2026. The rule is mandatory, it has no gate and cannot have one:
 "the shortest path" is not measured by a machine, it is held by discipline.
 
 **Sort work by its effect on the product, not by order of arrival.** First what the product
@@ -765,7 +765,7 @@ Did not pass — fix it and run again. This is your cycle, there is no human in 
 
 ## 5a. Rewrote something that already worked — compare with the old, not with the expectation
 
-Anvar's rule of 30 Jul 2026, written down after we got burned by it twice in one evening.
+the owner's rule of 30 Jul 2026, written down after we got burned by it twice in one evening.
 
 When you move, merge or rewrite a working piece — an installer,
 an expert, a wrapper — "the new one started" proves NOTHING. There is only one proof:
@@ -792,9 +792,9 @@ your place.
 
 ---
 
-## 5b. The method of working with a large artifact (from the build of KT and "Astra", 13 Aug 2026)
+## 5b. The method of working with a large artifact (from the build of the telecom operator and "the telecom demo", 13 Aug 2026)
 
-Sent by the KT platform builder chat as a distillation of **how the work was actually done**
+Sent by the the telecom operator platform builder chat as a distillation of **how the work was actually done**
 on a 16 MB artifact. Below is only what was not in the standards; the rest is mapped
 in a table to already existing rules, so that two phrasings of the same thing do not appear (as
 once happened with the palette).
@@ -825,7 +825,7 @@ A device skill is reused in three layers, and only the thinnest one needs to be 
    a native capability of the agent: "put … on the board" — and the artifact appears in the app.
 
 **Measurement.** On 20 Aug 2026 the board tool (written for Evolution Console · Lab) was connected in one go
-to four agents: CSO · Kazakhtelecom (`cso_board_push`), the main chat
+to four agents: CSO · the telecom operator (`cso_board_push`), the main chat
 (`board_push`), Recruiter (`rec_board_push`), 1C Agent (`onec_board_push`). Changes in
 the tool — 0 lines; the wrapper — 20 lines per agent; drawings from four sources live on
 one board without conflicts. The formula: **N apps + M agents, not N×M integrations.**
@@ -880,10 +880,10 @@ zip archives of two runs diverged (`5ddfce19…` versus `e7e69ce3…`). Containe
 timestamps. After the timestamp was fixed to a constant, two independent runs gave one hash:
 
 ```
-845e4033ade7b96ebb2ca57a7f46e0a9c6fe4b565fac7e4ad1cd028b566fa10d  демо «Астра», прогон 3
-845e4033ade7b96ebb2ca57a7f46e0a9c6fe4b565fac7e4ad1cd028b566fa10d  демо «Астра», прогон 4
-d05b627f2e6fab1de332f7f79f961cd27d20f87497f1bf5c87320485555eb150  КТ-бандл, прогон 1
-d05b627f2e6fab1de332f7f79f961cd27d20f87497f1bf5c87320485555eb150  КТ-бандл, прогон 2
+845e4033ade7b96ebb2ca57a7f46e0a9c6fe4b565fac7e4ad1cd028b566fa10d  демо аналитики обращений, прогон 3
+845e4033ade7b96ebb2ca57a7f46e0a9c6fe4b565fac7e4ad1cd028b566fa10d  демо аналитики обращений, прогон 4
+d05b627f2e6fab1de332f7f79f961cd27d20f87497f1bf5c87320485555eb150  телеком-бандл, прогон 1
+d05b627f2e6fab1de332f7f79f961cd27d20f87497f1bf5c87320485555eb150  телеком-бандл, прогон 2
 ```
 
 **A clarification of the mechanics — measured on our side on 13 Aug 2026, because the phrasing
@@ -931,7 +931,7 @@ timestamp, and the check sometimes "proved" the opposite.
 
 ### Why in the end this is about speed, not neatness
 
-The KT builder chat — the fastest of ours at deploying — answered the question "what is the secret" like this,
+The the telecom operator builder chat — the fastest of ours at deploying — answered the question "what is the secret" like this,
 and the answer deserves a place in the method:
 
 > **The one who deploys fast is not the one who deploys fast, but the one who, between "changed" and "deployed",

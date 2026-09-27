@@ -35,7 +35,7 @@ from pathlib import Path
     "check_onboarding_copies", "build_agent_cabinet", "build_automation_cabinet",
     "build_capability_registry",
 })
-# Старые имена приняты синонимами (решение Анвара 12.08.2026: demo и pilot слиты в
+# Старые имена приняты синонимами (решение владельца 12.08.2026: demo и pilot слиты в
 # «стройку») — хендоффы и preflight, написанные до слияния, продолжают работать.
 СИНОНИМЫ = {"demo": "build", "pilot": "build"}
 

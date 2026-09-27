@@ -266,7 +266,7 @@ agent:
   name: "Extella | __NAME_RU__"
   platform_agent_id: "by_user"          # агента выбирает пользователь на первом экране
   binding_ui: "app/agent_onboarding.py"
-  owner: "Анвар (CEO Extella)"
+  owner: "владелец (CEO Extella)"
   business_goal: "Каркас продукта: выбор агента пользователем и пробный запуск «готов».
     Замени эту цель настоящей, когда добавишь первую бизнес-способность."
   model_profile: "qwen-3.7"

@@ -68,7 +68,7 @@ def сохранить(папка: pathlib.Path, подпись: str) -> dict:
         # Имя и почта берутся из настроек git человека; если их нет, ставим
         # свои — иначе коммит просто не создастся, и человек не поймёт почему.
         кто = _git(папка, "config", "user.email").stdout.strip()
-        доп = [] if кто else ["-c", "user.name=Anvar Bakiyev",
+        доп = [] if кто else ["-c", "user.name=the repository owner",
                               "-c", "user.email=abakiyev@gmail.com"]
         зап = subprocess.run(["git", "-C", str(папка), *доп, "commit", "-q",
                               "-m", подпись], capture_output=True, text=True, timeout=180)

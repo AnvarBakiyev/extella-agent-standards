@@ -1,4 +1,4 @@
-<!-- source: AGENT_ARCHITECTURE.md sha256:04dfd6318860f473d511eb3353ca63c7dbf250b62a6c4d7bb32f932ff28cb50a -->
+<!-- source: AGENT_ARCHITECTURE.md sha256:26f7acc200664f9cdd07cbd5038c9d0ee3242f78a4a15fdeddfd1d2c237d8dc6 -->
 
 # Extella Agent Architecture Principles
 
@@ -10,7 +10,7 @@ one rule stated in two places drifts apart silently, and §9 had already drifted
 
 Version: v0.9.1
 
-Owner: Anvar (all decisions on this document are his alone)
+Owner: the owner (all decisions on this document are his alone)
 
 Date: 26 Jul 2026
 
@@ -391,7 +391,7 @@ Requirements:
 - machine translation is acceptable as a draft, but meaning-critical wording (the boundaries of the
   capability, warnings, legal text) MUST be reviewed by a human.
 
-### 3.27. The product's own agent in Extella is created AFTER deployment — by the product itself (Anvar's decision, 26 Jul 2026)
+### 3.27. The product's own agent in Extella is created AFTER deployment — by the product itself (the owner's decision, 26 Jul 2026)
 
 The product MUST get its **own personal agent** in Extella automatically, **after a successful
 deployment**, rather than waiting for a human to create the agent by hand and enter its number into the passport.

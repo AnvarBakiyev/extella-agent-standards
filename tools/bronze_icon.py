@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Иконки «Bronze Engraved» — стиль всех плиток Extella. Спека Анвара, 20.08.2026.
+"""Иконки «Bronze Engraved» — стиль всех плиток Extella. Спека владельца, 20.08.2026.
 
 СПЕКА (метрика 74px, всё масштабируется пропорционально):
   плитка: radius 0.27×size; фон linear-gradient(165deg, #FFFDF9 0%, #F0EBE0 55%,

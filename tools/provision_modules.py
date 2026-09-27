@@ -277,7 +277,7 @@ def main(аргументы) -> int:
         return 2
     if not реестр_путь.exists():
         print(f"ОТКАЗ: нет реестра паспортов {реестр_путь} — собери его: "
-              "python3 tools/build_capability_registry.py --roots-file config_registry_roots.txt -o <этот путь>")
+              "python3 tools/build_capability_registry.py --roots-file config_registry_roots.local.txt -o <этот путь>")
         return 2
     try:
         отчёт = провести(папка, Платформа(), json.loads(реестр_путь.read_text(encoding="utf-8")), только_чтение)

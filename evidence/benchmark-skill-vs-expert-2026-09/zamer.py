@@ -12,7 +12,8 @@ prompt_eval_count (вход) и eval_count (выход) — это точные 
 import json, re, time, urllib.request, sys, traceback
 
 МОДЕЛЬ = "qwen3.5:9b"
-ПАПКА = "/Users/anvarbakiyev/Extella Claude Bridge/gtm/zamer-navyki-vs-eksperty"
+import pathlib
+ПАПКА = str(pathlib.Path(__file__).resolve().parent)
 ЗАКАЗЫ = json.load(open(f"{ПАПКА}/dataset.json", encoding="utf-8"))
 
 НАВЫК = """Ты — модуль согласования заказов. На вход приходит заказ в JSON: id, клиент, позиции; у каждой позиции: товар, кол, цена, остаток.

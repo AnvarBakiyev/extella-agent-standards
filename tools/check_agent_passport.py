@@ -19,7 +19,7 @@ SIDE_EFFECTS = {"none", "local", "external", "physical"}
 CONFIRMATION = {"never", "conditional", "always"}
 IDEMPOTENCY = {"supported", "unsupported"}
 # Способность — не только эксперт. Реестр Extella уже держит восемь видов; вызов другого агента
-# такая же способность, как вызов функции (решение Анвара 28.07.2026).
+# такая же способность, как вызов функции (решение владельца 28.07.2026).
 CAPABILITY_KINDS = {"expert", "agent", "automation", "cli", "mcp", "cspl", "skill"}
 BUDGET_FIELDS = ("max_duration_ms", "max_llm_tokens", "max_delegation_depth", "max_external_actions")
 # ПОПРАВКА 29.07.2026: первый же настоящий паспорт был отвергнут гейтом.
@@ -538,7 +538,7 @@ def load_passport(path):
 
 # --- Встроенные примеры для --selftest (JSON, чтобы работать без pyyaml) ---
 GOOD_JSON = """{
-  "agent": {"name": "ET-Tech | Сводка заявок", "owner": "Анвар", "business_goal": "Утренняя сводка заявок",
+  "agent": {"name": "ET-Tech | Сводка заявок", "owner": "CEO", "business_goal": "Утренняя сводка заявок",
             "model_profile": "qwen-3.7", "version": "1.0.0", "immutable_bundle_id": "bundle-20260725",
             "platform_agent_id": "agent_qwen_daily_digest_20260725",
             "platform_provider": "alibaba",

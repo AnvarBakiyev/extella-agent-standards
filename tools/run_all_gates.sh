@@ -101,7 +101,7 @@ run check_brand_copy
 run check_writing_style
 run check_waiting_state
 run check_self_check
-# Доктор среды (PR #28, Гульжан) до сих пор был ядром без CLI: DOCTOR_STANDARD.md
+# Доктор среды (PR #28, FDE) до сих пор был ядром без CLI: DOCTOR_STANDARD.md
 # обещал машинную самопроверку, а падать было нечему — то есть страж без зубов
 # (H74). Теперь у него есть --selftest, который сажает беду в каждый охраняемый
 # класс (A/C/E/F) и требует красноты, а на чистом паспорте — зелени. Если доктор

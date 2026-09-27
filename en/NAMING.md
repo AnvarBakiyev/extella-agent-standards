@@ -1,8 +1,8 @@
-<!-- source: NAMING.md sha256:30cda9a60bb4abe78125653d3990d1ff675e8a7855ecad7131d8f6023e8221b1 -->
+<!-- source: NAMING.md sha256:24cf20891dce82288f35ed8a3f5f3bf9ca0794aedcf732e78a21c3ebc8f6932d -->
 
 # Extella Evolution Naming Architecture
 
-Owner: Anvar · Date: 26 Jul 2026 · Version: 1.0
+Owner: the owner · Date: 26 Jul 2026 · Version: 1.0
 Mandatory for use across all products, interfaces, documents and code.
 The reasoning behind these names lives in `EVOLUTION_PHILOSOPHY.md`.
 
@@ -91,7 +91,7 @@ agent, not a second mechanism.
    agent's genome — its knowledge, rules and capabilities)." The word "genome" without a
    gloss triggers biotech associations in an enterprise conversation.
 4. **Do not multiply terms.** Nine is the limit. A new term is introduced only by changing
-   this file, with Anvar's approval.
+   this file, with the owner's approval.
 5. Old working names are considered deprecated: "Agent Control Center" → Evolution
    Console; "Proving Ground" → Evolution Lab; "Capability Studio" remains a separate demo
    catalog, not part of Evolution.

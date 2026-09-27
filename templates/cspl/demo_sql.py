@@ -17,7 +17,7 @@ with tempfile.TemporaryDirectory() as врем:
     с = sqlite3.connect(база)
     с.execute("CREATE TABLE clients (name TEXT, phone TEXT, amount REAL)")
     с.executemany("INSERT INTO clients VALUES (?,?,?)", [
-        ("ТОО Астра", "+7 701 111 2233", 1250000),
+        ("ТОО источник А", "+7 701 111 2233", 1250000),
         ("ИП Ким",    "+7 707 222 3344", 340000),
         ("ТОО Байт",  "+7 747 333 4455", 90000),
         ("ТОО Ноль",  "+7 700 444 5566", 0)])
