@@ -258,10 +258,10 @@ button,input,select,textarea{font-family:inherit}
   <!-- Меню экранов. Одна задача на экран и одно бронзовое действие на экран:
        прежде всё лежало одной простынёй, и человек не понимал, с чего начать. -->
   <nav class="меню" id="меню">
-    <button class="вкладка" data-экран="начало">Начало</button>
-    <button class="вкладка" data-экран="проба">Попробовать</button>
-    <button class="вкладка" data-экран="поиск">Найти ответ</button>
-    <button class="вкладка" data-экран="ещё">Ещё</button>
+    <button class="вкладка" data-экран="начало" data-t="вкладка.начало">Начало</button>
+    <button class="вкладка" data-экран="проба" data-t="вкладка.проба">Попробовать</button>
+    <button class="вкладка" data-экран="поиск" data-t="вкладка.поиск">Найти ответ</button>
+    <button class="вкладка" data-экран="ещё" data-t="вкладка.ещё">Ещё</button>
   </nav>
 
   <div class="экран" data-экран="начало">
@@ -437,13 +437,13 @@ button,input,select,textarea{font-family:inherit}
   <div class="экран" data-экран="поиск">
 
   <p class="метка-раздела">ПОИСК</p>
-  <h2>Найди ответ по своему вопросу</h2>
-  <p class="ведущая">Набери, что случилось или что нужно сделать: токен, права, магазин,
+  <h2 data-t="поиск.заголовок">Найди ответ по своему вопросу</h2>
+  <p class="ведущая" data-t="поиск.ведущая">Набери, что случилось или что нужно сделать: токен, права, магазин,
   белый экран. Ищет по всем разделам руководства.</p>
 
-  <input class="search" id="q" type="search" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
+  <input class="search" id="q" type="search" data-t-подсказка="поиск.подсказка" placeholder="Найти: токен, права, магазин, устройство, ошибка" autocomplete="off">
   <div class="count" id="count"></div>
-  <div class="empty" id="empty" style="display:none">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
+  <div class="empty" id="empty" style="display:none" data-t="поиск.пусто">Ничего не нашлось. Сотри запрос или напиши короче — одним словом.</div>
 
   <div id="разделы"></div>
 
@@ -451,20 +451,20 @@ button,input,select,textarea{font-family:inherit}
 
   <div class="экран" data-экран="ещё">
 
-  <p class="метка-раздела">ОБСЛУЖИВАНИЕ</p>
+  <p class="метка-раздела" data-t="ещё.метка">ОБСЛУЖИВАНИЕ</p>
   <div class="actions">
-    <button class="btn" id="обновить">Проверить обновление</button>
-    <button class="btn" id="новое">Что нового</button>
-    <button class="btn" id="всё">Скопировать весь текст</button>
+    <button class="btn" id="обновить" data-t="ещё.обновить">Проверить обновление</button>
+    <button class="btn" id="новое" data-t="ещё.новое">Что нового</button>
+    <button class="btn" id="всё" data-t="ещё.всё">Скопировать весь текст</button>
     <button class="btn" id="язык" style="display:none">EN</button>
   </div>
-  <p class="copy-note">Весь текст — снимок на сегодня, он устареет. Живой источник
+  <p class="copy-note" data-t="ещё.снимок">Весь текст — снимок на сегодня, он устареет. Живой источник
   отдаёт кнопка на экране «Начало».</p>
 
   <footer>
-    <p>Полный канон, машинные проверки и разборы поломок —
+    <p><span data-t="подвал.канон">Полный канон, машинные проверки и разборы поломок —</span>
     <a href="https://github.com/AnvarBakiyev/extella-agent-standards" target="_blank" rel="noopener">github.com/AnvarBakiyev/extella-agent-standards</a>.
-    Проверки там же: они и есть спецификация, а не текст рядом с ней.</p>
+    <span data-t="подвал.проверки">Проверки там же: они и есть спецификация, а не текст рядом с ней.</span></p>
     <div class="status" id="статус"></div>
   </footer>
   </div>
@@ -760,6 +760,19 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     });
   }
 
+  // Строки ОБОЛОЧКИ — кнопки, статусы, отказы — живут в store_app/shell.json и
+  // вкладываются сборщиком сюда. Раньше они были россыпью по шаблону, и поэтому
+  // содержимое было двуязычным, а окно вокруг него — только русским: англичанин
+  // получал английские разделы внутри русских кнопок. Русский текст остаётся в
+  // разметке запасным — если таблица не приехала, страница читается, а не пустеет.
+  var ОБОЛОЧКА = /*ОБОЛОЧКА*/{"строки":{"вкладка.начало":{"ru":"Начало","en":"Start"},"вкладка.проба":{"ru":"Попробовать","en":"Try it"},"вкладка.поиск":{"ru":"Найти ответ","en":"Find an answer"},"вкладка.ещё":{"ru":"Ещё","en":"More"},"поиск.заголовок":{"ru":"Найди ответ по своему вопросу","en":"Find the answer to your question"},"поиск.ведущая":{"ru":"Набери, что случилось или что нужно сделать: токен, права, магазин, белый экран. Ищет по всем разделам руководства.","en":"Type what happened or what you need to do: token, permissions, store, blank screen. Searches every section of the guide."},"поиск.подсказка":{"ru":"Найти: токен, права, магазин, устройство, ошибка","en":"Search: token, permissions, store, device, error"},"поиск.пусто":{"ru":"Ничего не нашлось. Сотри запрос или напиши короче — одним словом.","en":"Nothing found. Clear the query or use fewer words — one is often enough."},"ещё.метка":{"ru":"ОБСЛУЖИВАНИЕ","en":"MAINTENANCE"},"ещё.обновить":{"ru":"Проверить обновление","en":"Check for an update"},"ещё.новое":{"ru":"Что нового","en":"What's new"},"ещё.новое.скрыть":{"ru":"Скрыть","en":"Hide"},"ещё.всё":{"ru":"Скопировать весь текст","en":"Copy the whole text"},"ещё.снимок":{"ru":"Весь текст — снимок на сегодня, он устареет. Живой источник отдаёт кнопка на экране «Начало».","en":"The whole text is a snapshot of today and will go stale. The button on the Start screen hands over the live source instead."},"подвал.канон":{"ru":"Полный канон, машинные проверки и разборы поломок —","en":"The full rulebook, the machine checks and the breakage write-ups live at"},"подвал.проверки":{"ru":"Проверки там же: они и есть спецификация, а не текст рядом с ней.","en":"The checks are there too: they are the specification, not prose beside it."},"язык.в_английский":{"ru":"EN","en":"EN"},"язык.в_русский":{"ru":"RU","en":"RU"},"язык.титул_ru":{"ru":"Читать по-русски","en":"Read in Russian"},"язык.титул_en":{"ru":"Read in English","en":"Read in English"},"промпт.кнопка":{"ru":"Скопировать промпт для агента","en":"Copy the agent prompt"},"промпт.готово":{"ru":"Скопировано — вставляй агенту","en":"Copied — paste it to your agent"},"промпт.нет":{"ru":"Промпта нет в тексте — нажми «Обновить»","en":"The prompt is missing from the text — press «Check for an update»"},"всё.кнопка":{"ru":"Скопировать весь текст","en":"Copy the whole text"},"всё.готово":{"ru":"Скопировано — снимок, он устареет","en":"Copied — a snapshot, it will go stale"}}}/*КОНЕЦ_ОБОЛОЧКИ*/;
+
+  function т(ключ){
+    var з = (ОБОЛОЧКА["строки"] || {})[ключ];
+    if (!з) return '';
+    return з[ЯЗЫК] || з["ru"] || '';
+  }
+
   // Язык хранится у человека, а не в адресе: окно продукта открывается без
   // адресной строки, и параметр в ссылке здесь некому передать.
   var ЯЗЫК = (function(){
@@ -776,6 +789,23 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
       if (typeof en === 'string' && en.trim()) return en;
     }
     return объект[имя] || '';
+  }
+
+  // Подписи оболочки проставляются одним проходом. Раздел с содержимым не
+  // трогается: он рисуется из content.json и уже двуязычен.
+  function подписать_оболочку(){
+    var узлы = document.querySelectorAll('[data-t]');
+    for (var i = 0; i < узлы.length; i++){
+      var у = узлы[i];
+      if (у.closest('#разделы')) continue;
+      var текст = т(у.getAttribute('data-t'));
+      if (текст) у.innerHTML = текст;
+    }
+    var поля = document.querySelectorAll('[data-t-подсказка]');
+    for (var j = 0; j < поля.length; j++){
+      var подсказка = т(поля[j].getAttribute('data-t-подсказка'));
+      if (подсказка) поля[j].setAttribute('placeholder', подсказка);
+    }
   }
 
   function переводПолон(содержимое){
@@ -1048,22 +1078,22 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     if (!текст){
       // Отказ словами: молча скопировать пустоту — худшее из возможного,
       // человек вставит ничего и решит, что сломался его редактор.
-      this.textContent = 'Промпта нет в тексте — нажми «Обновить»';
+      this.textContent = т('промпт.нет');
       return;
     }
     скопировать(текст, this,
-                'Скопировать промпт для агента', 'Скопировано — вставляй агенту');
+                т('промпт.кнопка'), т('промпт.готово'));
   };
 
   document.getElementById('всё').onclick = function(){
     скопировать(руководство_текстом(текущее), this,
-                'Скопировать весь текст', 'Скопировано — снимок, он устареет');
+                т('всё.кнопка'), т('всё.готово'));
   };
 
   document.getElementById('новое').onclick = function(){
     var узел = document.getElementById('новости');
     var открыто = узел.classList.toggle('open');
-    this.textContent = открыто ? 'Скрыть' : 'Что нового';
+    this.textContent = открыто ? т('ещё.новое.скрыть') : т('ещё.новое');
   };
 
   document.getElementById('обновить').onclick = function(){ подтянуть(true); };
@@ -1074,13 +1104,14 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
     var к = document.getElementById('язык');
     if (!переводПолон(текущее)) { к.style.display = 'none'; return; }
     к.style.display = '';
-    к.textContent = ЯЗЫК === 'en' ? 'RU' : 'EN';
-    к.title = ЯЗЫК === 'en' ? 'Читать по-русски' : 'Read in English';
+    к.textContent = ЯЗЫК === 'en' ? т('язык.в_русский') : т('язык.в_английский');
+    к.title = ЯЗЫК === 'en' ? т('язык.титул_ru') : т('язык.титул_en');
   }
   document.getElementById('язык').onclick = function(){
     ЯЗЫК = ЯЗЫК === 'en' ? 'ru' : 'en';
     try { localStorage.setItem('extella_guide_lang', ЯЗЫК); } catch (_) {}
     document.documentElement.lang = ЯЗЫК;
+    подписать_оболочку();
     нарисовать(текущее);
     обновитьКнопкуЯзыка();
   };
@@ -1321,6 +1352,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 4;   // растёт, когда меняе�
   });
 
   // Первый кадр — из встроенного снимка, мгновенно и без сети.
+  подписать_оболочку();
   нарисовать(текущее);
   новости(текущее);
   проверить_оболочку(текущее);

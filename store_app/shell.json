@@ -1,0 +1,104 @@
+{
+  "строки": {
+    "вкладка.начало": {
+      "ru": "Начало",
+      "en": "Start"
+    },
+    "вкладка.проба": {
+      "ru": "Попробовать",
+      "en": "Try it"
+    },
+    "вкладка.поиск": {
+      "ru": "Найти ответ",
+      "en": "Find an answer"
+    },
+    "вкладка.ещё": {
+      "ru": "Ещё",
+      "en": "More"
+    },
+    "поиск.заголовок": {
+      "ru": "Найди ответ по своему вопросу",
+      "en": "Find the answer to your question"
+    },
+    "поиск.ведущая": {
+      "ru": "Набери, что случилось или что нужно сделать: токен, права, магазин, белый экран. Ищет по всем разделам руководства.",
+      "en": "Type what happened or what you need to do: token, permissions, store, blank screen. Searches every section of the guide."
+    },
+    "поиск.подсказка": {
+      "ru": "Найти: токен, права, магазин, устройство, ошибка",
+      "en": "Search: token, permissions, store, device, error"
+    },
+    "поиск.пусто": {
+      "ru": "Ничего не нашлось. Сотри запрос или напиши короче — одним словом.",
+      "en": "Nothing found. Clear the query or use fewer words — one is often enough."
+    },
+    "ещё.метка": {
+      "ru": "ОБСЛУЖИВАНИЕ",
+      "en": "MAINTENANCE"
+    },
+    "ещё.обновить": {
+      "ru": "Проверить обновление",
+      "en": "Check for an update"
+    },
+    "ещё.новое": {
+      "ru": "Что нового",
+      "en": "What's new"
+    },
+    "ещё.новое.скрыть": {
+      "ru": "Скрыть",
+      "en": "Hide"
+    },
+    "ещё.всё": {
+      "ru": "Скопировать весь текст",
+      "en": "Copy the whole text"
+    },
+    "ещё.снимок": {
+      "ru": "Весь текст — снимок на сегодня, он устареет. Живой источник отдаёт кнопка на экране «Начало».",
+      "en": "The whole text is a snapshot of today and will go stale. The button on the Start screen hands over the live source instead."
+    },
+    "подвал.канон": {
+      "ru": "Полный канон, машинные проверки и разборы поломок —",
+      "en": "The full rulebook, the machine checks and the breakage write-ups live at"
+    },
+    "подвал.проверки": {
+      "ru": "Проверки там же: они и есть спецификация, а не текст рядом с ней.",
+      "en": "The checks are there too: they are the specification, not prose beside it."
+    },
+    "язык.в_английский": {
+      "ru": "EN",
+      "en": "EN"
+    },
+    "язык.в_русский": {
+      "ru": "RU",
+      "en": "RU"
+    },
+    "язык.титул_ru": {
+      "ru": "Читать по-русски",
+      "en": "Read in Russian"
+    },
+    "язык.титул_en": {
+      "ru": "Read in English",
+      "en": "Read in English"
+    },
+    "промпт.кнопка": {
+      "ru": "Скопировать промпт для агента",
+      "en": "Copy the agent prompt"
+    },
+    "промпт.готово": {
+      "ru": "Скопировано — вставляй агенту",
+      "en": "Copied — paste it to your agent"
+    },
+    "промпт.нет": {
+      "ru": "Промпта нет в тексте — нажми «Обновить»",
+      "en": "The prompt is missing from the text — press «Check for an update»"
+    },
+    "всё.кнопка": {
+      "ru": "Скопировать весь текст",
+      "en": "Copy the whole text"
+    },
+    "всё.готово": {
+      "ru": "Скопировано — снимок, он устареет",
+      "en": "Copied — a snapshot, it will go stale"
+    }
+  }
+}

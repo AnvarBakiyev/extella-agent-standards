@@ -190,6 +190,8 @@ run_command "вход и приложение согласны" python3 "$ROOT/t
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
 run check_counted_claims
+run_command "оболочка страницы двуязычна" python3 "$ROOT/tools/check_shell_bilingual.py"
+run check_shell_bilingual
 run_command "гейты приняты прогоном по предмету" python3 "$ROOT/tools/check_gate_acceptance.py"
 run check_gate_acceptance
 run check_device_pinning
