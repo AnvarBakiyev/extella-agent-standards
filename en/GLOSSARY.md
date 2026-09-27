@@ -78,6 +78,9 @@ When a term is missing here, add it here first, then use it.
 | опровергнутое правило | refuted rule | a rule shown wrong by an incident |
 | лазейка | loophole | |
 | контур / периметр клиента | client's perimeter | the client's own machines and network |
+| закрытый контур | closed perimeter | air-gapped or on-premises; **never "closed loop"** |
+| policy-контур | policy layer | the layer that grants permissions |
+| сложный контур (с мониторингом и стопом) | control loop | the only sense where "loop" is right |
 | маршрут по задачам (в README) | task-based route | reading path through the corpus; not the execution "route" |
 | прошивается / флешится целиком | flashed as a whole | firmware metaphor, keep it |
 | полка (модулей) | shelf | `build_modules_shelf` |
@@ -111,6 +114,15 @@ When a term is missing here, add it here first, then use it.
 | отпечаток | fingerprint | |
 | слоёный реюз | layered reuse | |
 | навык (устройства) | skill | "skill" is allowed for device skills; it is never used for эксперт |
+| стройка (процесс) | build | lowercase noun; the stage identifier `build` stays as is |
+| чат-строитель | builder chat | |
+| страничный / устройственный (тип продукта) | page-type / device-type | |
+| код возврата | exit code | |
+| оркестратор | Orchestrator | layer name in the architecture |
+| провести документ (1С) | post a document | 1C accounting sense |
+| сопоставить контрагента | match a counterparty | |
+| обезличить | de-identify | never "anonymize" — the corpus means removing identifiers, not anonymity guarantees |
+| рассчитать маржинальность | calculate margin | |
 
 ## Rules of use
 
