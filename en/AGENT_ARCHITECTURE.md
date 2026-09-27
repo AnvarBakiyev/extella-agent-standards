@@ -1,4 +1,4 @@
-<!-- source: AGENT_ARCHITECTURE.md sha256:04dfd6318860f473d511eb3353ca63c7dbf250b62a6c4d7bb32f932ff28cb50a -->
+<!-- source: AGENT_ARCHITECTURE.md sha256:26f7acc200664f9cdd07cbd5038c9d0ee3242f78a4a15fdeddfd1d2c237d8dc6 -->
 
 # Extella Agent Architecture Principles
 

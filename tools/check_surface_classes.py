@@ -47,7 +47,9 @@ TABLE = HERE / "surface_classes.yaml"
 # классов работает и без установленных карточек.
 DEFAULT_REGISTRY = Path(os.environ.get("EXTELLA_CARDS_DIR")
                         or Path.home() / "extella-plugins" / "_registry")
-PASSPORT_ROOTS = [Path.home() / "Documents"]
+PASSPORT_ROOTS = [Path(p).expanduser() for p in os.environ.get("EXTELLA_PASSPORT_ROOTS", "").split(":") if p]
+# Корни с паспортами продуктов задаются переменной EXTELLA_PASSPORT_ROOTS (через двоеточие).
+# Раньше здесь стоял ~/Documents владельца — путь одной машины в публичном репозитории.
 CLASSES = {"automation", "system", "installed_app", "probe"}
 
 

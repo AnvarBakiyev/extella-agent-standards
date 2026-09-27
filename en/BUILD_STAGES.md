@@ -1,4 +1,4 @@
-<!-- source: BUILD_STAGES.md sha256:403107318a862bdeb7208669b543bb26875af70ad49e4e7516f9570794fae9a1 -->
+<!-- source: BUILD_STAGES.md sha256:d77dca70e57c8f369aa8a384a78f0154df3e398ec4d62bd913ad2fa0521f849e -->
 
 # Build stages: build → prod
 

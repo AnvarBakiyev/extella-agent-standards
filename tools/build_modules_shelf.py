@@ -307,7 +307,7 @@ def задание(узлы: list, язык: str) -> str:
     if язык == "ru":
         строки = ["Собери приложение из модулей Extella.", "",
                   "Подготовка: git clone " + РЕПОЗИТОРИЙ + " и прочитай APP_FROM_MODULES.md целиком. Стадия — build. "
-                  "Реестр паспортов: python3 tools/build_capability_registry.py --roots-file config_registry_roots.txt "
+                  "Реестр паспортов: python3 tools/build_capability_registry.py --roots-file config_registry_roots.local.txt "
                   "-o ~/extella_wizard/registry/capabilities_declared.json", "",
                   "Задача от человека: {{ЗАДАЧА}}", "",
                   "Узлы библиотеки на сегодня (из паспортов):"]
@@ -325,7 +325,7 @@ def задание(узлы: list, язык: str) -> str:
     else:
         строки = ["Assemble an app from Extella modules.", "",
                   "Setup: git clone " + РЕПОЗИТОРИЙ + " and read APP_FROM_MODULES.md in full. Stage: build. "
-                  "Passport registry: python3 tools/build_capability_registry.py --roots-file config_registry_roots.txt "
+                  "Passport registry: python3 tools/build_capability_registry.py --roots-file config_registry_roots.local.txt "
                   "-o ~/extella_wizard/registry/capabilities_declared.json", "",
                   "Task from the person: {{ЗАДАЧА}}", "",
                   "Library nodes as of today (from passports):"]
