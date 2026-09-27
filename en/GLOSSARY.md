@@ -123,9 +123,48 @@ When a term is missing here, add it here first, then use it.
 | сопоставить контрагента | match a counterparty | |
 | обезличить | de-identify | never "anonymize" — the corpus means removing identifiers, not anonymity guarantees |
 | рассчитать маржинальность | calculate margin | |
+| полигон | proving ground | Evolution Lab is "the proving ground"; never "range" |
+| область (изменения, по умолчанию) | scope | same word as скоуп — the corpus uses both for one idea |
+| провижининг | provisioning | `provision_modules` |
+| свод (правил) | corpus | the rule set as a whole; a single rule is a "rule" |
+| замер-урок | measurement lesson | dated entries "Замер-урок ДД.ММ.ГГГГ:" |
+| слепок | imprint | distinct from снимок → snapshot and отпечаток → fingerprint |
+| привязка (устройства) | device binding | distinct from закрепление → pinning |
+| допуск (к выпуску), файл допуска | release permit | `РАЗРЕШЁН_ВЫПУСК.yaml`; the gate is named `check_release_license.py` for historical reasons — in prose say "release permit", never "license", which is reserved for лицензия (software license, LICENSE) |
+| рельсы | rails | the metaphor from H115, keep literal |
+| Доска схем | Schemes Board | product name; never "Diagram Board" |
+| Мияу | Мияу | product name, keep as is |
+| ЭЦП | digital signature | Kazakhstan's qualified e-signature |
+| КГД, кабинет налогоплательщика | KGD, Taxpayer Cabinet | State Revenue Committee |
+| БИН | BIN | business identification number |
+| НУЦ | NUC | National Certification Center, spelled out on first mention |
+| перепись (витрины) | census | a full inventory pass |
+| поломка | breakage | `FAILURE_CLASSES.md` uses "failure class" for класс поломки |
+| дозор / сторож | watcher | |
+| плитка | tile | |
+| ярлык | shortcut | |
+| приём (принят в канон) | practice | |
+| снимок | snapshot | |
+| рецепт (модуль-рецепт) | recipe | |
+| умение (устройства) | skill | H83 only; never for эксперт |
+| согласование (по отпечатку плана) | approval | |
+| ключ повторного вызова | idempotency key | |
+| чистая комната | clean room | for the final ZIP; distinct from clean machine |
+| замер | measurement | |
+| разведчик | scout | |
+| сверка | cross-check | |
+| развилка | fork (decision) | not a git fork |
+| предмет (гейта) | subject | the live thing a gate runs against |
+| обряд (выпуска) | ritual | |
+| запасной выход | fallback exit | |
+| самоповтор | self-repeat | |
+| разыменование | dereference | |
+| мнемоника | mnemonic | |
+| панель | panel | the on-device local admin UI; distinct from cabinet and console |
 
 ## Rules of use
 
+- **Rule suffixes:** `H5-бис/-тер/-кватер/-квинта` → `H5-bis/-ter/-quater/-quinta` and `H38-П` → `H38-P` in headings and prose; **file names keep the Cyrillic form** (`en/rules/H5-бис.md`), so links between rules keep resolving.
 - **Section labels with Cyrillic letters become Latin:** 0а/0б → 0a/0b, 4.2в → 4.2c, 4.2г → 4.2d, 5а–5в → 5a–5c. Cross-references (§0a, §5a) use the same mapping in every document, so links between translated documents keep working.
 
 - Product names from `NAMING.md` stay exactly as written there (Extella Evolution, Agent Passport, Agent Cabinet, Evolution Console, Evolution Lab, Evolution Loop, Evolution Receipt, Shared Gene).
