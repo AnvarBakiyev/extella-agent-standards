@@ -168,6 +168,12 @@ class H(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
+    # H118: узкая консоль Windows (cp1252) роняет печать по-русски на первом символе.
+    for _поток in (sys.stdout, sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     print("__NAME_RU__ on http://127.0.0.1:%d/" % PORT)
     ThreadingHTTPServer(("127.0.0.1", PORT), H).serve_forever()
 '''
@@ -494,6 +500,12 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # H118: узкая консоль Windows (cp1252) роняет печать по-русски на первом символе.
+    for _поток in (sys.stdout, sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     sys.exit(main())
 '''
 
@@ -1256,4 +1268,11 @@ def main(argv) -> int:
 
 
 if __name__ == "__main__":
+    # H118: узкая консоль Windows (cp1252) роняет печать по-русски на первом символе.
+    import sys as _sys
+    for _поток in (_sys.stdout, _sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     sys.exit(main(sys.argv[1:]))

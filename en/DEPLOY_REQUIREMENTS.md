@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:79e93741c4aeca47152ccca9b64e351f5e55fe943d3e9b2a759acbb8acefb0fe -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:ec1ff0dfcde7cfcceab5c8071e0d42a289aa526f0aa46fc6e22cc86862d4484b -->
 
 # Agent requirements for a rollout to happen
 
@@ -4651,10 +4651,21 @@ the README, the agent entry point, the copyable prompt, the onboarding and the a
 Tell people tomorrow to run a new tool — it falls under the check by itself, without our
 memory.
 
-**The boundary is stated out loud, not left unsaid.** Almost every tool in the repository
-prints in Russian, and on Windows each of them will fall over; the gate prints that number
-on every run. What is closed is the newcomer's path, not Windows as a whole — Windows
-support is NOT declared by this (the open part of F04 in the audit of 28 Sep 2026).
+**A full sweep, 28 Sep 2026.** All 107 tools in `tools/` that print Russian are protected,
+and so are the templates of the scaffold that `new_product.py` produces (`server.py`,
+`smoke_e2e.py`): otherwise every new product was born with a test that falls over on
+Windows. The self-test of every changed tool was run under `cp1252`.
+
+**Protection is looked up in the parse tree, not in the text.** The entry-point line also
+occurs inside template strings: a text-based sweep put the protection into a template, past
+the real entry point, and `new_product.py` was counted as protected because of a `reconfigure`
+in a template it generates. The syntax was intact both times — only parsing the last top-level
+`if __name__ == "__main__"` caught it. The gate does not let an unprotected tool through.
+
+**The boundary is stated out loud.** The newcomer's path is checked by behaviour; the other
+tools by their source. CI runs live on Windows only for the connector and the platform wrapper,
+and Windows support is NOT declared by this — that needs an "OS × client" matrix on a live
+bench (the open part of F04 in the audit of 28 Sep 2026).
 
 Held by `tools/check_windows_console.py`.
 

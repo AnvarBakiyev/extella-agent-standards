@@ -208,4 +208,11 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    # H118: узкая консоль Windows (cp1252) роняет печать по-русски на первом символе.
+    import sys as _sys
+    for _поток in (_sys.stdout, _sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     sys.exit(main(sys.argv[1:]))
