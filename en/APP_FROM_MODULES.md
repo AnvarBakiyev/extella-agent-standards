@@ -1,4 +1,4 @@
-<!-- source: APP_FROM_MODULES.md sha256:827add179a9d63247951d61c4f6c960e767d141dc76e1af6b289fe2433e4f88b -->
+<!-- source: APP_FROM_MODULES.md sha256:26b7b077679d67c78357745c8e66686d94310221ff81c9fe5f4f90a5b4a40589 -->
 
 # How to build an app from modules
 
@@ -54,8 +54,8 @@ What it is not:
   gets a copy into its own agent's scope, because the store window only sees that scope.
 
 Why it is this way: the interface changes more often than a capability does, and eight products with eight
-servers produced almost the entire breakage log of August. An app built from modules repeats the thin mode
-of the `new_product.py` framework, only instead of a route table it has a registry.
+servers produced almost the entire breakage log of August. An app built from modules repeats the page mode
+of the `new_product.py --page` framework, only instead of a route table it has a registry.
 
 ---
 

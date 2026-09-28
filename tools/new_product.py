@@ -16,8 +16,9 @@
 
 Запуск:
   python3 tools/new_product.py <slug> "<Название>" "<кому-в-дательном>" <порт> [каталог]
-  python3 tools/new_product.py <slug> "<Название>" "<кому>" <порт> --thin
-                                                 # бессерверная страница ОС (H106): без порта и процесса
+  python3 tools/new_product.py <slug> "<Название>" "<кому>" <порт> --page
+                                                 # страница ОС (H106): без порта и процесса;
+                                                 # старые флаги --thin/--serverless приняты с предупреждением
   python3 tools/new_product.py --selftest        # сгенерировать пробные и прогнать гейты
 
 Пример:
@@ -326,7 +327,7 @@ checks:
     fix_ru: "порт занят другим процессом — закрой его или поменяй порт продукта"
 '''
 
-MANIFEST_YAML_THIN = """# Манифест зависимостей «__NAME_RU__» (тонкая панель).
+MANIFEST_YAML_PAGE = """# Манифест зависимостей «__NAME_RU__» (страница ОС).
 #
 # Порта и своего процесса нет — проверять нечего. Осталось то, что действительно
 # нужно: приложение Extella с app_token-каналом и вход в аккаунт.
@@ -522,12 +523,12 @@ README_MD = '''# __NAME_RU__
 
 
 
-# Диспетчер тонкого продукта. КАНОН 04.08.2026: у продукта одна таблица маршрутов,
+# Диспетчер страничного продукта. КАНОН 04.08.2026: у продукта одна таблица маршрутов,
 # и мост смотрит В НЕЁ. Три переведённых продукта показали разницу: там, где таблицы
 # не было (Предиктив, Таргетолог), карту маршрутов пришлось держать в оболочке и
 # охранять отдельным гейтом; у Юриста таблица была — сверять оказалось нечего.
 # Поэтому новый продукт рождается с таблицей и диспетчером сразу.
-THIN_ROUTES_PY = '''"""Единственная таблица маршрутов продукта «__NAME_RU__».
+PAGE_ROUTES_PY = '''"""Единственная таблица маршрутов продукта «__NAME_RU__».
 
 Панель зовёт маршруты через мост, диспетчер __SLUG___call читает ЭТУ таблицу.
 Добавил маршрут сюда — он сразу доступен панели; убрал — сразу пропал. Второй
@@ -556,8 +557,8 @@ ROUTES: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] = {
 }
 '''
 
-THIN_CALL_EXPERT = '''# expert: __SLUG___call
-# description: __NAME_RU__: вызов маршрута продукта на ЭТОМ устройстве (мост тонкой панели). Параметры: route, body_json.
+PAGE_CALL_EXPERT = '''# expert: __SLUG___call
+# description: __NAME_RU__: вызов маршрута продукта на ЭТОМ устройстве (диспетчер страницы ОС). Параметры: route, body_json.
 
 def __SLUG___call(route="", body_json="{}") -> str:
     """Один эксперт вместо всех маршрутов — и без второй карты.
@@ -647,10 +648,10 @@ def __SLUG___call(route="", body_json="{}") -> str:
 '''
 
 
-# ── ТОНКИЙ РЕЖИМ (--thin/--serverless): панель без собственного сервера ───────
+# ── РЕЖИМ СТРАНИЦЫ (--page): страница ОС без собственного сервера ───────────────
 # Восемь продуктов = восемь локальных серверов = восемь портов, автозапусков и
 # зависимостей от питона машины; практически весь бэклог 03–04.08 вырос отсюда.
-# Тонкая панель не имеет ни порта, ни процесса: страница живёт в приложении
+# Страница ОС не имеет ни порта, ни процесса: она живёт в приложении
 # (ui.type=html), работу делают эксперты НА устройстве через scoped app_token.
 # Канон H106: удалённого toolbar-моста в Extella OS нет.
 #
@@ -662,7 +663,7 @@ def __SLUG___call(route="", body_json="{}") -> str:
 # персональные данные или большие выгрузки, это осознанный размен, а не мелочь:
 # решать до перевода, а не после.
 
-THIN_HTML = '''<script>window.EXTELLA_APP={appToken:"{{app_token}}"};</script>
+PAGE_HTML = '''<script>window.EXTELLA_APP={appToken:"{{app_token}}"};</script>
 <div class="wrap">
   <h1>__NAME_RU__</h1>
   <div class="sub" id="sub">Панель без локального сервера: работу делают эксперты на этом устройстве.</div>
@@ -846,7 +847,7 @@ $('deviceInput').addEventListener('keydown',function(event){if(event.key==='Ente
 </script>
 '''
 
-THIN_WHERE_EXPERT = '''# expert: __SLUG___where
+PAGE_WHERE_EXPERT = '''# expert: __SLUG___where
 # description: __NAME_RU__: диспетчер H106 — сообщает устройство и имя машины. Параметры: нет.
 
 def __SLUG___where() -> str:
@@ -866,7 +867,7 @@ def __SLUG___where() -> str:
     return json.dumps(value, ensure_ascii=False)
 '''
 
-THIN_STATE_EXPERT = '''# expert: __SLUG___state
+PAGE_STATE_EXPERT = '''# expert: __SLUG___state
 # description: __NAME_RU__: состояние продукта на устройстве — привязанный агент. Параметры: нет.
 
 def __SLUG___state() -> str:
@@ -881,7 +882,7 @@ def __SLUG___state() -> str:
     return json.dumps({"status": "success", "agent": agent}, ensure_ascii=False)
 '''
 
-THIN_BIND_EXPERT = '''# expert: __SLUG___bind
+PAGE_BIND_EXPERT = '''# expert: __SLUG___bind
 # description: __NAME_RU__: привязать агента к продукту на ЭТОМ устройстве. Параметры: agent_id.
 
 def __SLUG___bind(agent_id="") -> str:
@@ -901,11 +902,11 @@ def __SLUG___bind(agent_id="") -> str:
     return json.dumps({"status": "success", "agent": a}, ensure_ascii=False)
 '''
 
-THIN_CARD = '''{
+PAGE_CARD = '''{
   "id": "__SLUG__",
   "name": "__NAME_RU__",
   "tagline": "Панель без локального сервера — работа на устройстве через экспертов",
-  "description": "Тонкая панель Extella: ни порта, ни отдельного процесса. Интерфейс живёт в приложении, работу делают эксперты на этом устройстве; база и файлы остаются здесь, а сами вызовы идут через платформу.",
+  "description": "Страница Extella ОС: ни порта, ни отдельного процесса. Интерфейс живёт в приложении, работу делают эксперты на этом устройстве; база и файлы остаются здесь, а сами вызовы идут через платформу.",
   "category": "work",
   "type": "custom",
   "version": "0.1.0",
@@ -914,9 +915,9 @@ THIN_CARD = '''{
   "experts": ["__SLUG___where", "__SLUG___state", "__SLUG___bind", "__SLUG___ping"]
 }'''
 
-THIN_INSTALL = '''#!/usr/bin/env python3
+PAGE_INSTALL = '''#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Установка «__NAME_RU__» — тонкой панели (ни порта, ни процесса, ни автозапуска).
+"""Установка «__NAME_RU__» — страницы ОС (ни порта, ни процесса, ни автозапуска).
 
 Ставит: экспертов на аккаунт + карточку с самой страницей внутрь реестра плагинов.
 Обновление продукта = обновление карточки; чинить нечего — сервера нет.
@@ -988,7 +989,7 @@ if __name__ == "__main__":
 
 
 def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
-             register: bool = True, thin: bool = False) -> None:
+             register: bool = True, page: bool = False) -> None:
     if not re.fullmatch(r"[a-z][a-z0-9_]{2,30}", slug):
         raise SystemExit("slug — латиница/цифры/подчёркивание, 3–31 символ: %r" % slug)
     if dest.exists() and any(dest.iterdir()):
@@ -1004,30 +1005,30 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
     (dest / "app").mkdir(parents=True, exist_ok=True)
     (dest / "experts").mkdir(exist_ok=True)
 
-    if thin:
-        # Тонкая панель: ни server.py, ни порта, ни автозапуска.
-        (dest / "panel.html").write_text(fill(THIN_HTML), encoding="utf-8")
-        (dest / "card.json").write_text(fill(THIN_CARD), encoding="utf-8")
-        (dest / "install.py").write_text(fill(THIN_INSTALL), encoding="utf-8")
-        (dest / "experts" / (slug + "_state.py")).write_text(fill(THIN_STATE_EXPERT), encoding="utf-8")
-        (dest / "experts" / (slug + "_where.py")).write_text(fill(THIN_WHERE_EXPERT), encoding="utf-8")
-        (dest / "experts" / (slug + "_bind.py")).write_text(fill(THIN_BIND_EXPERT), encoding="utf-8")
+    if page:
+        # Страница ОС: ни server.py, ни порта, ни автозапуска.
+        (dest / "panel.html").write_text(fill(PAGE_HTML), encoding="utf-8")
+        (dest / "card.json").write_text(fill(PAGE_CARD), encoding="utf-8")
+        (dest / "install.py").write_text(fill(PAGE_INSTALL), encoding="utf-8")
+        (dest / "experts" / (slug + "_state.py")).write_text(fill(PAGE_STATE_EXPERT), encoding="utf-8")
+        (dest / "experts" / (slug + "_where.py")).write_text(fill(PAGE_WHERE_EXPERT), encoding="utf-8")
+        (dest / "experts" / (slug + "_bind.py")).write_text(fill(PAGE_BIND_EXPERT), encoding="utf-8")
         (dest / "experts" / (slug + "_ping.py")).write_text(fill(PING_EXPERT), encoding="utf-8")
         # Таблица маршрутов и диспетчер поверх неё — с рождения: продукт растёт
         # маршрутами, а панель получает их сама (канон 04.08).
-        (dest / "app" / "routes.py").write_text(fill(THIN_ROUTES_PY), encoding="utf-8")
+        (dest / "app" / "routes.py").write_text(fill(PAGE_ROUTES_PY), encoding="utf-8")
         (dest / "experts" / (slug + "_call.py")).write_text(
-            fill(THIN_CALL_EXPERT).replace("__SLUG_UPPER__", slug.upper()), encoding="utf-8")
+            fill(PAGE_CALL_EXPERT).replace("__SLUG_UPPER__", slug.upper()), encoding="utf-8")
         (dest / "agent_passport.yaml").write_text(
             fill(PASSPORT_YAML).replace('hosting_profile: "client_server"',
                                         'hosting_profile: "bridge_only"')
                                .replace("# локальная панель 127.0.0.1:__PORT__ + эксперты на устройстве".replace("__PORT__", str(port)),
                                         "# страница в приложении + эксперты на устройстве; своего сервера нет"),
             encoding="utf-8")
-        (dest / "MANIFEST.yaml").write_text(fill(MANIFEST_YAML_THIN), encoding="utf-8")
+        (dest / "MANIFEST.yaml").write_text(fill(MANIFEST_YAML_PAGE), encoding="utf-8")
         (dest / "README.md").write_text(fill(README_MD).replace(
             "## Что уже правильно с рождения",
-            "**Тонкий режим:** у продукта НЕТ своего сервера, порта и автозапуска — "
+            "**Режим страницы:** у продукта НЕТ своего сервера, порта и автозапуска — "
             "страница живёт в приложении, работу делают эксперты на устройстве через "
             "короткоживущий app_token (H106). Первый вызов находит устройство, следующие "
             "закрепляются за ним. Если платформа выбрала компьютер другого аккаунта (H104), "
@@ -1037,7 +1038,7 @@ def generate(slug: str, name_ru: str, dat_ru: str, port: int, dest: Path,
         shutil.copy(CANON_APP / "platform_client.py", dest / "app" / "platform_client.py")
         shutil.copy(CANON_APP / "agent_onboarding.py", dest / "app" / "agent_onboarding.py")
         shutil.copy(STANDARDS / "templates" / "manifest_check.py", dest / "manifest_check.py")
-        print("Тонкий каркас «%s» создан: %s" % (name_ru, dest))
+        print("Страничный каркас «%s» создан: %s" % (name_ru, dest))
         print("Установка: python3 %s/install.py — без порта и без службы." % dest)
         return
 
@@ -1139,27 +1140,27 @@ def selftest() -> int:
 
     shutil.rmtree(tmp.parent, ignore_errors=True)
 
-    # ── Тонкий режим: панель без сервера ──────────────────────────────────────
-    tmp2 = Path(tempfile.mkdtemp()) / "probe_thin"
-    generate("probethin", "Тонкая проба", "тонкой пробе", 8918, tmp2, register=False, thin=True)
+    # ── Режим страницы: без сервера ──────────────────────────────────────
+    tmp2 = Path(tempfile.mkdtemp()) / "probe_page"
+    generate("probepage", "Проба страницы", "пробе страницы", 8918, tmp2, register=False, page=True)
     for py in list(tmp2.rglob("*.py")):
         try:
             ast.parse(py.read_text(encoding="utf-8"))
         except SyntaxError as e:
-            print("  ✗ тонкий: синтаксис", py.name, e)
+            print("  ✗ страница: синтаксис", py.name, e)
             bad += 1
 
-    # Ни порта, ни процесса, ни автозапуска — иначе это не тонкая панель.
+    # Ни порта, ни процесса, ни автозапуска — иначе это не страница ОС.
     card = json.loads((tmp2 / "card.json").read_text(encoding="utf-8"))
     if card.get("ui", {}).get("type") != "html" or card.get("ui", {}).get("port") or card.get("service"):
-        print("  ✗ тонкий: карточка не бессерверная:", card.get("ui"))
+        print("  ✗ страница: карточка не бессерверная:", card.get("ui"))
         bad += 1
     page = (tmp2 / "panel.html").read_text(encoding="utf-8")
     # H106: живой контракт ОС — app_token + app-agent/run. Старый postMessage
     # мост удалён из desktop-сборки; etb_init несёт только тему и язык.
     leaks = [m for m in ("api.extella.ai", "X-Auth-Token", "auth_token", "parent.extellaDesktop") if m in page]
     if leaks:
-        print("  ✗ H106: тонкая страница содержит запрещённый канал:", leaks)
+        print("  ✗ H106: страница содержит запрещённый канал:", leaks)
         bad += 1
     if "{{app_token}}" not in page or "app-agent/run" not in page:
         print("  ✗ H106: страница обязана содержать {{app_token}} и app-agent/run")
@@ -1186,8 +1187,8 @@ def selftest() -> int:
                   if ("127.0.0.1" in ln or "localhost" in ln)
                   and not ln.lstrip().startswith(("//", "*", "/*", "#"))]
     if live_calls:
-        print("  ✗ тонкий: страница обращается к localhost — это и есть то, от чего "
-              "тонкий режим уходит:")
+        print("  ✗ страница: обращается к localhost — это и есть то, от чего "
+              "режим страницы уходит:")
         for ln in live_calls[:3]:
             print("      " + ln.strip()[:100])
         bad += 1
@@ -1198,17 +1199,17 @@ def selftest() -> int:
     env_home = os.environ.get("HOME")
     os.environ["HOME"] = fake_home
     try:
-        for name, kwargs, expect in (("probethin_where", {}, "success"),
-                                     ("probethin_state", {}, "success"),
-                                     ("probethin_bind", {"agent_id": "agent_extella_default"}, "error"),
-                                     ("probethin_bind", {"agent_id": "agent_qwen_x"}, "success"),
-                                     ("probethin_ping", {}, "success")):
+        for name, kwargs, expect in (("probepage_where", {}, "success"),
+                                     ("probepage_state", {}, "success"),
+                                     ("probepage_bind", {"agent_id": "agent_extella_default"}, "error"),
+                                     ("probepage_bind", {"agent_id": "agent_qwen_x"}, "success"),
+                                     ("probepage_ping", {}, "success")):
             src = (tmp2 / "experts" / (name + ".py")).read_text(encoding="utf-8")
             ns = {}
             exec(compile(src, name, "exec"), ns)
             got = json.loads(ns[name](**kwargs)).get("status")
             if got != expect:
-                print("  ✗ тонкий: %s дал %s вместо %s" % (name, got, expect))
+                print("  ✗ страница: %s дал %s вместо %s" % (name, got, expect))
                 bad += 1
     finally:
         if env_home:
@@ -1216,7 +1217,7 @@ def selftest() -> int:
     if not bad:
         print("  ✓ H106: без порта и процесса, app_token scoped, работа закреплена, эксперты живы")
 
-    if manifest_problems("тонкий", tmp2):
+    if manifest_problems("страничный", tmp2):
         bad += 1
 
     canon_gate2 = Path(__file__).resolve().parent / "check_panel_canon.py"
@@ -1224,10 +1225,10 @@ def selftest() -> int:
         r = subprocess.run([sys.executable, str(canon_gate2), str(tmp2 / "panel.html")],
                            capture_output=True, text=True)
         if "✕" in r.stdout:
-            print("  ✗ тонкая панель вне канона дизайна:\n" + r.stdout[-500:])
+            print("  ✗ страница вне канона дизайна:\n" + r.stdout[-500:])
             bad += 1
         else:
-            print("  ✓ тонкая панель проходит канон дизайна")
+            print("  ✓ страница проходит канон дизайна")
     shutil.rmtree(tmp2.parent, ignore_errors=True)
 
     if bad:
@@ -1243,11 +1244,14 @@ def main(argv) -> int:
     if len(argv) < 4:
         print(__doc__)
         return 1
-    thin = "--serverless" in argv or "--thin" in argv
+    page = "--page" in argv
+    if "--thin" in argv or "--serverless" in argv:
+        print("флаг --thin/--serverless переименован в --page (28.09.2026): режим тот же — страница ОС по H106")
+        page = True
     argv = [a for a in argv if not a.startswith("--")]
     slug, name_ru, dat_ru, port = argv[0], argv[1], argv[2], int(argv[3])
     dest = Path(argv[4]).expanduser() if len(argv) > 4 else Path.home() / "Documents" / ("extella-" + slug)
-    generate(slug, name_ru, dat_ru, port, dest, thin=thin)
+    generate(slug, name_ru, dat_ru, port, dest, page=page)
     return 0
 
 
