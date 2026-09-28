@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:a01363c276cae5527a365134373835e14cf8c2569deb871c466a49136886bc66 -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:c4ba81c7b87e8b927bb39cc1dc8b801f20c2986343b109bbf6f7ad8373d937f1 -->
 
 # Agent requirements for a rollout to happen
 
@@ -2930,16 +2930,44 @@ because the prompt itself sends the agent to read the README as the source of tr
 A person who doesn't know Extella hit a dead end: which chat, what to write, where to
 paste the secret.
 
-**There was no need to ask at all.** The key appears on disk by itself on the app's
-first launch (`~/.extella/os_token.txt`, 600), and it is the SAME key that MCP needs —
-confirmed by an `initialize` handshake with `api.extella.ai/mcp/`. An "issue token"
-screen does not exist: `token/list` on a live account returns zero manually created
-keys.
+**There was no need to ask at all.** The key needed is the same one MCP uses.
+
+> **AMENDMENT 28 Sep 2026 — two claims in this paragraph turned out to be wrong.**
+> First: the key does NOT appear on disk by itself — app 1.3.0 does not write it, and
+> an issue screen does exist (`Library → System → Tokens`), see H108 and the
+> measurement of 24 Sep 2026. Second, and this one costs more: **a handshake proves
+> nothing.** `initialize` with a deliberately wrong key answers HTTP 200 with
+> `"result"`, and `tools/list` returns the tool catalogue with no authorisation at
+> all. A check built on the `"result"` substring declared "connected" for any string
+> in place of a key — and the newcomer went looking for the fault where there was
+> none (audit of 28 Sep 2026, F01). There is exactly one proof: **calling a reading
+> tool and parsing the answer field by field** (`isError`, `error`). An empty list on
+> a new account is a legitimate success.
 
 **Norm.** A step that a person cannot complete without knowing the platform is not an
 instruction but a command: `tools/connect_mcp.py`. Three rules inside it:
-1. **The key is verified by working, not by the file's presence.** The file outlives
-   an account switch; the handshake is the only honest proof.
+1. **The key is verified by a call — not by the file's presence and not by a
+   handshake.** The file outlives an account switch, and the handshake passes with any
+   rubbish in place of a key. The honest proof is `tools/call` on a reading tool with
+   `isError` parsed.
+1-bis. **`X-Agent-Id` is mandatory in MCP headers — and only in MCP.** Measured 28 Sep
+   2026: the same `tools/call` with a valid key but without this header answers
+   `isError: true` and the text "Failed to resolve dependency 'token'" — the message
+   blames the key, though the key is valid. **This does not carry over to REST:**
+   `POST /api/agent/list` with the same key and NO `X-Agent-Id` answers HTTP 200. One
+   header's requirement is not extended to every method without checking its contract.
+   A non-empty value is enough (a non-existent agent id gives the same answer as a real
+   one — verified on `list_agents`; tools that work INSIDE an agent's scope need a real
+   one). So connecting is possible on an empty account, and the person creates their
+   own agent afterwards.
+   **One text for two causes:** MCP answers with the same wording both for a wrong key
+   and for an empty agent header — the answer cannot tell them apart.
+1-ter. **Ask REST for the cause of an MCP refusal.** Measured 28 Sep 2026: for a wrong
+   key REST answers `HTTP 401 {"error":"Invalid or expired token"}`, while MCP at the
+   same moment answers HTTP 200 with the text about a "token dependency". The honest
+   channel exists and must be used: if REST returns 200, the key is VALID and the MCP
+   headers need fixing, not the token. Retelling the MCP wording as the cause is
+   forbidden — it names the wrong thing to fix.
 2. **The secret goes into neither the config nor the arguments.** Claude Code has
    `headersHelper` for this — the script hands over headers at call time. Codex has
    no such thing; the key goes into `~/.codex/config.toml` — the file is set to 600,
@@ -4171,7 +4199,9 @@ happen.
    `Library → System → Tokens`, create a token and save it to the same file, or pass it
    via the `EXTELLA_API_TOKEN` variable. No "go look for the key somewhere."
 3. **Verify by fact, not by the file's presence.** A dead key in the file looks like a
-   connection and breaks later — verification only by handshake.
+   connection and breaks later. Verification is by calling a reading tool; the
+   `initialize` handshake passes with any string in place of a key (amendment of
+   28 Sep 2026, H81).
 4. **The key is never forwarded.** Not into chat, not to a colleague, not into a ticket:
    it gives full access to the account, up to deleting the agent. Every machine and
    every person has its own key.
