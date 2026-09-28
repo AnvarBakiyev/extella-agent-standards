@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:20a8969a71bc95529d28bd223545120978086e79c0c54ac0ad8381b553746882 -->
+<!-- source: README.md sha256:e1bd57a642cccee1ee6d6b8a7966c37745e6757160bed93514ec90947f373c10 -->
 
 # Building on Extella — start here
 
@@ -161,8 +161,18 @@ X-Profile-Id = "default"
 
 ### Step 2. Verify the connection with a fact, not hope
 
-Call `list_agents`. A list came back — the connection works. An error or empty — stop and
-say the reason in plain words.
+Call `list_agents` and parse the ANSWER, not the fact that one arrived. Four distinct
+outcomes:
+
+| what came back | what it means |
+|---|---|
+| a list of agents | the connection works |
+| **an empty list** | **the connection works**, the account is new — that is how it should be, carry on |
+| an authorisation refusal (REST returns HTTP 401) | the key is not recognised → Library → System → Tokens |
+| a tool error (MCP: HTTP 200 with `isError`) | the connection works, the call refused → ask REST for the cause |
+
+An empty list on a new account is a legitimate success. The previous wording told you to
+stop there, and the newcomer halted exactly where everything was fine.
 
 ### Step 3. Ask the machine how many checks apply
 
