@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:7345204ad8b69972ac408c780055b6599f89545d952f7c43bcf65a7a708ff1fb -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:52c86f1f852b05f8e07392697e11e7f753ddce9d67fcef3fa12ee4425d67210c -->
 
 # How to build an Extella agent
 
@@ -247,51 +247,16 @@ a lagging or drifting translation. A single-language app does not pass acceptanc
 
 ---
 
-## 3a. The product interface: a panel without a local server
+## 3a. Calling an expert from a page: platform traps
 
-**Scope of applicability (12 Aug 2026).** This section is about the DEVICE delivery channel
-(data/1C/services on the machine; the interface calls experts). For it the thin panel is
-the current canon, and it must not be thrown out: a page from the OS storefront (`page`) CANNOT call
-an agent or an expert — this is a platform limitation, our only open
-request to its author. When (if) the OS learns to call a device from a page, there will be a
-separate decision about the migration; until then, moving the interface of a device product
-into the OS is a mistake. The three delivery channels — `DEPLOY_REQUIREMENTS.md`.
-
-Verified on three products on 04 Aug 2026 (Predictive, Targetologist, Lawyer). A product's local
-server is the most fragile thing we have: port, autostart, permissions,
-Windows. It broke for colleagues exactly where we did not see it. A panel without it
-is arranged like this:
-
-**One dispatcher expert instead of all the routes.** Not one expert per method —
-that is a month of work and as many places where you can drift from the product. The dispatcher
-takes the method name and arguments and calls the product on the device.
-
-**If the product has a route table, the dispatcher takes IT.** The Lawyer has
-`ROUTES` of the form "path → handler": the dispatcher looks straight into it, a second map
-does not appear. A route added — it is immediately available to the panel; removed — it immediately
-disappears; there is nothing to reconcile. Where there is no table (Predictive, Targetologist), the map
-has to be kept in the shell and **guarded by a gate** that stops the
-rollout on divergence. The conclusion for new products: **set up a route table
-from day one** — it pays off exactly here.
-
-**The allow list is explicit if the product can spend money or write outward.**
-"All public methods" is fine for reading; for the Targetologist (ad accounts)
-the allowed methods are listed by name.
-
-**The page lives on the device, not in the card.** The storefront keeps cards in
-the app's browser storage; a card with a page of hundreds of kilobytes
-overflows it SILENTLY, and the human forever opens yesterday's panel. In the card
-— a shell of a few kilobytes; the page is read by a second expert in chunks.
-
-**A version label right in the panel.** A stale storefront cache is indistinguishable from a product
-breakage; the label answers the question "am I looking at the right page" in a second.
-
-### What is worth knowing before you start
+The "panel through the toolbar bridge" channel is closed: the toolbar was removed on 12 Aug 2026,
+the channel was struck from the rulebook on 23 Sep 2026 (`DEPLOY_REQUIREMENTS.md`, "Delivery
+channels"). An OS page calls experts through `{{app_token}}` and `app-agent/run` — rule H106; a
+serverless scaffold with a route table and a dispatcher comes from `tools/new_product.py --thin`.
+Below is only what the rulebook does not cover and what catches everyone (measured 04 Aug 2026):
 
 - **An expert run ≈ 10 seconds** of overhead (an empty probe — 8 s).
   Assemble the first screen with ONE method, not four calls.
-- **The platform does not deliver an answer larger than ~200 KB** ("upload result failed").
-  Compress (gzip + base64), the panel unpacks it itself: 793 KB → 108 KB.
 - **An asynchronous run (`wait: false`) is bounced by an instant "Worker hung".**
   Call synchronously; follow up on a deferred task only if the platform itself
   returned a `task_id`.
@@ -300,14 +265,11 @@ breakage; the label answers the question "am I looking at the right page" in a s
 - **Your own timeouts in the request body break the run** — that is the client's concern, not the server's.
 - **The expert must know the root of THE copy of the product where the data lies.** A machine
   can have several clones; a search through the list once picked the developer's clone with
-  an empty database, and the product honestly answered "no table" — it looked like a panel
+  an empty database, and the product honestly answered "no table" — it looked like a page
   breakage.
-- **The panel does not work before the storefront's greeting.** The device arrives asynchronously;
-  a panel that calls a method immediately gets an empty device and prints "the app
-  did not report a device" on a healthy machine.
-- **Verify on a test stand, not in the app.** A panel in an iframe with a bridge stub
+- **Verify on a test stand, not in the app.** A page in an iframe with a call stub
   and a `window.onerror` catcher catches what live looks like "loading forever":
-  the panel script is an IIFE, one error kills it entirely.
+  the page script is an IIFE, one error kills it entirely.
 
 ---
 
@@ -980,7 +942,6 @@ reconnaissance (what is actually there)
 - a demonstration of a possibility without a working user path;
 - a change to a shared handler without a run of the whole class;
 - a second route map next to the one that already exists in the product;
-- a heavy page inside a plugin card;
 - "fixed" by the code, without proving that the app shows precisely this file;
 - **a check that does real work**: a run with an "empty body" is not safe
   everywhere — a route that sends outward or creates entities will do it even from
