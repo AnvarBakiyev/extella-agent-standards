@@ -189,6 +189,9 @@ run check_assistant_onboarding
 # Копируемый промпт живёт в двух местах; расходятся копии молча (H78).
 run_command "копии промпта обещают одно" python3 "$ROOT/tools/check_prompt_agreement.py"
 run check_prompt_agreement
+# Текст приложения читается установленными публично: merge = выпуск покупателю.
+run_command "содержимое приложения готово уехать людям" python3 "$ROOT/tools/check_content_release.py"
+run check_content_release
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
