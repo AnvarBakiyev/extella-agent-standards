@@ -10,7 +10,7 @@
 
 # START_HERE — с чего начать
 
-**Репозиторий:** extella-agent-standards · **Компания:** Extella (Chariot Technologies Lab) · **Владелец:** владелец (CEO)
+**Репозиторий:** extella-agent-standards · **Компания:** Extella (Chariot Technologies Lab) · **Владелец:** CEO
 
 ## 1. Кто читает этот репозиторий
 

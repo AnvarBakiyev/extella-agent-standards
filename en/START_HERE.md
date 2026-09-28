@@ -1,4 +1,4 @@
-<!-- source: START_HERE.md sha256:51b35c0a3f5851db026d0aaa19127e86de1ee6b96f3e6fe6cf5a7f6431ef69ad -->
+<!-- source: START_HERE.md sha256:db8b3992c5fbb411e0b5dfc0720d988425afa6e0ae2bcf2a0c8b8d116cc69d8e -->
 
 # One entry point — README
 
@@ -12,7 +12,7 @@ Below is the former text, kept for the sake of existing links.
 
 # START_HERE — where to start
 
-**Repository:** extella-agent-standards · **Company:** Extella (Chariot Technologies Lab) · **Owner:** the owner (CEO)
+**Repository:** extella-agent-standards · **Company:** Extella (Chariot Technologies Lab) · **Owner:** CEO
 
 ## 1. Who reads this repository
 

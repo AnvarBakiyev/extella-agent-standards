@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:4315be141073ad3c3f46c8a6d53503ee3fe3f8afa6082138be055920341543ef -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:6b8de0db645eca9ab7aafe588188f1fc2a7f1caf73f80fabc81808f546f9f228 -->
 
 # How to build an Extella agent
 
@@ -6,7 +6,7 @@
 builds agents. A human does not read it and fills nothing in from it: they say what they need,
 and you do everything else.
 
-Owner: the owner (CEO Extella). Version: 3.0, 12 Aug 2026 — two stages instead of three, add-ons by facts, agent freeze lifted (§0a).
+Owner: CEO. Version: 3.0, 12 Aug 2026 — two stages instead of three, add-ons by facts, agent freeze lifted (§0a).
 
 ---
 
@@ -482,9 +482,9 @@ this repository (the toolbar repository is closed, tag `toolbar-final-2026-08`).
 mono all-caps labels are no longer canon. The former documents (`archive/DESIGN_RULE_FOR_APPS.md`,
 `archive/UX_CANON.md`) remain as history and are not referenced. `DESIGN_CODE.md` is how
 the platform looks; `NO_AI_LOOK.md` is how an app must not look. Both are in the root of
-this repository; a ready prompt insert is the section "Вставка в промпт" in `NO_AI_LOOK.md`.
+this repository; a ready prompt insert is the section "Prompt insert" in `NO_AI_LOOK.md`.
 
-**Deviation from the canon — only by Ella's written decision**, not by the taste of whoever is building.
+**Deviation from the canon — only by the design owner's written decision**, not by the taste of whoever is building.
 If the needed decision is not in `DESIGN_CODE.md`, there is no decision: first the rule as a pull request into
 this file, then the code.
 
@@ -499,7 +499,7 @@ when the rule arrived as text.
 
 ### 4.4b. The card on the storefront: icon, description, tags are part of the product
 
-the owner's decision of 14 Aug 2026: **"icons, description and tags are mandatory, otherwise there will be a mess
+The owner's decision of 14 Aug 2026: **"icons, description and tags are mandatory, otherwise there will be a mess
 later".** The reason is measurable — of our ten listings **four went out without an icon, three without a
 description**.
 
@@ -528,7 +528,7 @@ wish that would be more honest not to write down.
 
 ## 4.5. The shortest path to the product is an SLA, not a wish
 
-the owner's decision of 29 Jul 2026. The rule is mandatory, it has no gate and cannot have one:
+The owner's decision of 29 Jul 2026. The rule is mandatory, it has no gate and cannot have one:
 "the shortest path" is not measured by a machine, it is held by discipline.
 
 **Sort work by its effect on the product, not by order of arrival.** First what the product
@@ -765,7 +765,7 @@ Did not pass — fix it and run again. This is your cycle, there is no human in 
 
 ## 5a. Rewrote something that already worked — compare with the old, not with the expectation
 
-the owner's rule of 30 Jul 2026, written down after we got burned by it twice in one evening.
+The owner's rule of 30 Jul 2026, written down after we got burned by it twice in one evening.
 
 When you move, merge or rewrite a working piece — an installer,
 an expert, a wrapper — "the new one started" proves NOTHING. There is only one proof:
@@ -792,9 +792,9 @@ your place.
 
 ---
 
-## 5b. The method of working with a large artifact (from the build of the telecom operator and "the telecom demo", 13 Aug 2026)
+## 5b. The method of working with a large artifact (from the build for the telecom operator, 13 Aug 2026)
 
-Sent by the the telecom operator platform builder chat as a distillation of **how the work was actually done**
+Sent by the telecom operator's platform builder chat as a distillation of **how the work was actually done**
 on a 16 MB artifact. Below is only what was not in the standards; the rest is mapped
 in a table to already existing rules, so that two phrasings of the same thing do not appear (as
 once happened with the palette).
@@ -931,7 +931,7 @@ timestamp, and the check sometimes "proved" the opposite.
 
 ### Why in the end this is about speed, not neatness
 
-The the telecom operator builder chat — the fastest of ours at deploying — answered the question "what is the secret" like this,
+The telecom operator's builder chat — the fastest of ours at deploying — answered the question "what is the secret" like this,
 and the answer deserves a place in the method:
 
 > **The one who deploys fast is not the one who deploys fast, but the one who, between "changed" and "deployed",
