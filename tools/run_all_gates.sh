@@ -195,6 +195,9 @@ run check_content_release
 # Путь новичка обязан пережить узкую консоль Windows (H118).
 run_command "путь новичка переживает узкую консоль" python3 "$ROOT/tools/check_windows_console.py"
 run check_windows_console
+# Эксперт выкладки исполняется в сухом режиме: выложено ≠ установлено ≠ работает (H119).
+run_command "эксперт выкладки не обманывает" python3 "$ROOT/tools/check_publish_expert.py"
+run check_publish_expert
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"

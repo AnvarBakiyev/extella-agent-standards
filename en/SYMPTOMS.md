@@ -1,4 +1,4 @@
-<!-- source: SYMPTOMS.md sha256:84fec5b1c45b6c6eb684bd522f6dd772fea2eea53982620524182bf0b0cd990c -->
+<!-- source: SYMPTOMS.md sha256:8504bfe1911aebedae3c5639582bd14f3698fdd5c124c23dc05aade8b54b1f6f -->
 
 # Entry by symptom: what you see — where to look
 
@@ -153,6 +153,10 @@ or in the "no external symptom" list below: it cannot silently fall out of both.
 | A new product from a template was born with the wrong hint, one that had long been fixed | H110 | The templates in `tools/new_product.py` weren't covered by the gate — check text in the generators too, not only in finished files |
 | The sections are in English while the buttons and the demo stay Russian | H117 | Only the content was bilingual; the shell's strings were scattered across the template. Their place is `store_app/shell.json`, and a ratchet holds the remainder |
 | On Windows a tool falls over immediately: `UnicodeEncodeError: 'charmap' codec can't encode character` | H118 | The Windows console runs in `cp1252` while the tool prints Russian or "✓". The entry point must switch output to UTF-8; the newcomer's path is guarded by `tools/check_windows_console.py` |
+| A publish "went through" but the version is not in the listing; or the publish Expert answered 400 "At least one tag is required" | H119 | Publish success is a version read back, not a `done` event; tags are mandatory. The sample is `experts/dev_publish_private.py`, guarded by `tools/check_publish_expert.py` |
+| Three purchases of one product — three agents in the account | H119 | The repeat-purchase contract is not described (letter to the platform §55). Do not blindly reinstall a product that has an agent — install the version by hand |
+| `expert/save` hangs with no answer | H5-quater | A timeout ≠ a refusal. First look the Expert up by its EXACT name in the same profile and agent — it may have been saved; only then retry. Do not require an embeddings key from every newcomer: that is not proven (letter to the platform §56) |
+| The whole app is built, yet a large or a second file never reaches the Expert on the device | H106 | A file in the window ≠ a file on the device. Before the full build, prove an end-to-end slice: the person picks a file → the Expert reads it on its device → returns something checkable. The platform has not named a supported path for several/large files (§57) |
 | A path in the output is glued together wrong, a letter is missing, no error | H115 | zsh read the colon as a history modifier: `$BR:tools/x` with `BR=refs/heads/main` gives `mainools/x`. Curly braces save you, quotes don't; the defect doesn't reproduce in bash |
 | The gate judges a copy from a dead branch, although the work is happening in another one | H114 | There are many clones of the product on the machine, one is live. The live one is determined by the freshest HEAD, not by name order or by a conventional directory |
 | A run over someone else's tree found nothing, and the gate still isn't accepted | H114 | A run without a subject isn't acceptance: there was nothing to look for. Acceptance counts from the second run, once the subject appeared |
@@ -181,7 +185,7 @@ decision, not an omission.
 
 **Rollout order and composition:** H1, H8, H9, H10, H12, H14, H21, H45, H46, H47.
 
-**How the platform is built:** H2, H5, H5-bis, H5-ter, H5-quater, H6, H7, H11, H13, H15,
+**How the platform is built:** H2, H5, H5-bis, H5-ter, H6, H7, H11, H13, H15,
 H29, H30, H48.
 
 **Techniques and working rules:** H37, H64.
