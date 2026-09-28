@@ -12,9 +12,9 @@
   "содержимое": "store_app/content.json, страница читает его из этого же репозитория",
   "version_id": "b7fd17c4-2fcd-4b10-8791-c3829f6c15a7",
   "карточка_предлагается": {
-    "почему": "Решение 27.09.2026: имя английское, описание двумя абзацами — сначала английский, потом русский. Платформа поддержки языков не даёт, поэтому двуязычие делается одним описанием.",
+    "почему": "Решение 28.09.2026: имя «Extella Guide» — коротко, однозначно и без двусмысленности. Прежний вариант «Building on Extella» грамматически верен и стандартен для платформ (Building on AWS, Building on Stripe), но «build on» читается ещё и как «развивать начатое», а название не говорит, что внутри руководство. Описание — двумя абзацами, сначала английский, потом русский: платформа языков не поддерживает.",
     "кто_меняет": "Анвар: карточку видят все в магазине сразу, это внешнее действие.",
-    "имя": "Building on Extella",
+    "имя": "Extella Guide",
     "описание": "Build applications on Extella with your own AI agent. Copy the ready prompt, hand it to Claude Code or Codex, describe the application you need — and it will be built and installed for you. Inside: a live seven-act demo that sorts your own Downloads folder on this computer without sending anything outside, the rules the platform actually enforces, and the traps everyone hits. Free. English and Russian, switchable in the window.\n\nРазработка приложений на Extella силами своего ИИ-агента. Скопируй готовый промпт, отдай его Claude Code или Codex, опиши нужное приложение — и он соберёт и поставит его. Внутри: живая демонстрация из семи актов, которая разбирает твои Загрузки на этом компьютере, ничего не отправляя наружу; правила, которые платформа действительно проверяет; и ловушки, на которых встают все. Бесплатно. Английский и русский, переключается в окне."
   }
 }

@@ -6,7 +6,7 @@
     "лид": "Опиши идею словами — агент соберёт приложение и поставит его прямо в Extella",
     "вступление": "Нажми «Скопировать промпт для агента» и вставь его в Claude Code, Codex, Cursor или другое приложение для разработки. Следом опиши своими словами, какое приложение тебе нужно, попроси сразу поставить его в Extella — и нажми ввод. Дальше агент всё сделает сам и в конце скажет, что осталось за тобой.",
     "метка_en": "guide",
-    "заголовок_en": "Building on Extella",
+    "заголовок_en": "Extella Guide",
     "лид_en": "Describe your idea in plain words — your agent will build the app and install it right into Extella",
     "вступление_en": "Press «Copy prompt for your agent» and paste it into Claude Code, Codex, Cursor or another development tool. Then describe the app you need in your own words, ask to install it straight into Extella — and hit enter. Your agent does the rest and tells you at the end what is left for you."
   },
