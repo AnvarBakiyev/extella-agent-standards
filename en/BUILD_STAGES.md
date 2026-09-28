@@ -1,4 +1,4 @@
-<!-- source: BUILD_STAGES.md sha256:d77dca70e57c8f369aa8a384a78f0154df3e398ec4d62bd913ad2fa0521f849e -->
+<!-- source: BUILD_STAGES.md sha256:ab879366f3bb3c484bd3ad7c58e185adc7b4f8132dad753757c03e4c78f96734 -->
 
 # Build stages: build → prod
 
@@ -274,8 +274,8 @@ In practice:
 1. **Capability**: an expert (or a class handler) plus the agent role as a file in the
    repository.
 2. **A live run through the agent** — proof that the thing works.
-3. **Only now, the surface**: a thin panel, a card, a page — matching the delivery type
-   (`DEPLOY_REQUIREMENTS.md`).
+3. **Only now, the surface**: a page, an archive with an installer, a container — matching
+   the delivery channel (`DEPLOY_REQUIREMENTS.md`).
 4. Keep the old surface, if there was one, **as a fallback**, until the new one is proven by a
    live scenario — don't switch it off ahead of time.
 
