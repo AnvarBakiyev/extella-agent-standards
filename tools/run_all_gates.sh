@@ -186,6 +186,9 @@ run_command "размеры файлов в тексте правдивы" pytho
 run check_file_size_claims
 run_command "подключение ассистента закрыто продуктом" python3 "$ROOT/tools/check_assistant_onboarding.py"
 run check_assistant_onboarding
+# Копируемый промпт живёт в двух местах; расходятся копии молча (H78).
+run_command "копии промпта обещают одно" python3 "$ROOT/tools/check_prompt_agreement.py"
+run check_prompt_agreement
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
