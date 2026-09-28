@@ -1,4 +1,4 @@
-<!-- source: rules/INDEX.md sha256:f5405dc6846bca0e839621f4640f75f87a2eaa61c20ba965e7aad5abb73f897c -->
+<!-- source: rules/INDEX.md sha256:ce53434dca481529c12c309c07dc901728c534b988ab88240efb203a595e6207 -->
 
 <!-- Собрано автоматически: python3 tools/split_rules.py -->
 
@@ -135,3 +135,4 @@ Raw link to a rule: `https://raw.githubusercontent.com/AnvarBakiyev/extella-agen
 | [H116](H116.md) | RELEASING YOUR OWN — BY CLEARANCE, NOT BY PERMISSION FOR EVERY VERSION |
 | [H117](H117.md) | A PRODUCT'S SHELL IS BILINGUAL ON EQUAL TERMS WITH ITS CONTENT |
 | [H118](H118.md) | A TOOL WE TELL PEOPLE TO RUN MUST SURVIVE A NARROW CONSOLE |
+| [H119](H119.md) | PUBLISHED ≠ INSTALLED ≠ WORKING: THREE STATES, THREE PROOFS |
