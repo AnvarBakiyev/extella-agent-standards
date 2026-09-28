@@ -1,5 +1,5 @@
 {
-  "версия_содержимого": "2026-09-27.1",
+  "версия_содержимого": "2026-09-28.1",
   "шапка": {
     "метка": "руководство",
     "заголовок": "Разработка на Extella",
@@ -301,6 +301,11 @@
   "оболочка_минимум": 4,
   "что_нового": [
     {
+      "версия": "2026-09-28.1",
+      "текст": "Приложение стало двуязычным целиком: английский по умолчанию, переключатель на русский в разделе «Ещё». Раньше на двух языках были только разделы руководства, а кнопки, отказы и демонстрация «День первый» оставались русскими. Выбранный язык запоминается. Заодно панель «Что нового» снова показывает текст изменений, а не только номера версий.",
+      "текст_en": "The application is now fully bilingual: English by default, with a switch to Russian under «More». Until now only the guide sections had two languages, while the buttons, the refusals and the «Day one» demo stayed Russian. Your chosen language is remembered. Also the «What's new» panel shows the text of the changes again, not just version numbers."
+    },
+    {
       "версия": "2026-09-27.1",
       "текст": "Уточнено, как автор получает деньги: платформа списывает у покупателя после установки, а выплата автору пока ручная — продажи выгружаются и переводятся автору. Автоматическое зачисление в работе.",
       "текст_en": "Clarified how authors get paid: the platform charges the buyer after installation, while payouts to authors are manual for now — sales are exported and transferred to the author. Automatic payouts are in progress."
@@ -320,6 +325,10 @@
       "пункты": [
         "Новая тема «Память и точность»: четыре слоя, свой синтаксис под класс задач, что убивает точность",
         "Материал Тимы про память и CSPL перенесён в общий канон"
+      ],
+      "пункты_en": [
+        "New theme «Memory and precision»: four layers, your own syntax for a class of tasks, what kills precision",
+        "Tima's material on memory and CSPL moved into the common rulebook"
       ]
     },
     {
@@ -327,6 +336,10 @@
       "пункты": [
         "Разделы собраны в шесть тем: начало, агент, что строить, путь до магазина, не сломать чужое, пример",
         "Главная кнопка отдаёт агенту ссылку на живой источник, а не снимок текста"
+      ],
+      "пункты_en": [
+        "Sections grouped into six themes: start, the agent, what to build, the way to the store, do not break other people's work, a worked example",
+        "The main button hands the agent a link to the live source, not a snapshot of the text"
       ]
     },
     {
@@ -335,6 +348,11 @@
         "Новый раздел про серверные приложения в контейнере: установка, четыре правила, белое окно",
         "Причину белого окна ищут по журналу запросов, а не по памяти",
         "Контейнер видит сеть иначе: 127.0.0.1 внутри означает сам контейнер"
+      ],
+      "пункты_en": [
+        "New section on server applications in a container: installation, four rules, the blank window",
+        "The cause of a blank window is found in the request log, not from memory",
+        "A container sees the network differently: 127.0.0.1 inside means the container itself"
       ]
     },
     {
@@ -343,6 +361,11 @@
         "Новый раздел про интерфейс: три вопроса за пять секунд, четыре состояния, ожидание, выбор формы",
         "Скилл extella-ui ставится одной командой; для Codex та же выжимка в AGENTS.md",
         "Разграничение со скиллом frontend-design: он для лендингов, не для окон Extella"
+      ],
+      "строки_en": [
+        "New section on the interface: three questions in five seconds, four states, waiting, choosing the form",
+        "The extella-ui skill installs with one command; for Codex the same digest lives in AGENTS.md",
+        "Boundary with the frontend-design skill: that one is for landing pages, not for Extella windows"
       ]
     },
     {
@@ -351,6 +374,11 @@
         "Руководство переписано по правилу языка инструкций: термины объясняются при первом появлении",
         "Убран раздел про конвейер изданий: этих инструментов больше нет в репозитории",
         "Добавлено: свою установку удалить нельзя, а чужая мешает автору удалить листинг"
+      ],
+      "строки_en": [
+        "The guide rewritten by the rule of instruction language: a term is explained where it first appears",
+        "The section on the editions pipeline removed: those tools are no longer in the repository",
+        "Added: you cannot delete your own installation, and someone else's blocks the author from deleting the listing"
       ]
     },
     {
@@ -359,6 +387,11 @@
         "Обратный мост запускает и Codex, и Claude Code — двумя независимыми локальными службами",
         "«Подключено» у MCP не доказывает авторизацию: нужна проверка токена и реальный вызов инструмента",
         "Кнопка «Подключить Claude» требует оболочку 4 — приложение скажет, если она старее"
+      ],
+      "строки_en": [
+        "The reverse bridge starts both Codex and Claude Code — two independent local services",
+        "«Connected» in MCP does not prove authorisation: it takes a token check and a real tool call",
+        "The «Connect Claude» button needs shell 4 — the application says so if yours is older"
       ]
     },
     {
@@ -366,6 +399,10 @@
       "строки": [
         "Любой агент подключается к одному публичному канону",
         "Codex, Claude Code и другие инструменты описаны как маршруты, а не отдельные стандарты"
+      ],
+      "строки_en": [
+        "Any agent connects to one public rulebook",
+        "Codex, Claude Code and other tools are described as routes, not as separate standards"
       ]
     },
     {
@@ -373,6 +410,10 @@
       "строки": [
         "Живая проверка: add-version уже опубликованного листинга сразу становится публичным",
         "Конвейер требует отдельное решение владельца и перед Publish, и перед такой новой версией"
+      ],
+      "строки_en": [
+        "Measured live: add-version on an already published listing becomes public immediately",
+        "The pipeline requires a separate decision by the owner both before Publish and before such a new version"
       ]
     },
     {
@@ -380,6 +421,10 @@
       "строки": [
         "Кнопка Codex использует мост 0.3.5 и читает локальный токен текущего Extella-аккаунта",
         "Установка выполняет только пять поддерживаемых безмодельных этапов"
+      ],
+      "строки_en": [
+        "The Codex button uses bridge 0.3.5 and reads the local token of the current Extella account",
+        "Installation runs only the five supported model-free stages"
       ]
     },
     {
@@ -389,6 +434,12 @@
         "Категория «ИИ-приложения»: приложение, издание и отдел",
         "Путь от идеи до заработка и готовый конвейер издания одной командой",
         "Живой пример «Решения» и контракт ответа H17"
+      ],
+      "строки_en": [
+        "The «Connect Codex» button — a native installation through an Expert on the device, without a model",
+        "The «AI applications» category: an application, an edition and a department",
+        "The path from an idea to earning, and a ready edition pipeline in one command",
+        "The live example «Solutions» and the H17 answer contract"
       ]
     },
     {
@@ -396,6 +447,10 @@
       "строки": [
         "Раздел «Мост с Codex и Claude»: один канон для человека, Codex и Claude Code",
         "Готовый промпт: чтение публичного гида без копии, строгая версия и безмодельные проверки"
+      ],
+      "строки_en": [
+        "Section «The bridge with Codex and Claude»: one rulebook for a person, for Codex and for Claude Code",
+        "A ready prompt: reading the public guide without a copy, a strict version and model-free checks"
       ]
     },
     {
@@ -405,6 +460,12 @@
         "Проверка обновления по кнопке, а не только в фоне",
         "Приложение говорит словами, когда его оболочка устарела",
         "Клавиша «/» ставит курсор в поиск, Esc сбрасывает"
+      ],
+      "строки_en": [
+        "The «Copy the whole guide» button — the entire rulebook in one paste into your agent",
+        "Checking for an update by button, not only in the background",
+        "The application says in words when its shell is out of date",
+        "The «/» key puts the cursor in the search box, Esc clears it"
       ]
     },
     {
@@ -412,6 +473,10 @@
       "строки": [
         "Раздел «Обновление без передеплоя» — три способа и их цена",
         "Текст переехал в репозиторий: правка приезжает без загрузки в магазин"
+      ],
+      "строки_en": [
+        "Section «Updating without a redeploy» — three ways and what each costs",
+        "The text moved into the repository: an edit arrives without uploading to the store"
       ]
     },
     {
@@ -419,6 +484,10 @@
       "строки": [
         "Ловушка «магазин принадлежит токену, а не аккаунту»",
         "Права приложения: без объявленных прав каждый вызов агента получает отказ"
+      ],
+      "строки_en": [
+        "The trap «the store belongs to a token, not to an account»",
+        "Application permissions: without declared permissions every agent call is refused"
       ]
     }
   ]
