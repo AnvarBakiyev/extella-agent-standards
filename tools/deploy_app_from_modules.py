@@ -176,7 +176,9 @@ def selftest() -> int:
             return 200, 'data: {"type":"done"}\n'
         return 500, "?"
 
-    пк.токен = lambda: "проба-токен-проба-токен"
+    # Подпись должна повторять настоящую: токен(назначение). Нулевой lambda
+    # ломался ровно тогда, когда вызов стал называть назначение явно.
+    пк.токен = lambda назначение="магазин": "проба-токен-проба-токен"
     with tempfile.TemporaryDirectory() as tmp:
         папка = pathlib.Path(tmp)
         (папка / "index.html").write_text("<html>{{app_token}}</html>")
