@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:ec1ff0dfcde7cfcceab5c8071e0d42a289aa526f0aa46fc6e22cc86862d4484b -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:889297bd2a686b4f3799eff30496298a2e8edc7ad2ca026696976382f5b2c9a8 -->
 
 # Agent requirements for a rollout to happen
 
@@ -4697,3 +4697,30 @@ in words.
 Held by `tools/check_publish_expert.py` (runs the publish Expert in dry mode) and by the
 self-test of `tools/deploy_page_product.py` (agent binding in all three product kinds, the stop
 on reinstalling a product with an agent).
+
+### H120. AN EDIT LEAVES NO REFERENCE TO A NAME IT DELETED
+
+**Measurement, 28 Sep 2026.** An edit to a check in `store_app/update.py` removed the variable
+`маркер`. It was read **twice** — before the page is sent and after. The first place was fixed, the
+second was missed. The result: the page went to the buyers successfully, and then the script died
+with a `NameError` in the verification **after** the send. The deployment looked as if it had
+failed while it had in fact gone through — and in that situation a person presses the button again,
+not knowing everything is already done.
+
+**Why this was not caught.** Python sees it only when that particular branch executes, and the
+branch «after a successful send» never executes on a dry run. Compiling the file checks the syntax;
+a missing name it does not.
+
+**The rule.** When you remove a name, find **every** read of it, not the first. Held by
+`tools/check_undefined_names.py`: by walking the tree, a name used inside a function must be its
+local, an argument, an import, declared `global`, assigned at module level, or a builtin.
+
+**The check is narrow on purpose.** It does not replace pyflakes and does not hunt for unused names
+or shadowing: a broad check over your own code produces false alarms, and a gate that lies gets
+switched off together with its usefulness (H114, item 2). The live run showed exactly that — 18
+hits, of which **17 were false**, all on the module name `__file__`, which Python provides itself
+and which is absent from `dir(builtins)`. There was one real finding, the one above.
+
+**And about the acceptance line.** I wrote its first edition BEFORE the run, guessing what would be
+found: «2 false alarms». The measurement gave 17. An acceptance line describes a measurement, not
+an expectation — otherwise it is once again a number living apart from the fact (H113).

@@ -204,6 +204,8 @@ run_command "числа проверок не написаны руками" pyt
 run check_counted_claims
 run_command "оболочка страницы двуязычна" python3 "$ROOT/tools/check_shell_bilingual.py"
 run check_shell_bilingual
+run_command "ссылок на несуществующие имена нет" python3 "$ROOT/tools/check_undefined_names.py"
+run check_undefined_names
 run_command "гейты приняты прогоном по предмету" python3 "$ROOT/tools/check_gate_acceptance.py"
 run check_gate_acceptance
 run check_device_pinning
