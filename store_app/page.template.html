@@ -138,6 +138,10 @@ mark{background:rgba(212,148,74,.22);color:var(--tx);border-radius:8px;padding:0
          border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer}
 .вкладка:hover{color:var(--tx)}
 .вкладка[aria-current="page"]{color:var(--tx);border-color:var(--ln);background:var(--bg2)}
+.язык-переключатель{margin-left:auto;background:transparent;color:var(--tx);
+         border:1px solid var(--ln);border-radius:999px;padding:6px 14px;
+         font:500 12px/1.4 var(--mono);letter-spacing:.06em;cursor:pointer}
+.язык-переключатель:hover{border-color:var(--a)}
 .экран{display:none}
 .экран.виден{display:block}
 .метка-раздела{font:400 11px/1.4 ui-monospace,Menlo,monospace;color:var(--tm);margin:24px 0 8px}
@@ -262,13 +266,18 @@ button,input,select,textarea{font-family:inherit}
     <button class="вкладка" data-экран="проба" data-t="вкладка.проба">Попробовать</button>
     <button class="вкладка" data-экран="поиск" data-t="вкладка.поиск">Найти ответ</button>
     <button class="вкладка" data-экран="ещё" data-t="вкладка.ещё">Ещё</button>
+    <!-- Язык — в строке вкладок, а не в «Ещё»: переключатель, спрятанный на
+         четвёртом экране, человек не находит (замечание владельца 28.09.2026,
+         Windows 11). Класс свой, не «вкладка»: код экранов разбирает клик через
+         closest('.вкладка') и принял бы кнопку за экран. -->
+    <button class="язык-переключатель" id="язык" type="button" style="display:none">EN</button>
   </nav>
 
   <div class="экран" data-экран="начало">
   <div class="actions">
     <button class="btn main" id="промпт" data-t="промпт.кнопка">Скопировать промпт для агента</button>
   </div>
-  <p class="copy-note">В промпте — ссылка на правила Extella. Агент прочитает их
+  <p class="copy-note" data-t="промпт.пояснение">В промпте — ссылка на правила Extella. Агент прочитает их
   сам, поэтому приложение сразу получится по стандарту платформы: с правами,
   проверками и понятными отказами.</p>
   <div class="stale" id="устарело"></div>
@@ -456,7 +465,6 @@ button,input,select,textarea{font-family:inherit}
     <button class="btn" id="обновить" data-t="ещё.обновить">Проверить обновление</button>
     <button class="btn" id="новое" data-t="ещё.новое">Что нового</button>
     <button class="btn" id="всё" data-t="ещё.всё">Скопировать весь текст</button>
-    <button class="btn" id="язык" style="display:none">EN</button>
   </div>
   <p class="copy-note" data-t="ещё.снимок">Весь текст — снимок на сегодня, он устареет. Живой источник
   отдаёт кнопка на экране «Начало».</p>

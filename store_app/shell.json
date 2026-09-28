@@ -755,6 +755,10 @@
     "обнов.проверяю": {
       "ru": "Проверяю…",
       "en": "Checking…"
+    },
+    "промпт.пояснение": {
+      "ru": "В промпте — ссылка на правила Extella. Агент прочитает их сам, поэтому приложение сразу получится по стандарту платформы: с правами, проверками и понятными отказами.",
+      "en": "The prompt links to the Extella rules. Your agent reads them itself, so the app comes out to the platform's standard from the start: with permissions, checks and refusals that explain themselves."
     }
   }
 }
