@@ -144,6 +144,7 @@ docs:
   - {ru: rules/H19-квинта.md, en: en/rules/H19-квинта.md}
   - {ru: rules/H19-секста.md, en: en/rules/H19-секста.md}
   - {ru: rules/H19-тер.md, en: en/rules/H19-тер.md}
+  - {ru: rules/H120.md, en: en/rules/H120.md}
   - {ru: EXTELLA_AI_ONBOARDING.md, en: en/EXTELLA_AI_ONBOARDING.md}
   - {ru: DOCTOR_STANDARD.md, en: en/DOCTOR_STANDARD.md}
   - {ru: AGENT_START.md, en: en/AGENT_START.md}

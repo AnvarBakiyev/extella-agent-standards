@@ -1,4 +1,4 @@
-<!-- source: SYMPTOMS.md sha256:8504bfe1911aebedae3c5639582bd14f3698fdd5c124c23dc05aade8b54b1f6f -->
+<!-- source: SYMPTOMS.md sha256:7319e34939280ca239d9f5e0c36b8339ea812967f818f393635ac63c5c82307a -->
 
 # Entry by symptom: what you see — where to look
 
@@ -153,6 +153,7 @@ or in the "no external symptom" list below: it cannot silently fall out of both.
 | A new product from a template was born with the wrong hint, one that had long been fixed | H110 | The templates in `tools/new_product.py` weren't covered by the gate — check text in the generators too, not only in finished files |
 | The sections are in English while the buttons and the demo stay Russian | H117 | Only the content was bilingual; the shell's strings were scattered across the template. Their place is `store_app/shell.json`, and a ratchet holds the remainder |
 | On Windows a tool falls over immediately: `UnicodeEncodeError: 'charmap' codec can't encode character` | H118 | The Windows console runs in `cp1252` while the tool prints Russian or "✓". The entry point must switch output to UTF-8; the newcomer's path is guarded by `tools/check_windows_console.py` |
+| The script died with a NameError AFTER the action had already gone through | H120 | An edit removed a name that was read twice: the first place was fixed, the second was not. The branch after success never runs on a dry run — caught by `check_undefined_names` |
 | A publish "went through" but the version is not in the listing; or the publish Expert answered 400 "At least one tag is required" | H119 | Publish success is a version read back, not a `done` event; tags are mandatory. The sample is `experts/dev_publish_private.py`, guarded by `tools/check_publish_expert.py` |
 | Three purchases of one product — three agents in the account | H119 | The repeat-purchase contract is not described (letter to the platform §55). Do not blindly reinstall a product that has an agent — install the version by hand |
 | `expert/save` hangs with no answer | H5-quater | A timeout ≠ a refusal. First look the Expert up by its EXACT name in the same profile and agent — it may have been saved; only then retry. Do not require an embeddings key from every newcomer: that is not proven (letter to the platform §56) |
