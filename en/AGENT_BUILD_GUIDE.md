@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:52c86f1f852b05f8e07392697e11e7f753ddce9d67fcef3fa12ee4425d67210c -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:11bd9f42c0399f80bfefdcef11ce6d27c10a8433e65634532bcac95e50c31027 -->
 
 # How to build an Extella agent
 
@@ -252,7 +252,7 @@ a lagging or drifting translation. A single-language app does not pass acceptanc
 The "panel through the toolbar bridge" channel is closed: the toolbar was removed on 12 Aug 2026,
 the channel was struck from the rulebook on 23 Sep 2026 (`DEPLOY_REQUIREMENTS.md`, "Delivery
 channels"). An OS page calls experts through `{{app_token}}` and `app-agent/run` — rule H106; a
-serverless scaffold with a route table and a dispatcher comes from `tools/new_product.py --thin`.
+serverless scaffold with a route table and a dispatcher comes from `tools/new_product.py --page`.
 Below is only what the rulebook does not cover and what catches everyone (measured 04 Aug 2026):
 
 - **An expert run ≈ 10 seconds** of overhead (an empty probe — 8 s).

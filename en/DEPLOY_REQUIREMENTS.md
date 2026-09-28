@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:53fa0aafb8c19cdbbf46ba75d6b386600cf69483bbfa5f4de27c3ce283f5cf1a -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:a01363c276cae5527a365134373835e14cf8c2569deb871c466a49136886bc66 -->
 
 # Agent requirements for a rollout to happen
 
@@ -4020,7 +4020,7 @@ sandbox, so on the next opening the person enters it again. Don't show the field
 This path was adopted in the 1C Agent's live window, 1.66.0, and re-verified by the H106
 pre-release on 22 Sep 2026.
 
-**Machine guard.** The `tools/new_product.py --thin` generator and the `templates/app-recipe`
+**Machine guard.** The `tools/new_product.py --page` generator and the `templates/app-recipe`
 recipe must contain `{{app_token}}` and `app-agent/run`, and the generated page must not
 contain `etb_run_expert` or `parent.extellaDesktop`. The gate must reference the
 number `H106`, otherwise the rule doesn't count as covered.
