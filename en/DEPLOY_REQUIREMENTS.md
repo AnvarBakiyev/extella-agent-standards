@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:c4ba81c7b87e8b927bb39cc1dc8b801f20c2986343b109bbf6f7ad8373d937f1 -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:e0408e77d688a96ede7c90ea2d645bed3744b9ed13acef284745a1f79face777 -->
 
 # Agent requirements for a rollout to happen
 
@@ -4632,3 +4632,28 @@ edit and in fact requires translating the whole shell.
    table that the template never calls.
 
 Held by `tools/check_shell_bilingual.py`.
+
+### H118. A TOOL WE TELL PEOPLE TO RUN MUST SURVIVE A NARROW CONSOLE
+
+**Measured 28 Sep 2026, the first CI run on `windows-latest` ever.** The Windows console
+runs in `cp1252`, and `print("  ✓ H78: key source…")` kills the process with
+`UnicodeEncodeError` on the very first character. The person sees a stack trace instead of
+guidance — and BEFORE the tool has done anything. Until that run the README promised "any
+OS" while CI only knew ubuntu: we talked about Windows without ever running it.
+
+**Norm.** Every tool that a document tells a person to run switches `stdout` and `stderr`
+to UTF-8 at start-up — six lines at the entry point, not failing where a stream has been
+replaced. Verified BY BEHAVIOUR: the gate runs each such tool's self-test under
+`PYTHONIOENCODING=cp1252` and catches `UnicodeEncodeError`.
+
+**The list is not written by hand.** It is collected from the documents a newcomer reads:
+the README, the agent entry point, the copyable prompt, the onboarding and the app's text.
+Tell people tomorrow to run a new tool — it falls under the check by itself, without our
+memory.
+
+**The boundary is stated out loud, not left unsaid.** Almost every tool in the repository
+prints in Russian, and on Windows each of them will fall over; the gate prints that number
+on every run. What is closed is the newcomer's path, not Windows as a whole — Windows
+support is NOT declared by this (the open part of F04 in the audit of 28 Sep 2026).
+
+Held by `tools/check_windows_console.py`.

@@ -216,4 +216,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # Узкая консоль Windows (cp1252) роняет печать по-русски на первом символе
+    # — человек увидел бы стектрейс вместо подсказки (замер CI 28.09.2026, F04).
+    for _поток in (sys.stdout, sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     sys.exit(main())

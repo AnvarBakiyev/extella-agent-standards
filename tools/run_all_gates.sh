@@ -192,6 +192,9 @@ run check_prompt_agreement
 # Текст приложения читается установленными публично: merge = выпуск покупателю.
 run_command "содержимое приложения готово уехать людям" python3 "$ROOT/tools/check_content_release.py"
 run check_content_release
+# Путь новичка обязан пережить узкую консоль Windows (H118).
+run_command "путь новичка переживает узкую консоль" python3 "$ROOT/tools/check_windows_console.py"
+run check_windows_console
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"
