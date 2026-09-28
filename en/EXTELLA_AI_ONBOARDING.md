@@ -1,4 +1,4 @@
-<!-- source: EXTELLA_AI_ONBOARDING.md sha256:7b225cbf87069819ae9e77b19db984cb7967f46b3a2f7c708e863a5fd7abc2db -->
+<!-- source: EXTELLA_AI_ONBOARDING.md sha256:0d93052e76bf392c1660d84b746ede7b39aa182edfc28ad89155ec88ea25a544 -->
 
 # Extella — onboarding for an AI agent (Codex / Claude / any LLM assistant)
 
@@ -30,13 +30,21 @@ Key entities:
 1. **All client agents are the platform Qwen 3.7.** `agent_extella_default` is Claude Sonnet,
    and it's PAID: don't use it as the "default" and don't run loops on it. BYOK/gpt-4o are
    forbidden in client scenarios.
-2. **Do NOT create agents via the API.** `POST /api/agent/create` always makes a Pro-BYOK
-   agent → `pro_key_required` on run. The only working path: a person in the UI "copies" the
-   base Qwen agent (2 clicks) and hands you the id. Ask for the id, don't try to create it
-   yourself.
-3. **Scoping: everything shared is `global: true`**, both on save and on call. The same
-   expert_name in two scopes = a nondeterministic run (which of the two executes is a lottery).
-   Duplicate check: the `wz_expert_janitor` expert.
+2. **An agent created via the API is born Pro-BYOK and answers `pro_key_required` on run —
+   until the model is configured in the Extella interface.** The reliable path is unchanged:
+   a person in the UI "copies" the base Qwen agent (2 clicks) and hands you the id. But
+   "agents cannot be created via the API" is wrong: per a training participant's report of
+   28 Sep 2026, once Qwen was configured in the interface the API-created agent did answer.
+   We have not confirmed this with our own probe; treat it as a condition, not a ban, and
+   read `pro_key_required` as "the model is not configured", not as "this is not allowed".
+3. **Scoping: `global: true` is not universal advice but a case-by-case decision.** For a NEW
+   application its objects live in its own scope; they are made shared only under a justified
+   contract — otherwise another agent gets your names and you get theirs. Where sharing really
+   is needed, `global: true` goes both on save and on call. The same expert_name in two scopes
+   = a nondeterministic run (which of the two executes is a lottery). Remember: `global: true`
+   is global WITHIN THE ACCOUNT and does not save you from shadow copies — every agent has its
+   own world, and an agent's own copy of a key beats the shared one. Duplicate check: the
+   `wz_expert_janitor` expert.
 4. **Prod agents are frozen.** Process changes go only through the Builder agent, with the
    decision recorded in a session (`~/extella_wizard/sessions/`). Letters/outbound sends are
    drafts only — a person sends them.

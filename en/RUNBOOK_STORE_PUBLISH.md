@@ -1,4 +1,4 @@
-<!-- source: RUNBOOK_STORE_PUBLISH.md sha256:9c72c0b921f48a038d0405b9762cd31f2a4d38667ad9b00f1c4e20d57ed2cee7 -->
+<!-- source: RUNBOOK_STORE_PUBLISH.md sha256:21e35ce32eff807e59fe08d4dab625d87e519bb18c0c482f3d6d778d7890d5cf -->
 
 # Runbook: publish a product to the OS store (Codex → Store)
 
@@ -70,10 +70,16 @@ then SSE events), not a single JSON.
 increasing `sequence`, ending in a terminal event of `type=done` or `type=error`.
 Response code 200 does **not** mean success — success is carried by the terminal event.
 
-**Read the stream to the end and save it whole to a file — before you analyze anything.**
-Both chats whose version failed did not save the events after `expert_progress`, and
-afterward there was nowhere to get the exact cause (backend exception, stage) from.
-Raw SSE to a file is one line in the client and saves a day.
+**Read the stream to the end and save it to a file — before you analyze anything.** Both
+chats whose version failed did not save the events after `expert_progress`, and afterward
+there was nowhere to get the exact cause (backend exception, stage) from.
+
+This does not contradict the ban on printing the raw answer above, but the boundary must be
+stated plainly (audit of 28 Sep 2026, F05): **saving is allowed, showing and distributing is
+not.** The raw stream counts as potentially secret: a file in the diagnostics folder with
+mode 600, token-shaped values and headers replaced with `…`, and the file never travels into
+chat, into a commit, or into the product archive. Only named fields go into the diagnostics
+a person reads.
 
 **A version is immutable** (canon H8): a released version cannot be corrected —
 `edit-version/{vid}` edits only the version's card, not its contents. A fix goes out as
@@ -121,9 +127,13 @@ not count as acceptance. If it doesn't pass, don't create the version: it is imm
 
 `POST /api/listing/{lid}/publish` makes the listing visible to everyone. **A human
 clicks it** (canon: an accidental publish is ruled out by construction). Reversible at
-the same address with `published: false` (canon H26). A pre-release is a version
-visible only to its author (`published=0`); everything above in this runbook happens on
-one. The target state to hand off a chat: "pre-release published, bought for myself,
+the same address with `published: false` (canon H26). A pre-release is a version **hidden from the
+catalogue** (`published=0`); everything above in this runbook happens on one. **Hidden from
+the catalogue does not mean closed:** higher up in this same runbook it says the listing body
+is currently visible to outsiders as well. These are two different properties — visibility in
+the storefront and access control — and the second one we have not verified. Do not promise a
+buyer that a pre-release is private until the platform answers and the probe is repeated
+(audit of 28 Sep 2026, F05; the question to the platform is open). The target state to hand off a chat: "pre-release published, bought for myself,
 clean-room acceptance passed — one click of Publish remains," plus the evidence:
 `listing_id`, `version_id`, what the first run showed.
 

@@ -1,4 +1,4 @@
-<!-- source: AGENT_START.md sha256:d00315335826e3a42f6d901f6f8935221f67ec15ac183d5fe94423f1a3434d5e -->
+<!-- source: AGENT_START.md sha256:d1330566eac1996cb747e00eca5b2ac9579f12f630608971ad4c60491330ea36 -->
 
 # Agent start: one page, then by address
 
@@ -55,8 +55,11 @@ aren't described there. The reference's silence proves nothing. The source is th
 8. **The response arrives wrapped twice**, and a Python dict is not JSON. → `rules/H17.md`
 9. **`invalid decimal literal (<container>, line 1)`** is not a syntax issue: the code didn't
    decrypt on the device, the key didn't match. → `rules/H104.md`
-10. **An agent created via the API doesn't talk** (`agent/run` → 400): a conversational agent
-    is created by a person in the interface. Experts still work.
+10. **An agent created via the API answers `pro_key_required` until the provider and model
+    are configured in the Extella interface.** This is NOT "an API agent doesn't talk": per a
+    training participant's report of 28 Sep 2026, after Qwen was configured in the interface
+    that same agent answered. Our own probe has not confirmed it yet — so what is stated here
+    is a condition, not a ban. Experts work either way. → `rules/H107.md`
 
 ## First actions
 
