@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:6b8de0db645eca9ab7aafe588188f1fc2a7f1caf73f80fabc81808f546f9f228 -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:7345204ad8b69972ac408c780055b6599f89545d952f7c43bcf65a7a708ff1fb -->
 
 # How to build an Extella agent
 
@@ -309,8 +309,6 @@ breakage; the label answers the question "am I looking at the right page" in a s
   and a `window.onerror` catcher catches what live looks like "loading forever":
   the panel script is an IIFE, one error kills it entirely.
 
-A detailed memo with the bridge contract: `extella-core-portal/docs/HANDOFF_THIN_PANELS.md`.
-
 ---
 
 ## 4. What you must ship together with the agent
@@ -512,7 +510,7 @@ What any product that gets into the store must have:
 | **tags** | 2–6 of them, lowercase, hyphenated; one is the product type: `приложение`, `издание`, `агент`, `демо`, `инструмент` (for a product with an English name — English ones: `app`, `edition`, `agent`, `demo`, `tool`; the tag language follows the language of the name) |
 | **name** | up to 40 characters, **without a version** ("Доска v2.1" lies within a week) and without service words |
 
-Checked by `tools/check_listing_meta.py`; it is wired into `deploy_edition.py` **before** the rollout —
+Checked by `tools/check_listing_meta.py`; the deployer calls it **before** the rollout —
 an unready card stops the rollout just like a red passport does.
 
 **Why this is not a matter of taste.** The icon is the only thing by which a human finds their window
@@ -864,7 +862,7 @@ The artifact has a machine integrity check, and it is run **after every edit**:
 tag balance, navigation order, integrity of internal links, validity of embedded
 JSON. An edit without a green gate does not count as done.
 
-An example from the build: `verify_vitrina.py` — div balance, tab order equal to navigation,
+An example from the telecom-demo build: the storefront gate — div balance, tab order equal to navigation,
 881 "figure → dialogue" links with none broken.
 
 ### The build is deterministic and reproducible
