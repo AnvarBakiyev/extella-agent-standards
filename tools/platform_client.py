@@ -19,6 +19,7 @@
 import json
 import os
 import pathlib
+import sys
 import urllib.error
 import urllib.request
 import uuid
@@ -27,6 +28,22 @@ import uuid
 ОС = "https://os.extella.ai"
 ЯДРО = "https://api.extella.ai"
 КОРЕНЬ = pathlib.Path(__file__).resolve().parent.parent
+
+
+def настроить_вывод() -> None:
+    """Печать по-русски не должна ронять инструмент на Windows.
+
+    Замер 28.09.2026, первый прогон CI на windows-latest: консоль там cp1252, и
+    `print("  ✓ H78: источник ключа…")` падает UnicodeEncodeError на первом же
+    символе. Это не косметика — на машине человека инструмент умирает до того,
+    как что-то сделает, и человек видит стектрейс вместо подсказки. Классом
+    занимается F04 аудита: тут чинятся те инструменты, что гоняются матрицей ОС.
+    """
+    for поток in (sys.stdout, sys.stderr):
+        try:
+            поток.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError, OSError):
+            pass  # поток подменён или не поддерживает перенастройку — не падаем
 
 
 class Отказ(Exception):
@@ -225,6 +242,7 @@ def _selftest() -> int:
 
 
 if __name__ == "__main__":
+    настроить_вывод()
     import sys
     if "--selftest" in sys.argv:
         sys.exit(_selftest())

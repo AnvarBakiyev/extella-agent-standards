@@ -26,3 +26,25 @@ jobs:
 
       - name: Прогнать все гейты
         run: bash tools/run_all_gates.sh
+
+  connector:
+    # ЗАЧЕМ ОТДЕЛЬНОЙ РАБОТОЙ. Установщик подключения — единственная часть, которую
+    # человек запускает на СВОЁМ компьютере, а не у нас. README обещал «любую ОС»,
+    # но CI знал только ubuntu (аудит 28.09.2026, F04/F11): про Windows и macOS мы
+    # говорили без единого прогона. Здесь гоняется только самопроверка коннектора —
+    # она не ходит в сеть и не трогает чужие конфиги.
+    name: Коннектор на ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Самопроверка установщика подключения
+        run: python tools/connect_mcp.py --selftest
+      - name: Самопроверка канонной обвязки
+        run: python tools/platform_client.py --selftest
