@@ -1,4 +1,4 @@
-<!-- source: rules/INDEX.md sha256:84315b6ff1220e809f2bc0944c05a68b90efaf197ef9cd2163b0d3f5418a1768 -->
+<!-- source: rules/INDEX.md sha256:48ef8eeaa122157723827d380662b9e6f721e3aa52247b30eb9f675e04fa0701 -->
 
 <!-- Собрано автоматически: python3 tools/split_rules.py -->
 
@@ -133,3 +133,4 @@ Raw link to a rule: `https://raw.githubusercontent.com/AnvarBakiyev/extella-agen
 | [H114](H114.md) | A GATE IS ACCEPTED ONLY AFTER A RUN AGAINST A LIVE SUBJECT |
 | [H115](H115.md) | THE REPOSITORY'S RAILS: FOUR CHECKS BEFORE THE COMMIT, NOT A CONVERSATION AFTER |
 | [H116](H116.md) | RELEASING YOUR OWN — BY CLEARANCE, NOT BY PERMISSION FOR EVERY VERSION |
+| [H117](H117.md) | A PRODUCT'S SHELL IS BILINGUAL ON EQUAL TERMS WITH ITS CONTENT |
