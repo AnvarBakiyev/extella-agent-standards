@@ -423,6 +423,146 @@
     "дп.сек": {
       "ru": "{сек} с",
       "en": "{сек} s"
+    },
+    "дп.3.вопрос": {
+      "ru": "Вот имена файлов из одной папки: {имена}. Назови 3-4 темы, которыми занимается хозяин папки. Ответь ТОЛЬКО темами через запятую.",
+      "en": "Here are file names from one folder: {имена}. Name 3-4 topics the owner of this folder works on. Answer with the topics ONLY, separated by commas."
+    },
+    "дп.3.пропуск": {
+      "ru": "Ни кредитов, ни модели на диске — этот шаг пропускаем.",
+      "en": "No credits and no model on disk — we skip this step."
+    },
+    "дп.3.пропуск_цена": {
+      "ru": "Это предупреждение, а не остановка: дальше всё работает без модели. Модель ставится одной кнопкой на экране «Локальные модели».",
+      "en": "This is a warning, not a stop: everything ahead works without a model. A model is installed with one button on the «Local models» screen."
+    },
+    "дп.3.ждём_агента": {
+      "ru": "Спрашиваю агента Extella…",
+      "en": "Asking the Extella agent…"
+    },
+    "дп.3.ждём_модель": {
+      "ru": "Спрашиваю модель на твоём диске… первые разы она просыпается дольше.",
+      "en": "Asking the model on your disk… the first few times it takes longer to wake up."
+    },
+    "дп.3.занят": {
+      "ru": "думает…",
+      "en": "thinking…"
+    },
+    "дп.3.нет_ответа": {
+      "ru": "ответа не пришло",
+      "en": "no answer came back"
+    },
+    "дп.3.шаг_пропущен": {
+      "ru": "Шаг пропущен, остальное работает.",
+      "en": "Step skipped, the rest works."
+    },
+    "дп.3.где_модель": {
+      "ru": "Модель ставится на экране «Локальные модели».",
+      "en": "A model is installed on the «Local models» screen."
+    },
+    "дп.3.цена_агент": {
+      "ru": "{сек} с · агент Extella · потрачены кредиты аккаунта",
+      "en": "{сек} s · the Extella agent · account credits were spent"
+    },
+    "дп.3.цена_модель": {
+      "ru": "{сек} с · модель на твоём диске · бесплатно · названия не покидали компьютер",
+      "en": "{сек} s · the model on your disk · free · the names never left the computer"
+    },
+    "дп.4.ждём": {
+      "ru": "Прошу эксперта разложить…",
+      "en": "Asking the Expert to sort it…"
+    },
+    "дп.4.занят": {
+      "ru": "прошу…",
+      "en": "asking…"
+    },
+    "дп.4.не_тронуты": {
+      "ru": "Файлы не тронуты. Решение за тобой.",
+      "en": "The files are untouched. The decision is yours."
+    },
+    "дп.4.неожиданно": {
+      "ru": "неожиданный ответ",
+      "en": "an unexpected answer"
+    },
+    "дп.5.ждём": {
+      "ru": "Раскладываю внутри Загрузок…",
+      "en": "Sorting inside Downloads…"
+    },
+    "дп.5.занят": {
+      "ru": "раскладываю…",
+      "en": "sorting…"
+    },
+    "дп.5.цифры": {
+      "ru": "{сколько} файлов<br>разложено",
+      "en": "{сколько} files<br>sorted"
+    },
+    "дп.5.строки": {
+      "ru": "внутри той же папки, наружу ничего не ушло",
+      "en": "inside the same folder, nothing left the machine"
+    },
+    "дп.5.цена": {
+      "ru": "{сек} с · Finder открылся сам · откат рядом с файлами",
+      "en": "{сек} s · Finder opened by itself · the undo sits next to the files"
+    },
+    "дп.5.откат_ждём": {
+      "ru": "Возвращаю как было…",
+      "en": "Putting it back…"
+    },
+    "дп.5.откат_занят": {
+      "ru": "возвращаю…",
+      "en": "restoring…"
+    },
+    "дп.5.откат_готово": {
+      "ru": "Возвращено файлов: {сколько}. Как будто ничего и не было.",
+      "en": "Files restored: {сколько}. As if nothing had happened."
+    },
+    "дп.6.нет_доски": {
+      "ru": "«Доска схем» на этом устройстве не отвечает.",
+      "en": "The Diagram board is not responding on this device."
+    },
+    "дп.6.нет_доски_цена": {
+      "ru": "Поставь её из магазина и открой один раз — тогда карта ляжет сюда. Это тоже не остановка: последний шаг работает и без неё.",
+      "en": "Install it from the store and open it once — then the map will land here. This is not a stop either: the last step works without it."
+    },
+    "дп.6.ждём": {
+      "ru": "Эксперт рисует в соседнем приложении…",
+      "en": "The Expert is drawing in the neighbouring application…"
+    },
+    "дп.6.занят": {
+      "ru": "рисую…",
+      "en": "drawing…"
+    },
+    "дп.6.готово": {
+      "ru": "карта готова",
+      "en": "the map is ready"
+    },
+    "дп.6.строки": {
+      "ru": "нарисовано элементов: {нарисовано} · твои рисунки целы ({цело} на месте)",
+      "en": "elements drawn: {нарисовано} · your own drawings are intact ({цело} still there)"
+    },
+    "дп.6.цена": {
+      "ru": "{сек} с · открой Доску схем заново",
+      "en": "{сек} s · open the Diagram board again"
+    },
+    "дп.7.ждём": {
+      "ru": "Создаю черновик в магазине…",
+      "en": "Creating the draft in the store…"
+    },
+    "дп.7.занят": {
+      "ru": "создаю…",
+      "en": "creating…"
+    },
+    "дп.7.на_столе": {
+      "ru": "Приложение создано и уже стоит на твоём рабочем столе Extella — плитка с этим именем. Открой её: внутри страница с твоими сегодняшними цифрами, чек-лист порядка и правило дома.",
+      "en": "The application is created and already sits on your Extella desktop — a tile with this name. Open it: inside is a page with today's numbers from your own run, the tidiness checklist and the house rule."
+    },
+    "дп.7.только_твоё": {
+      "ru": "Оно только твоё: в магазине его никто не видит. Захочешь убрать — снеси плитку в корзину рабочего стола, а сам черновик удали в магазине: это две разные вещи, и одна без другой оставляет след.",
+      "en": "It is yours alone: nobody sees it in the store. To remove it, drop the tile into the desktop bin and delete the draft in the store as well: these are two separate things, and one without the other leaves a trace."
+    },
+    "дп.7.без_плитки": {
+      "ru": "Черновик создан, но плитка на рабочий стол не встала. Открой магазин Extella, найди эту карточку и нажми у неё «Buy &amp; Deploy» — это бесплатно, приложение твоё.",
+      "en": "The draft was created but the tile did not appear on the desktop. Open the Extella store, find this card and press «Buy &amp; Deploy» on it — it is free, the application is yours."
     }
   }
 }
