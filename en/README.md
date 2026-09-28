@@ -32,7 +32,7 @@ left for you.
 | `CSPL_GUIDE.md` | verified by live runs of four languages on 27–28 Aug | **execute, when you need your own language or access to someone else's system** |
 | `RUNBOOK_STORE_PUBLISH.md` | the short path to publishing in the store, endpoints captured live on 3 Sep | **execute when publishing a product** |
 | `AGENT_BUILD_GUIDE.md` | build order, verified on our own agents | **execute** |
-| `WRITING_RULES.md` | the language of instructions and text for humans, author — Ella | **execute** |
+| `WRITING_RULES.md` | the language of instructions and text for humans, author — the designer | **execute** |
 | `skills/extella-ui/` | a skill about the interface: clarity, design code, screen skeletons | **install for yourself** |
 | `tools/*.py` + `run_all_gates.sh` | machine checks (full list in `run_all_gates.sh`), each one must be able to fail | **run** |
 | `tools/GATES.md` | how to run the checks: exact commands, argument — absolute path | **read before running them** |

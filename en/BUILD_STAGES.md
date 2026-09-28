@@ -63,7 +63,7 @@ is given by `python3 tools/stage_gates.py --stage prod`, and it is not written d
 25 Sep 2026 this said "21 gates" while the actual count was 25. Including the
 `DEPLOY_REQUIREMENTS.md` sections that apply to the product type, and the release preflight.
 
-**Manual acceptance item for the interface (Ella's rule against the AI look):** fonts are
+**Manual acceptance item for the interface (the designer's rule against the AI look):** fonts are
 ours (Nunito / Source Serif 4 / JetBrains Mono, plus
 `button,input,select,textarea{font-family:inherit}`), checked in the inspector on a heading,
 a button and a field. The product picks its own palette and character; what stays shared is
@@ -94,7 +94,7 @@ what applies is needed right now).**
 
 ## The agent lives one life — there's no freeze
 
-the owner's decision, 12 Aug 2026: there is no such thing as a "demo agent" and a "prod agent"
+The owner's decision, 12 Aug 2026: there is no such thing as a "demo agent" and a "prod agent"
 as two different creatures. An agent is born during build and grows up into prod without
 changing identity. The old rule "prod agents are frozen" is repealed and replaced with:
 
@@ -142,7 +142,7 @@ any stage.
 
 ## Rights over platform objects: your own namespace is free rein
 
-the owner's decision, 12 Aug 2026, born of irritation at "permit writing an expert, permit
+The owner's decision, 12 Aug 2026, born of irritation at "permit writing an expert, permit
 deleting one": an expert is a disposable entity — created fast, reused, deleted without
 regret.
 
