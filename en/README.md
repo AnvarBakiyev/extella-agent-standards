@@ -1,4 +1,4 @@
-<!-- source: README.md sha256:c770d5da8e5a4cf016f69bc7d819e07e8d069f7a4b3f1f2aa4960b9327d52c42 -->
+<!-- source: README.md sha256:20a8969a71bc95529d28bd223545120978086e79c0c54ac0ad8381b553746882 -->
 
 # Building on Extella — start here
 
@@ -106,8 +106,11 @@ live products; next to each rule is what breaks without it.
 python3 tools/connect_mcp.py
 ```
 
-The script finds the Extella key, verifies it with a **handshake** against the MCP, and
-registers the server with the client (Claude Code, Codex). **Zero actions from the human.**
+The script finds the Extella key, **proves access by calling a reading tool** (a
+handshake passes with any string in place of a key — measured 28 Sep 2026) and registers
+the server with the client (Claude Code, Codex) with every header, `X-Agent-Id` included.
+**One step stays with the human: restart the client** — until a tool is called from the
+client itself the connection is not proven, and the script does not claim it is.
 
 **The key may not be on disk, and that's a normal state for a new machine.**
 Extella app 1.3.0 does not place a key on disk on any system (measured
@@ -385,7 +388,7 @@ it when a checker or a task leads you here.
 | [`docs/ICON_STYLE_BRONZE.md`](docs/ICON_STYLE_BRONZE.md) | product icon: one style, a Lucide glyph, `tools/bronze_icon.py` |
 | [`experts/local_model_classify.py`](experts/local_model_classify.py) | a local model as an agent tool: a flow that takes seconds and costs no tokens, the brain stays strong. The path is verified by a run — an expert, not MCP |
 | [`tools/local_model_mcp.py`](tools/local_model_mcp.py) | the same model over MCP: the server is assembled and responds, but whether the tool reaches the agent in chat — not verified |
-| [`tools/connect_mcp.py`](tools/connect_mcp.py) | connect an agent to Extella with zero human actions: the key from disk, verified by a handshake, client config with no secret inside it |
+| [`tools/connect_mcp.py`](tools/connect_mcp.py) | connect an agent to Extella: the key from disk, access proven by a tool call, client config with no secret inside it |
 | `tools/` | **the checkers are the specification**; each one has `--selftest` |
 | [`tools/GATES.md`](tools/GATES.md) | a table of commands for running the checks |
 

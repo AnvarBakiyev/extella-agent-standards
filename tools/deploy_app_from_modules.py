@@ -76,7 +76,7 @@ def приёмка(listing_id: str, план: dict, карточка: dict, за
         беды.append(f"права {права} вместо {карточка.get('права')}")
     if str(версия.get("source_id") or "") != план["agent_id"]:
         беды.append(f"агент версии {версия.get('source_id')} вместо {план['agent_id']}")
-    заголовки = {"X-Auth-Token": пк.токен(), "X-Profile-Id": "default", "X-Agent-Id": план["agent_id"]}
+    заголовки = {"X-Auth-Token": пк.токен("ядро"), "X-Profile-Id": "default", "X-Agent-Id": план["agent_id"]}
     for имя in эксперты:
         код, сырое = запрос(пк.ЯДРО, "/api/expert/get", тело={"name": имя, "global": True}, заголовки=заголовки)
         if код != 200 or not (пк.как_json(сырое, имя).get("expert_code") or "").strip():

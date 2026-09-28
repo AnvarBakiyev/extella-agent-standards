@@ -58,7 +58,7 @@ class Платформа:
 
     def _заголовки(self, agent_id: str) -> dict:
         if self._токен is None:
-            self._токен = пк.токен()
+            self._токен = пк.токен("ядро")
         return {"X-Auth-Token": self._токен, "X-Profile-Id": "default", "X-Agent-Id": agent_id}
 
     def получить(self, имя: str, agent_id: str, глобально: bool) -> str:

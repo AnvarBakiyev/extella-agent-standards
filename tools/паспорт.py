@@ -157,7 +157,7 @@ def спросить_модель(имя: str, обр: dict) -> dict:
     }
     з = urllib.request.Request(
         f"{ЯДРО}/api/agent/run", data=json.dumps(тело, ensure_ascii=False).encode(),
-        headers={"X-Auth-Token": токен(), "X-Profile-Id": "default",
+        headers={"X-Auth-Token": токен("ядро"), "X-Profile-Id": "default",
                  "X-Agent-Id": АГЕНТ, "Content-Type": "application/json"},
         method="POST")
     try:

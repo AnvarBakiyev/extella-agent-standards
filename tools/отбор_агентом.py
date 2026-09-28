@@ -73,7 +73,7 @@ def _спросить(запрос: str) -> dict:
     тело = {"agent_id": П.АГЕНТ, "input": запрос}
     з = urllib.request.Request(
         f"{П.ЯДРО}/api/agent/run", data=json.dumps(тело, ensure_ascii=False).encode(),
-        headers={"X-Auth-Token": П.токен(), "X-Profile-Id": "default",
+        headers={"X-Auth-Token": П.токен("ядро"), "X-Profile-Id": "default",
                  "X-Agent-Id": П.АГЕНТ, "Content-Type": "application/json"},
         method="POST")
     try:
