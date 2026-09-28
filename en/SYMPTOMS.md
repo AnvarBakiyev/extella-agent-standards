@@ -1,4 +1,4 @@
-<!-- source: SYMPTOMS.md sha256:76746e35662583be69074d6b94d6c514ea6dcf45fd8859f8884fbec55f97a388 -->
+<!-- source: SYMPTOMS.md sha256:84fec5b1c45b6c6eb684bd522f6dd772fea2eea53982620524182bf0b0cd990c -->
 
 # Entry by symptom: what you see — where to look
 
@@ -152,6 +152,7 @@ or in the "no external symptom" list below: it cannot silently fall out of both.
 | Wrong text was removed, but it meets the person again in another file | H110 | The ban lived in one file's self-check; a rule about text is closed by a search across the whole tree — `check_assistant_onboarding` |
 | A new product from a template was born with the wrong hint, one that had long been fixed | H110 | The templates in `tools/new_product.py` weren't covered by the gate — check text in the generators too, not only in finished files |
 | The sections are in English while the buttons and the demo stay Russian | H117 | Only the content was bilingual; the shell's strings were scattered across the template. Their place is `store_app/shell.json`, and a ratchet holds the remainder |
+| On Windows a tool falls over immediately: `UnicodeEncodeError: 'charmap' codec can't encode character` | H118 | The Windows console runs in `cp1252` while the tool prints Russian or "✓". The entry point must switch output to UTF-8; the newcomer's path is guarded by `tools/check_windows_console.py` |
 | A path in the output is glued together wrong, a letter is missing, no error | H115 | zsh read the colon as a history modifier: `$BR:tools/x` with `BR=refs/heads/main` gives `mainools/x`. Curly braces save you, quotes don't; the defect doesn't reproduce in bash |
 | The gate judges a copy from a dead branch, although the work is happening in another one | H114 | There are many clones of the product on the machine, one is live. The live one is determined by the freshest HEAD, not by name order or by a conventional directory |
 | A run over someone else's tree found nothing, and the gate still isn't accepted | H114 | A run without a subject isn't acceptance: there was nothing to look for. Acceptance counts from the second run, once the subject appeared |

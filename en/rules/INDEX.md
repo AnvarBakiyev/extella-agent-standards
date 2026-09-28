@@ -1,4 +1,4 @@
-<!-- source: rules/INDEX.md sha256:48ef8eeaa122157723827d380662b9e6f721e3aa52247b30eb9f675e04fa0701 -->
+<!-- source: rules/INDEX.md sha256:f5405dc6846bca0e839621f4640f75f87a2eaa61c20ba965e7aad5abb73f897c -->
 
 <!-- Собрано автоматически: python3 tools/split_rules.py -->
 
@@ -134,3 +134,4 @@ Raw link to a rule: `https://raw.githubusercontent.com/AnvarBakiyev/extella-agen
 | [H115](H115.md) | THE REPOSITORY'S RAILS: FOUR CHECKS BEFORE THE COMMIT, NOT A CONVERSATION AFTER |
 | [H116](H116.md) | RELEASING YOUR OWN — BY CLEARANCE, NOT BY PERMISSION FOR EVERY VERSION |
 | [H117](H117.md) | A PRODUCT'S SHELL IS BILINGUAL ON EQUAL TERMS WITH ITS CONTENT |
+| [H118](H118.md) | A TOOL WE TELL PEOPLE TO RUN MUST SURVIVE A NARROW CONSOLE |
