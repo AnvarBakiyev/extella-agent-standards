@@ -22,8 +22,15 @@ def dev_connect_assistant(token: str = "", проверить_только: str 
     import hashlib
     import json
     import os
+    import platform
     import urllib.error
     import urllib.request
+
+    # Кнопка в окне приложения обязана показать, НА КАКУЮ машину лёг ключ: окно не
+    # знает своего устройства (H106), и ошибка адреса иначе не видна. Имя машины и
+    # система идут в каждый ответ — это не секрет, это адрес.
+    машина = {"компьютер": platform.node(), "система": platform.system()}
+    на_windows = platform.system() == "Windows"
 
     дом = os.path.expanduser("~")
     папка = os.path.join(дом, ".extella")
@@ -71,7 +78,7 @@ def dev_connect_assistant(token: str = "", проверить_только: str 
                                               "действие ещё раз."}, ensure_ascii=False)
         живой, как = рукопожатие(существующий)
         return json.dumps({"status": "success" if живой else "error",
-                           "подключено": живой, "файл": файл,
+                           "подключено": живой, "файл": файл, **машина,
                            "отпечаток": отпечаток(существующий), "ответ": как},
                           ensure_ascii=False)
 
@@ -79,7 +86,7 @@ def dev_connect_assistant(token: str = "", проверить_только: str 
         if существующий:
             живой, как = рукопожатие(существующий)
             if живой:
-                return json.dumps({"status": "success", "подключено": True, "файл": файл,
+                return json.dumps({"status": "success", "подключено": True, "файл": файл, **машина,
                                    "отпечаток": отпечаток(существующий),
                                    "message": "Ключ уже на месте и работает."},
                                   ensure_ascii=False)
@@ -121,7 +128,12 @@ def dev_connect_assistant(token: str = "", проверить_только: str 
                           ensure_ascii=False)
 
     return json.dumps({
-        "status": "success", "подключено": True, "файл": файл, "права": "600",
+        "status": "success", "подключено": True, "файл": файл,
+        # На Windows chmod 0o600 лишь снимает «только чтение» и доступа не
+        # ограничивает: файл защищён только профилем пользователя. Писать там
+        # «600» значило бы докладывать неправду (замер 28.09.2026).
+        "права": "профиль пользователя Windows" if на_windows else "600",
+        **машина,
         "отпечаток": отпечаток(ключ),
         "заменён_прежний": bool(существующий and существующий != ключ),
         "message": "Ключ на месте и проверен рукопожатием. Ассистент подключится без "
