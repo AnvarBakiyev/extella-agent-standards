@@ -563,6 +563,198 @@
     "дп.7.без_плитки": {
       "ru": "Черновик создан, но плитка на рабочий стол не встала. Открой магазин Extella, найди эту карточку и нажми у неё «Buy &amp; Deploy» — это бесплатно, приложение твоё.",
       "en": "The draft was created but the tile did not appear on the desktop. Open the Extella store, find this card and press «Buy &amp; Deploy» on it — it is free, the application is yours."
+    },
+    "окно.заголовок": {
+      "ru": "Разработка на Extella",
+      "en": "Building on Extella"
+    },
+    "уст.отложено": {
+      "ru": "Этап выполняется дольше обычного и продолжается в фоне. Подождите около минуты и нажмите кнопку ещё раз — установка продолжится с места, где остановилась.",
+      "en": "This stage is taking longer than usual and continues in the background. Wait about a minute and press the button again — the installation resumes from where it stopped."
+    },
+    "уст.не_по_форме": {
+      "ru": "Установщик ответил не по форме (H17). Пришлите это в поддержку целиком: ответ начинался с «{улика}»",
+      "en": "The installer answered in an unexpected shape (H17). Send this to support in full: the answer began with «{улика}»"
+    },
+    "уст.нет_состояния": {
+      "ru": "Ответ пришёл не той формой: нет признака состояния — разобрать нечем.",
+      "en": "The answer came in the wrong shape: there is no state field — nothing to read it by."
+    },
+    "уст.чужая_форма": {
+      "ru": "Установщик ответил не той формой, которую ждёт приложение.",
+      "en": "The installer answered in a shape the application does not expect."
+    },
+    "уст.вне_приложения": {
+      "ru": "Эта страница открыта вне приложения. Кнопка работает только в установленном приложении из магазина Extella.",
+      "en": "This page is open outside the application. The button works only inside the installed application from the Extella store."
+    },
+    "уст.старая_оболочка": {
+      "ru": "Обнови приложение в магазине: эта версия ещё не умеет ставить мосты.",
+      "en": "Update the application in the store: this version cannot install bridges yet."
+    },
+    "уст.вне_приложения_установщик": {
+      "ru": "Эта страница открыта вне приложения — установщик отсюда не запускается. Открой приложение из магазина Extella.",
+      "en": "This page is open outside the application — the installer does not start from here. Open the application from the Extella store."
+    },
+    "уст.нет_права": {
+      "ru": "Приложению не выдано право запускать установщик. Открой карточку приложения в магазине и разреши запуск на устройстве.",
+      "en": "The application has not been granted permission to run the installer. Open the application's card in the store and allow it to run on the device."
+    },
+    "уст.раздача_не_дошла": {
+      "ru": "Раздача не дошла до конца за шестьдесят порций — повторы остановлены, чтобы не плодить задачи. Роздано {роздано} из {всего}. Нажми кнопку ещё раз: уже розданные агенты пройдут быстро.",
+      "en": "The rollout did not finish within sixty batches — retries were stopped so as not to pile up tasks. Delivered {роздано} of {всего}. Press the button again: the agents already done will pass quickly."
+    },
+    "уст.мост_не_подтвердился": {
+      "ru": "Раздача моста не подтвердилась.",
+      "en": "The bridge rollout was not confirmed."
+    },
+    "уст.сверяю": {
+      "ru": "Сверяю раздачу: {сделано} из {всего}",
+      "en": "Checking the rollout: {сделано} of {всего}"
+    },
+    "уст.порция_не_сдвинулась": {
+      "ru": "Установщик не продвинул раздачу (порция {порция} не сдвинулась) — останавливаюсь, чтобы не плодить задачи.",
+      "en": "The installer did not advance the rollout (batch {порция} did not move) — stopping so as not to pile up tasks."
+    },
+    "уст.не_json": {
+      "ru": "ОС вернула не JSON.",
+      "en": "The OS returned something that is not JSON."
+    },
+    "уст.нет_изменений": {
+      "ru": "<p>Список изменений пока пуст.</p>",
+      "en": "<p>The list of changes is empty for now.</p>"
+    },
+    "уст.оболочка_устарела": {
+      "ru": "<strong>Оболочка приложения устарела.</strong> Текст обновился и ждёт версию {нужно}, а здесь {есть}. Открой карточку приложения в магазине и обнови страницу — покупку и версию менять не нужно.",
+      "en": "<strong>The application shell is out of date.</strong> The text has been updated and expects version {нужно}, while this is {есть}. Open the application's card in the store and refresh the page — the purchase and the version do not change."
+    },
+    "всё.хвост": {
+      "ru": "\\nПолный канон и проверки: github.com/AnvarBakiyev/extella-agent-standards",
+      "en": "\\nThe full rulebook and the checks: github.com/AnvarBakiyev/extella-agent-standards"
+    },
+    "копия.вручную": {
+      "ru": "Выдели и скопируй сам",
+      "en": "Select it and copy by hand"
+    },
+    "обнов.пустой_ответ": {
+      "ru": "пустой ответ",
+      "en": "an empty answer"
+    },
+    "обнов.готово": {
+      "ru": "обновлено до {версия}",
+      "en": "updated to {версия}"
+    },
+    "обнов.свежего": {
+      "ru": "свежего",
+      "en": "the latest"
+    },
+    "обнов.обновлено": {
+      "ru": "Обновлено",
+      "en": "Updated"
+    },
+    "обнов.уже_свежее": {
+      "ru": "Уже свежее",
+      "en": "Already current"
+    },
+    "обнов.не_дозвонился": {
+      "ru": "Не дозвонился, показан свой текст",
+      "en": "Could not reach the source, showing the built-in text"
+    },
+    "этап.preflight": {
+      "ru": "проверяю программу и вход",
+      "en": "checking the program and the sign-in"
+    },
+    "этап.install": {
+      "ru": "готовлю пакет",
+      "en": "preparing the package"
+    },
+    "этап.credentials": {
+      "ru": "подключаю аккаунт",
+      "en": "connecting the account"
+    },
+    "этап.раздача": {
+      "ru": "раздаю мост агентам",
+      "en": "rolling the bridge out to the agents"
+    },
+    "этап.bridge": {
+      "ru": "ставлю локальную службу",
+      "en": "installing the local service"
+    },
+    "этап.verify": {
+      "ru": "проверяю связку целиком",
+      "en": "checking the whole chain"
+    },
+    "этап.model": {
+      "ru": "скачиваю модель",
+      "en": "downloading the model"
+    },
+    "этап.server": {
+      "ru": "поднимаю локальный сервер",
+      "en": "starting the local server"
+    },
+    "этап.configure": {
+      "ru": "переключаю листенер на локальную модель",
+      "en": "switching the listener to the local model"
+    },
+    "уст.в_фоне": {
+      "ru": "этап продолжается в фоне, жду и повторяю…",
+      "en": "the stage continues in the background, waiting and retrying…"
+    },
+    "уст.claude_не_подключён": {
+      "ru": "Не удалось подключить Claude.",
+      "en": "Could not connect Claude."
+    },
+    "уст.пятнадцать_минут": {
+      "ru": "За пятнадцать минут установка не подтвердилась. Дальше сам не повторяю: каждый повтор ставит новую задачу на устройстве. Закрой и открой окно приложения — установка, дошедшая в фоне, покажет «Готово». Если и после этого нет — пришли в поддержку эту надпись и время.",
+      "en": "The installation was not confirmed within fifteen minutes. I stop retrying on my own: every retry queues another task on the device. Close and open the application window — an installation that finished in the background will show «Done». If it still does not, send support this message and the time."
+    },
+    "уст.этап_с_ошибкой": {
+      "ru": "Этап {шаг} завершился ошибкой.",
+      "en": "Stage {шаг} ended with an error."
+    },
+    "уст.этап_не_дошёл": {
+      "ru": "Этап «{этап}» не дошёл за полчаса опроса. Повторы остановлены. Проверь место на диске и сеть, потом нажми кнопку ещё раз — этап продолжится с места остановки.",
+      "en": "Stage «{этап}» did not finish within half an hour of polling. Retries were stopped. Check disk space and the network, then press the button again — the stage resumes from where it stopped."
+    },
+    "уст.мост_не_запустился": {
+      "ru": "Мост не запустился у {сколько} агентов.",
+      "en": "The bridge failed to start for {сколько} agents."
+    },
+    "уст.не_подтвердил": {
+      "ru": "Установщик не подтвердил готовность.",
+      "en": "The installer did not confirm that it is ready."
+    },
+    "уст.не_подключить": {
+      "ru": "Не удалось подключить.",
+      "en": "Could not connect."
+    },
+    "дп.дольше": {
+      "ru": " · дольше обычного, но идёт",
+      "en": " · longer than usual, but running"
+    },
+    "дп.дальше_акт": {
+      "ru": "Дальше — акт {номер} ↓",
+      "en": "Next — act {номер} ↓"
+    },
+    "дп.7.цена": {
+      "ru": "{сек} с · частей: {частей} · {столе}не опубликовано · кредиты не потрачены",
+      "en": "{сек} s · parts: {частей} · {столе}not published · no credits spent"
+    },
+    "дп.7.на_столе_кратко": {
+      "ru": "на рабочем столе · ",
+      "en": "on the desktop · "
+    },
+    "статус.строка": {
+      "ru": "оболочка {оболочка} · содержимое ",
+      "en": "shell {оболочка} · content "
+    },
+    "ещё.новое.заголовок": {
+      "ru": "Что нового",
+      "en": "What's new"
+    },
+    "обнов.проверяю": {
+      "ru": "Проверяю…",
+      "en": "Checking…"
     }
   }
 }

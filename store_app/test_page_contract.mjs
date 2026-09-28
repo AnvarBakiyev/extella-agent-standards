@@ -4,12 +4,22 @@ import test from "node:test";
 
 const template = await readFile(new URL("./page.template.html", import.meta.url), "utf8");
 
-function parser() {
+const строкиОболочки = JSON.parse(
+  await readFile(new URL("./shell.json", import.meta.url), "utf8")).строки;
+
+// Разборщик теперь берёт текст отказов из таблицы строк (H117), поэтому ему
+// передаётся настоящий помощник т() на выбранном языке.
+function parser(язык = "ru") {
   const source = template.match(
     /\/\/ BEGIN_H17_PARSER([\s\S]*?)\/\/ END_H17_PARSER/,
   )?.[1];
   assert.ok(source, "H17 parser must remain marked in the page shell");
-  return Function(`${source}; return разобрать_ответ_эксперта;`)();
+  return Function("т", "тф", `${source}; return разобрать_ответ_эксперта;`)(
+    (ключ) => (строкиОболочки[ключ] || {})[язык] || "",
+    (ключ, знач) => String((строкиОболочки[ключ] || {})[язык] || "").replace(
+      /\{([A-Za-zА-Яа-яЁё0-9_]+)\}/g,
+      (всё, имя) => (знач && знач[имя] !== undefined ? String(знач[имя]) : всё)),
+  );
 }
 
 test("page unwraps both Extella result envelopes", () => {
@@ -175,10 +185,17 @@ test("каждый самоповтор страницы конечен, а до
     "приёмник результата обязан принимать сообщения только от родителя");
 });
 
-test("page rejects Python repr and an unexpected result shape", () => {
-  const parse = parser();
-  assert.throws(() => parse({ result: { result: "{'status': 'success'}" } }), /H17/);
-  assert.throws(() => parse({ result: { result: JSON.stringify({ ok: true }) } }), /формой/);
+test("page rejects Python repr and an unexpected result shape, in both languages", () => {
+  // Номер правила H17 в тексте отказа language-independent и обязан остаться в
+  // обоих языках: по нему человек находит разбор поломки.
+  const ждём = {ru: /не той формой/, en: /shape/i};
+  for (const язык of ["ru", "en"]) {
+    const parse = parser(язык);
+    assert.throws(() => parse({ result: { result: "{'status': 'success'}" } }), /H17/,
+      `${язык}: отказ обязан назвать H17`);
+    assert.throws(() => parse({ result: { result: JSON.stringify({ ok: true }) } }),
+      ждём[язык], `${язык}: отказ про чужую форму обязан быть на этом языке`);
+  }
 });
 
 test("shell contains one build-time app token marker", () => {
@@ -375,5 +392,41 @@ test("подстановка в строках оболочки работает
     const источник2 = new Function("т", `${источник[0]}; return тф;`)(() => "{чего_нет}");
     assert.match(источник2("любой", {}), /\{чего_нет\}/,
       "неизвестная метка остаётся видимой, а не съедается");
+  }
+});
+
+test("скрипт собранной страницы разбирается: битый JS не проходит молча", async () => {
+  // Замена строк по якорю «до ближайшей ;» однажды оставила висячий обрывок
+  // выражения — `показать(тф('уст.сверяю', {…},\n ' из ' + итог.total + '…');`.
+  // Страница собиралась, гейты были зелёными, а скрипт не разбирался вовсе:
+  // в окне не работала бы ни одна кнопка (замер 28.09.2026). Разбор собранной
+  // страницы — самая дешёвая проверка из возможных, и её не было.
+  const собрано = await readFile(new URL("./index.html", import.meta.url), "utf8");
+  const скрипты = [...собрано.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  assert.ok(скрипты.length >= 1, "в собранной странице обязан быть скрипт");
+  for (const [, код] of скрипты) {
+    assert.doesNotThrow(() => new Function(код),
+      "скрипт собранной страницы обязан разбираться");
+  }
+});
+
+test("каждая запись «что нового» показывает текст, а не только номер версии", async () => {
+  // Рисовальщик читал только поле «строки». У трёх новейших записей текст лежит
+  // в «текст», у трёх — в «пункты»: под номером версии выводился ПУСТОЙ список.
+  // Номер видно, изменения нет — панель выглядела рабочей и молчала (28.09.2026).
+  const содержимое = JSON.parse(
+    await readFile(new URL("./content.json", import.meta.url), "utf8"));
+  const записи = содержимое["что_нового"] || [];
+  assert.ok(записи.length, "список изменений обязан быть непустым");
+  for (const в of записи) {
+    const есть = (в["строки"] && в["строки"].length) ||
+                 (в["пункты"] && в["пункты"].length) ||
+                 (в["текст"] && String(в["текст"]).trim());
+    assert.ok(есть, `запись ${в["версия"]}: нет ни строк, ни пунктов, ни текста`);
+  }
+  // Рисовальщик обязан знать все три формы, иначе запись покажется пустой.
+  for (const поле of ["строки", "пункты", "текст"]) {
+    assert.ok(template.includes(`поле(в, "${поле}")`),
+      `рисовальщик новостей обязан читать поле «${поле}»`);
   }
 });
