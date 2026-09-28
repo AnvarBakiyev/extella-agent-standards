@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:93ba74f36cf5dbb7c3e55265eead515c9a6c33cc8962fc65687b13083cec987f -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:53fa0aafb8c19cdbbf46ba75d6b386600cf69483bbfa5f4de27c3ce283f5cf1a -->
 
 # Agent requirements for a rollout to happen
 
@@ -877,7 +877,7 @@ Measurement: the guide's listing is readable **with no token at all**, `publishe
 Practical consequences:
 
 * **the owner's permission is needed not only for the first Publish but for every version
-  of a published product.** Our `deploy_edition.py` and the standard's text account for this:
+  of a published product.** Our deployer and the standard's text account for this:
   the first release is a pre-release, and any version after that only with explicit sign-off;
 * **a pre-release for testing something new is done as a separate listing**, not as a version of the live one;
 * **intermediate versions cannot be deleted** if purchases point to them — including your own
@@ -2284,7 +2284,7 @@ characters, and two tags, one of which is the product type (`приложени�
 `агент`, `демо`, `инструмент`; for a product with an English name, the English
 equivalents `app`, `edition`, `agent`, `demo`, `tool`: the tag language follows the
 name's language). Checked by `tools/check_listing_meta.py`, which is also wired into
-`deploy_edition.py` before rollout: a red card stops the rollout the same way a red
+the deployer before rollout: a red card stops the rollout the same way a red
 passport does.
 
 **The icon must be produced by a command, otherwise it won't exist.**
