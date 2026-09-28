@@ -35,6 +35,7 @@ import json
 import pathlib
 import re
 import shutil
+import os
 import subprocess
 import sys
 import tempfile
@@ -81,7 +82,12 @@ def найти_точку_входа(корень: pathlib.Path) -> tuple[list[s
 
 def прогнать(команда: list[str], корень: pathlib.Path) -> tuple[int, str]:
     try:
+        # H118: ребёнок печатает в НАШ канал, и его кодировка — наша забота.
+        # На Windows (cp1252) он иначе падает на первом «✓», и мы читаем это как
+        # красную самопроверку чужого инструмента.
         итог = subprocess.run(команда, cwd=корень, capture_output=True, text=True,
+                              encoding="utf-8", errors="replace",
+                              env={**os.environ, "PYTHONIOENCODING": "utf-8"},
                               timeout=ПРЕДЕЛ_СЕКУНД)
     except subprocess.TimeoutExpired:
         return 124, "самопроверка не уложилась в три минуты"
@@ -425,4 +431,11 @@ def main(аргументы: list) -> int:
 
 
 if __name__ == "__main__":
+    # H118: узкая консоль Windows (cp1252) роняет печать по-русски на первом символе.
+    import sys as _sys
+    for _поток in (_sys.stdout, _sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     sys.exit(main(sys.argv[1:]))

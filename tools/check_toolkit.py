@@ -28,6 +28,7 @@
 
 import argparse
 import pathlib
+import os
 import subprocess
 import sys
 import tempfile
@@ -64,8 +65,12 @@ def проверить(тулкит: pathlib.Path, гонять_selftest: bool =
 
     проверка = тулкит / "проверка.py"
     if проверка.exists() and гонять_selftest:
+        # H118: кодировку ребёнка задаём сами — на Windows он иначе падает на
+        # первом «✓», и это выглядит как красная проверка тулкита.
         итог = subprocess.run([sys.executable, str(проверка), "--selftest"],
-                              capture_output=True, text=True, timeout=600)
+                              capture_output=True, text=True, timeout=600,
+                              encoding="utf-8", errors="replace",
+                              env={**os.environ, "PYTHONIOENCODING": "utf-8"})
         if итог.returncode != 0:
             хвост = ((итог.stdout or "") + (итог.stderr or "")).strip().splitlines()
             беды.append(("проверка-красная",
@@ -133,4 +138,11 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # H118: узкая консоль Windows (cp1252) роняет печать по-русски на первом символе.
+    import sys as _sys
+    for _поток in (_sys.stdout, _sys.stderr):
+        try:
+            _поток.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     sys.exit(main())
