@@ -859,6 +859,10 @@
     "подкл.адрес.неверно": {
       "ru": "Это не похоже на Device ID: 8-4-4-4-12 знаков через дефисы, как внизу окна.",
       "en": "That does not look like a Device ID: 8-4-4-4-12 characters with hyphens, as at the bottom of the window."
+    },
+    "подкл.отложено": {
+      "ru": "Подключение идёт дольше обычного и доделывается в фоне. Подожди минуту и нажми кнопку ещё раз: если ключ уже лёг, она скажет об этом и нового не выпустит.",
+      "en": "Connecting is taking longer than usual and is finishing in the background. Wait a minute and press the button again: if the key is already in place, it will say so and issue no new one."
     }
   }
 }
