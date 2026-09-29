@@ -759,6 +759,86 @@
     "промпт.пояснение": {
       "ru": "В промпте — ссылка на правила Extella. Агент прочитает их сам, поэтому приложение сразу получится по стандарту платформы: с правами, проверками и понятными отказами.",
       "en": "The prompt links to the Extella rules. Your agent reads them itself, so the app comes out to the platform's standard from the start: with permissions, checks and refusals that explain themselves."
+    },
+    "подкл.кнопка": {
+      "ru": "Подключить Claude Code и Codex",
+      "en": "Connect Claude Code and Codex"
+    },
+    "подкл.идёт": {
+      "ru": "Кладу ключ на этот компьютер…",
+      "en": "Putting the key on this computer…"
+    },
+    "подкл.готово": {
+      "ru": "Подключено",
+      "en": "Connected"
+    },
+    "подкл.пояснение": {
+      "ru": "Сначала подключи редактор: кнопка кладёт ключ Extella на этот компьютер, в ~/.extella/api_token.txt, и проверяет его. Claude Code и Codex найдут ключ сами, показывать и копировать его не нужно. Потом скопируй промпт и вставь агенту.",
+      "en": "Connect your editor first: the button puts an Extella key on this computer, in ~/.extella/api_token.txt, and checks it. Claude Code and Codex find the key themselves; there is nothing to show or copy. Then copy the prompt and paste it to your agent."
+    },
+    "подкл.компьютер": {
+      "ru": "Компьютер: {компьютер} ({система})",
+      "en": "Computer: {компьютер} ({система})"
+    },
+    "подкл.имя_ключа": {
+      "ru": "В списке токенов ключ называется «{имя}» — там его можно отозвать.",
+      "en": "In the token list the key is named «{имя}»; you can revoke it there."
+    },
+    "подкл.код.уже_подключено": {
+      "ru": "Ключ уже на месте и работает. Новый не выпускал.",
+      "en": "The key is already in place and works. No new key issued."
+    },
+    "подкл.код.подключено": {
+      "ru": "Ключ на месте и проверен. Claude Code и Codex подключатся сами.",
+      "en": "The key is in place and verified. Claude Code and Codex will connect on their own."
+    },
+    "подкл.код.ключ_мёртв": {
+      "ru": "В файле лежит ключ, но платформа его больше не принимает. Нажми кнопку ещё раз: ключ заменится рабочим.",
+      "en": "The file holds a key the platform no longer accepts. Press the button again to replace it with a working one."
+    },
+    "подкл.код.нет_ключа": {
+      "ru": "Ключа на этом компьютере нет.",
+      "en": "There is no key on this computer."
+    },
+    "подкл.код.контейнер": {
+      "ru": "Вызов выполнился в облачном контейнере, а не на твоём компьютере, поэтому ключ не выпущен. Открой приложение в Extella на своём компьютере: внизу окна должно быть «Running».",
+      "en": "The call ran in a cloud container, not on your computer, so no key was issued. Open the app in Extella on your own computer; the bottom of the window should say «Running»."
+    },
+    "подкл.код.нет_пропуска": {
+      "ru": "Окно не передало пропуск. Закрой приложение и открой снова: пропуск живёт два часа.",
+      "en": "The window passed no pass. Close the app and open it again; the pass lives two hours."
+    },
+    "подкл.код.нет_права": {
+      "ru": "Приложению не выдано право «Full Extella API access». Разреши его в карточке приложения и нажми кнопку ещё раз.",
+      "en": "The app has not been granted «Full Extella API access». Allow it on the app card and press the button again."
+    },
+    "подкл.код.платформа_молчит": {
+      "ru": "Платформа не ответила. Повтори через минуту; если не проходит, закрой и открой приложение.",
+      "en": "The platform did not answer. Try again in a minute; if it keeps failing, close and reopen the app."
+    },
+    "подкл.код.нет_основного_агента": {
+      "ru": "В аккаунте не нашёлся основной агент Extella. Создай ключ руками: Library → System → Tokens.",
+      "en": "The account's main Extella agent was not found. Create a key by hand: Library → System → Tokens."
+    },
+    "подкл.код.не_выдан": {
+      "ru": "Платформа не выдала ключ. Повтори; если не проходит, создай ключ руками: Library → System → Tokens.",
+      "en": "The platform did not issue a key. Try again; if it keeps failing, create one by hand: Library → System → Tokens."
+    },
+    "подкл.код.не_принят": {
+      "ru": "Ключ выпущен, но платформа его не приняла. Повтори через минуту.",
+      "en": "A key was issued but the platform did not accept it. Try again in a minute."
+    },
+    "подкл.код.не_записан": {
+      "ru": "Не удалось записать ключ в ~/.extella. Проверь права на эту папку.",
+      "en": "Could not write the key to ~/.extella. Check the permissions on that folder."
+    },
+    "подкл.код.проба": {
+      "ru": "Проба: ключ выпущен, проверен и отозван, на диск ничего не записано.",
+      "en": "Trial: a key was issued, checked and revoked; nothing was written to disk."
+    },
+    "подкл.код.неизвестно": {
+      "ru": "Ответ без кода исхода. Нажми ещё раз; если повторится, сообщи нам.",
+      "en": "An answer without an outcome code. Press again; if it repeats, tell us."
     }
   }
 }

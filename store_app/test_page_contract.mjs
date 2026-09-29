@@ -337,7 +337,10 @@ test('главное действие — промпт со ссылкой на 
   // копирующая весь текст, ему противоречила: снимок устаревает в тот же день,
   // а агент не знает, что читает снимок.
   const действия = page.slice(page.indexOf('<div class="actions">'), page.indexOf('</div>', page.indexOf('<div class="actions">')));
-  const главная = действия.slice(действия.indexOf('class="btn main"'), действия.indexOf('</button>'));
+  // Конец ищется ПОСЛЕ начала главной кнопки: перед ней в ряду стоит кнопка
+  // подключения редактора, и первый </button> в блоке принадлежит ей.
+  const начало = действия.indexOf('class="btn main"');
+  const главная = действия.slice(начало, действия.indexOf('</button>', начало));
   assert.ok(главная.includes('промпт'), 'главная кнопка — промпт, а не копия текста');
 
   const содержимое = JSON.parse(
@@ -518,4 +521,31 @@ test("переключатель языка виден на главном эк�
   // кнопку языка с классом вкладки за экран.
   const кнопка = меню.match(/<button[^>]*id="язык"[^>]*>/)[0];
   assert.ok(!/class="[^"]*вкладка/.test(кнопка), "у кнопки языка не класс вкладки");
+});
+
+test('кнопка подключения редактора: на главном экране, без адреса, ключа в окне нет', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  // Экран, а не вкладка меню: у вкладки тот же атрибут data-экран.
+  const экран = '<div class="экран" data-экран="начало">';
+  const начало = page.slice(page.indexOf(экран), page.indexOf('<div class="экран" data-экран="проба">'));
+  assert.ok(начало.includes('id="подключить"'), 'кнопка стоит на экране «Начало», рядом с промптом');
+
+  const обработчик = page.slice(page.indexOf("getElementById('подключить').onclick"),
+                                page.indexOf("getElementById('всё').onclick"));
+  assert.ok(обработчик.includes("зовСценария('dev_connect_assistant', {app_token: APP_TOKEN})"),
+            'эксперту уходит только пропуск окна');
+  // Без targets — как «Попробовать»: в окне вызов исполняется там, где окно открыто (H106).
+  assert.ok(!/targets/.test(обработчик), 'Device ID человек не вписывает');
+  // Ключ выпускает эксперт на компьютере; странице его неоткуда взять и нечего показать.
+  assert.ok(!/\{\{token\}\}|\.token\b/.test(обработчик), 'окно не держит и не показывает ключ');
+  assert.ok(обработчик.includes('кнопка.disabled = true') && обработчик.includes('кнопка.disabled = false'),
+            'кнопка гаснет на время вызова и загорается в любом исходе');
+
+  const эксперт = await readFile(new URL('../experts/dev_connect_assistant.py', import.meta.url), 'utf8');
+  const коды = [...эксперт.matchAll(/код="([^"]+)"/g)].map((м) => м[1]);
+  const оболочка = JSON.parse(await readFile(new URL('./shell.json', import.meta.url), 'utf8'))['строки'];
+  for (const к of коды) {
+    assert.ok(обработчик.includes(`'подкл.код.${к}'`), `исход ${к} есть в таблице окна`);
+    assert.ok(оболочка[`подкл.код.${к}`]?.en, `исход ${к} переведён`);
+  }
 });
