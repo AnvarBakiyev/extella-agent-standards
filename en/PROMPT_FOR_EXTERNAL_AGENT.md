@@ -1,4 +1,4 @@
-<!-- source: PROMPT_FOR_EXTERNAL_AGENT.md sha256:94f1b79e3d5ee876aded6d2bcb3f51d3f5c643afa9e09a7aff17ac5d0b1509c8 -->
+<!-- source: PROMPT_FOR_EXTERNAL_AGENT.md sha256:6b5c98397fb9485a67a9f146de77e8a784bbaa7975cbe06c54b5ca3b7cfbcc68 -->
 
 # Prompt for a client's chat agent
 
@@ -40,8 +40,8 @@ When something doesn't work: .../main/SYMPTOMS.md — enter by symptom.
 
 CONNECTION. The Extella app does not put the key on disk — don't look for it and don't
 ask me for it in chat. Procedure: run python3 tools/connect_mcp.py; if there is no key,
-the script will name one action for me to take (Library → System → Tokens in the Extella
-app). Don't create your own tokens, don't print the key anywhere.
+the script will name one action for me to take (the «Connect Claude Code and Codex» button
+in the Extella Guide app; without it — Library → System → Tokens). Don't create your own tokens, don't print the key anywhere.
 
 BEFORE YOU BUILD, name the rule numbers for my task, one line per rule — so I can see
 that you read them rather than paraphrased generic advice.

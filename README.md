@@ -1,4 +1,4 @@
-<!-- source: README.ru.md sha256:990908d8381e33f9d3ad8bc025c285cffa00b4d828f384c6cd9f894224adf9bb -->
+<!-- source: README.ru.md sha256:f62ab22c9f77598331569673793bc927e3bf1a43ad3be749ea1c7d95160db4fa -->
 
 **Русский:** [README.ru.md](README.ru.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
 
@@ -118,10 +118,12 @@ client itself the connection is not proven, and the script does not claim it is.
 Extella app 1.3.0 does not place a key on disk on any system (measured
 24 Sep 2026, H108). Old machines carry a file from earlier builds — new ones don't.
 
-In that case the script names **one** human action: in the app, open
-`Library → System → Tokens`, create a token, and save it to
-`~/.extella/api_token.txt` (mode 600) or pass it via the `EXTELLA_API_TOKEN`
-variable. No "go look for a key somewhere."
+In that case the script names **one** human action: open the Extella Guide app and
+press «Connect Claude Code and Codex» — the key lands in `~/.extella/api_token.txt`
+by itself and is never shown (verified 29 Sep 2026 on macOS and Windows 11).
+Without Guide: in the app, open `Library → System → Tokens`, create a token, and
+save it to `~/.extella/api_token.txt` (mode 600) or pass it via the
+`EXTELLA_API_TOKEN` variable. No "go look for a key somewhere."
 
 If you already have a connection to Extella on another machine, the connection is done
 without a human at all: the expert `dev_connect_assistant` with `targets: [device_id]` of
