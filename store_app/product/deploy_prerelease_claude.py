@@ -188,7 +188,7 @@ def _setup_label(path):
     return found.group(1) if found else ""
 
 
-def prepare_experts(agent_id):
+def prepare_experts(agent_id, пропустить=()):
     """Записать установочные Expert'ы в source-agent и сверить посимвольно.
 
     Сверка читает содержимое, а не флаг: платформа пишет одним набором полей,
@@ -196,6 +196,10 @@ def prepare_experts(agent_id):
     """
     headers = {"X-Auth-Token": token(), "X-Profile-Id": "default", "X-Agent-Id": agent_id}
     for name, path in EXPERTS.items():
+        if name in пропустить:
+            # Копия в агенте остаётся прежней и уходит в снимок версии как есть.
+            print(f"  Expert {name}: НЕ перезаписан (--без-моста-claude), в снимке прежняя копия")
+            continue
         if not path.is_file():
             raise DeployError(f"нет файла Expert: {path}")
         code = path.read_text(encoding="utf-8").rstrip()
@@ -440,7 +444,14 @@ def main():
     parser.add_argument("--в-живой-листинг", dest="в_живой", action="store_true",
                         help="добавить версию в опубликованный листинг: она станет "
                              "публичной немедленно (H20)")
+    # Эксперт моста Claude живёт в соседнем репозитории. Когда там идёт чужая
+    # незакоммиченная работа, поднимать его метку нельзя, а без неё проверка
+    # метки останавливает выпуск. Флаг оставляет в агенте его прежнюю копию —
+    # выпуск не меняет мост Claude, а не притворяется, что обновил его.
+    parser.add_argument("--без-моста-claude", dest="без_моста", action="store_true",
+                        help="не перезаписывать extella_claude_product_setup")
     options = parser.parse_args()
+    пропустить = ("extella_claude_product_setup",) if options.без_моста else ()
 
     items = listings()
     agent_id = source_agent(items)
@@ -473,7 +484,7 @@ def main():
 
     if options.в_живой:
         print("\nзаписываю Expert'ы в source-agent…")
-        prepare_experts(agent_id)
+        prepare_experts(agent_id, пропустить)
         print("добавляю версию в живой листинг…")
         done = add_version_to_live(agent_id, items)
         print(f"  версия добавлена · снимок: {done.get('stats')}")
