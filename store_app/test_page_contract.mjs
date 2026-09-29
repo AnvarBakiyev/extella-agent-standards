@@ -563,3 +563,14 @@ test('кнопка подключения редактора: на главно�
     assert.ok(оболочка[`подкл.код.${к}`]?.en, `исход ${к} переведён`);
   }
 });
+
+test('приёмка выпуска ищет кнопку, которая есть в странице', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  const выпуск = await readFile(new URL('./product/deploy_prerelease_claude.py', import.meta.url), 'utf8');
+  // Приёмка ждала снятую кнопку claude-connect и роняла исправный выпуск 3.8.0.
+  const ids = [...выпуск.matchAll(/'id="([^"]+)"' not in page/g)].map((м) => м[1]);
+  assert.ok(ids.length > 0, 'приёмка проверяет хотя бы одну кнопку');
+  for (const id of ids) {
+    assert.ok(page.includes(`id="${id}"`), `приёмка ждёт id="${id}", а в шаблоне его нет`);
+  }
+});
