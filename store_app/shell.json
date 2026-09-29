@@ -105,8 +105,8 @@
       "en": "Allow the application to run an Expert on this device, then try again. The permission is granted on the application's card in the store."
     },
     "отказ.устройство": {
-      "ru": "Extella на этом компьютере не отвечает — работать некому. Полностью закрой Extella (⌘Q), открой снова и подожди, пока внизу окна загорится «Running». Потом повтори.",
-      "en": "Extella on this computer is not responding — there is nobody to do the work. Quit Extella completely (⌘Q), open it again and wait until «Running» lights up at the bottom of the window. Then try again."
+      "ru": "Extella на этом компьютере не отвечает — работать некому. Полностью закрой Extella (на Mac — ⌘Q, на Windows — выход из значка в трее), открой снова и подожди, пока внизу окна загорится «Running». Потом повтори.",
+      "en": "Extella on this computer is not responding — there is nobody to do the work. Quit Extella completely (⌘Q on Mac; on Windows, Exit from the tray icon), open it again and wait until «Running» lights up at the bottom of the window. Then try again."
     },
     "отказ.нет_шага": {
       "ru": "Этот шаг не найден на твоём устройстве. Нажми кнопку обновления в шапке окна: продукт обновился, а окно осталось на старой версии.",
@@ -843,6 +843,22 @@
     "отказ.нет_подключения": {
       "ru": "Эта кнопка новее твоей установки. Удали Extella Guide с рабочего стола и добавь заново из магазина, разреши «Full Extella API access» — после этого кнопка заработает. Перезагрузки окна для этого недостаточно.",
       "en": "This button is newer than your installation. Remove Extella Guide from the desktop and add it again from the store, allow «Full Extella API access», and the button will work. Reloading the window is not enough."
+    },
+    "подкл.адрес.пояснение": {
+      "ru": "Extella отправила вызов не на этот компьютер, а на другое устройство, и оно не ответило. Нажми на глаз рядом с Device ID внизу окна, скопируй номер сюда и нажми кнопку — ключ ляжет именно на этот компьютер.",
+      "en": "Extella sent the call not to this computer but to another device, and it did not answer. Click the eye next to Device ID at the bottom of the window, copy the number here and press the button — the key will go to this very computer."
+    },
+    "подкл.адрес.кнопка": {
+      "ru": "Подключить этот компьютер",
+      "en": "Connect this computer"
+    },
+    "подкл.адрес.заголовок": {
+      "ru": "Вызов ушёл не на этот компьютер. Укажи его Device ID ниже.",
+      "en": "The call went to another device. Enter this computer's Device ID below."
+    },
+    "подкл.адрес.неверно": {
+      "ru": "Это не похоже на Device ID: 8-4-4-4-12 знаков через дефисы, как внизу окна.",
+      "en": "That does not look like a Device ID: 8-4-4-4-12 characters with hyphens, as at the bottom of the window."
     }
   }
 }

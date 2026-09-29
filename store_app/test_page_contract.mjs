@@ -536,16 +536,20 @@ test('кнопка подключения редактора: на главно�
   const начало = page.slice(page.indexOf(экран), page.indexOf('<div class="экран" data-экран="проба">'));
   assert.ok(начало.includes('id="подключить"'), 'кнопка стоит на экране «Начало», рядом с промптом');
 
-  const обработчик = page.slice(page.indexOf("getElementById('подключить').onclick"),
+  const обработчик = page.slice(page.indexOf("function подключениеРедактора("),
                                 page.indexOf("getElementById('всё').onclick"));
-  assert.ok(обработчик.includes("зовСценария('dev_connect_assistant', {app_token: APP_TOKEN}, 'подключение')"),
+  assert.ok(обработчик.includes("зовСценария('dev_connect_assistant', {app_token: APP_TOKEN}, 'подключение', адрес)"),
             'эксперту уходит только пропуск окна');
+  // Главная кнопка зовёт без адреса; Device ID — только запасной путь H106.
+  assert.ok(обработчик.includes("подключениеРедактора(this, '');"), 'главная кнопка — без адреса');
+  assert.ok(обработчик.includes("if (e && e.не_туда && !адрес)"), 'поле Device ID открывается только при «не туда»');
   // Старая установка не знает нового эксперта: совет обязан вести в магазин, а не
   // к перезагрузке окна — она агента не меняет (Windows, 29.09.2026).
   assert.ok(page.includes("if (роль === 'подключение') return т('отказ.нет_подключения');"),
             'отказ «эксперт не найден» у кнопки подключения ведёт к переустановке');
-  // Без targets — как «Попробовать»: в окне вызов исполняется там, где окно открыто (H106).
-  assert.ok(!/targets/.test(обработчик), 'Device ID человек не вписывает');
+  // Адрес попадает в targets только из поля запасного пути (H106).
+  const зов = page.slice(page.indexOf('function зовСценария('), page.indexOf('(function деньПервый'));
+  assert.ok(зов.includes('if (адрес) тело.targets = [адрес];'), 'targets — только когда адрес дан');
   // Ключ выпускает эксперт на компьютере; странице его неоткуда взять и нечего показать.
   assert.ok(!/\{\{token\}\}|\.token\b/.test(обработчик), 'окно не держит и не показывает ключ');
   assert.ok(обработчик.includes('кнопка.disabled = true') && обработчик.includes('кнопка.disabled = false'),
