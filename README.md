@@ -1,146 +1,155 @@
-**English:** [README.en.md](README.en.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
+<!-- source: README.ru.md sha256:990908d8381e33f9d3ad8bc025c285cffa00b4d828f384c6cd9f894224adf9bb -->
 
-# Разработка на Extella — начни отсюда
+**Русский:** [README.ru.md](README.ru.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
 
-> **Ты агент? Не читай эту страницу целиком.** Вход на одну страницу —
-> [`AGENT_START.md`](AGENT_START.md): там маршрут по задачам, десять ловушек и
-> адресация правил по одному файлу. Свод `DEPLOY_REQUIREMENTS.md` — 369 КБ, веб-чтение
-> его обрезает; поэтому правила разложены в [`rules/`](rules/INDEX.md) по одному на файл.
+# Building on Extella — start here
+
+> **Are you an agent? Don't read this whole page.** The single-page entry point is
+> [`AGENT_START.md`](en/AGENT_START.md): it has the task-based route, the ten traps, and
+> rule addressing one file at a time. The `DEPLOY_REQUIREMENTS.md` canon is 369 KB, and
+> web reading truncates it; that's why the rules are broken out in [`rules/`](en/rules/INDEX.md)
+> one per file.
 >
-> **Ты человек и хочешь отдать это своему ассистенту?** Готовый первый промпт —
-> [`PROMPT_FOR_EXTERNAL_AGENT.md`](PROMPT_FOR_EXTERNAL_AGENT.md).
+> **Are you human and want to hand this to your assistant?** A ready first prompt is at
+> [`PROMPT_FOR_EXTERNAL_AGENT.md`](en/PROMPT_FOR_EXTERNAL_AGENT.md).
 
-Один вход для всех: и для человека, и для его ИИ-ассистента, и для команды с десятком
-продуктов. Ничего выбирать заранее не нужно — **объём работы определяют факты, а не то,
-кто вы**, и считает их машина, а не вы.
+One entry point for everyone: for the human, for their AI assistant, and for a team with a
+dozen products. Nothing needs to be chosen up front — **the amount of work is determined by
+facts, not by who you are**, and a machine counts them, not you.
 
-**Если вы человек** — не читайте эту страницу целиком. Отдайте ссылку своему Claude Code
-или Codex со словами: «настройся по этой инструкции и сделай мне такого-то агента». Всё
-остальное он сделает сам и в конце скажет, какие два-три действия остаются за вами.
+**If you're human** — don't read this whole page. Hand the link to your Claude Code or
+Codex with the words: "set yourself up per this guide and build me such-and-such an
+agent." It will do the rest itself and at the end tell you which two or three actions are
+left for you.
 
 ---
 
-## Что здесь доказано, а что лаборатория
+## What's proven here, and what's the lab
 
-**Читай это до того, как начнёшь что-то строить по этому репозиторию.**
+**Read this before you start building anything from this repository.**
 
-| файл | статус | как читать |
+| file | status | how to read it |
 |---|---|---|
-| `DEPLOY_REQUIREMENTS.md` | проверено на живых продуктах и живых отказах | **выполнять** |
-| `CSPL_GUIDE.md` | проверено живыми прогонами четырёх языков 27–28.08 | **выполнять, когда нужен свой язык или доступ к чужой системе** |
-| `RUNBOOK_STORE_PUBLISH.md` | короткий путь выкладки в магазин, эндпоинты сняты живьём 03.09 | **выполнять при выкладке продукта** |
-| `AGENT_BUILD_GUIDE.md` | порядок стройки, проверен на своих агентах | **выполнять** |
-| `WRITING_RULES.md` | язык инструкций и текстов для человека, автор — дизайнер | **выполнять** |
-| `skills/extella-ui/` | скилл про интерфейс: понятность, дизайн-код, скелеты экранов | **поставить себе** |
-| `tools/*.py` + `run_all_gates.sh` | машинные проверки (полный список — в `run_all_gates.sh`), каждая умеет провалиться | **гонять** |
-| `tools/GATES.md` | как запускать проверки: точные команды, аргумент — абсолютный путь | **читать до их запуска** |
-| `APP_FROM_MODULES.md` | приложение из модулей: проверено сборкой одного приложения на себе (04.09.2026), на покупателе не проверено | **выполнять на стройке; на проде — после проверки на покупателе** |
-| **`LAB.md`** | **механизмы, которые работают, но как продукт не доказаны** | **читать, не выполнять** |
+| `DEPLOY_REQUIREMENTS.md` | verified on live products and live failures | **execute** |
+| `CSPL_GUIDE.md` | verified by live runs of four languages on 27–28 Aug | **execute, when you need your own language or access to someone else's system** |
+| `RUNBOOK_STORE_PUBLISH.md` | the short path to publishing in the store, endpoints captured live on 3 Sep | **execute when publishing a product** |
+| `AGENT_BUILD_GUIDE.md` | build order, verified on our own agents | **execute** |
+| `WRITING_RULES.md` | the language of instructions and text for humans, author — the designer | **execute** |
+| `skills/extella-ui/` | a skill about the interface: clarity, design code, screen skeletons | **install for yourself** |
+| `tools/*.py` + `run_all_gates.sh` | machine checks (full list in `run_all_gates.sh`), each one must be able to fail | **run** |
+| `tools/GATES.md` | how to run the checks: exact commands, argument — absolute path | **read before running them** |
+| `APP_FROM_MODULES.md` | an app built from modules: verified by building one app on ourselves (04 Sep 2026), not verified on a buyer | **execute while building; on prod — after verification on a buyer** |
+| **`LAB.md`** | **mechanisms that work, but are not proven as a product** | **read, don't execute** |
 
-Пример, ради которого этот раздел появился: **издания.** Механика собрана и измерена,
-а как продукт издание не доказано ни разу: собственное издание было снято. Поэтому правила про издания
-лежат в `LAB.md`, а не в каноне: иначе следующий человек прочитает их как задание и
-построит то, от чего в проекте уже отказались.
+The example this section exists for: **editions.** The mechanics are assembled and
+measured, but as a product an edition has never been proven: our own edition was pulled.
+That's why the rules about editions live in `LAB.md`, not in the canon: otherwise the next
+person will read them as a task and build the thing the project has already abandoned.
 
-**Правило для тех, кто пополняет репозиторий:** в канон попадает то, что проверено на
-покупателе или на отказе. Проверено только на себе — значит в лабораторию.
+**Rule for anyone adding to this repository:** the canon gets what's verified on a buyer
+or on a failure. Verified only on yourself — that means the lab.
 
 ---
 
-## Скилл про интерфейс — поставь до того, как рисовать экран
+## The interface skill — install it before you draw a screen
 
-Правила ловят нарушения, но не помогают сделать понятно. Для этого есть скилл
-`extella-ui`: три вопроса, на которые экран отвечает за пять секунд, четыре состояния
-каждого экрана, ожидание, тексты, выбор формы под задачу, дизайн-код и скелет.
+Rules catch violations, but they don't help you make things clear. That's what the
+`extella-ui` skill is for: three questions a screen answers in five seconds, four states
+per screen, waiting, copy, choosing the right form for the task, design code, and a
+skeleton.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/skills/extella-ui/SKILL.md \
+curl -fsSL https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/en/skills/extella-ui/SKILL.md \
   -o ~/.claude/skills/extella-ui/SKILL.md --create-dirs
 ```
 
-Дальше ассистент подхватит его сам, когда речь зайдёт об интерфейсе.
+After that the assistant will pick it up on its own once the interface comes up.
 
-У Codex механизма скиллов нет — он читает `AGENTS.md` в корне этого
-репозитория, и там та же выжимка со ссылкой на полный текст.
-
-
-## Если ты ассистент — читай отсюда
-
-### Шаг 0. Веди человека сам и покажи результат как можно раньше
-
-Человек не знает слов «задеплой», «листинг», «версия», «OS» — и не обязан. Наблюдение
-владельца 24.08.2026: люди собирали приложение по этому репозиторию и застревали, потому
-что готовая сборка **сама** не появлялась в Extella, а сказать «задеплой в Extella» никто
-не догадывался. Ждать этих слов — значит бросить человека на середине пути.
-
-Поэтому:
-
-1. **Скажи вслух, что будет происходить**, прежде чем начать. Три-четыре шага обычными
-   словами и сколько это займёт. Без названий инструментов.
-2. **Доведи до первого видимого результата раньше, чем до готовности.** Как только есть
-   каркас, который открывается, — предложи показать его в Extella. Не в конце стройки, а
-   на первом же шаге, где есть что показать.
-3. **Предлагай сам, вопросом, а не жаргоном.** Формулировка, которая работает:
-   «Готов показать, как это выглядит у тебя в Extella — займёт минуту. Показать?»
-4. **Ничего не публикуй в магазин без слова человека.** Показ — это закрытая версия для
-   владельца; кнопку публикации жмёт он (см. `DEPLOY_REQUIREMENTS.md`, завершение стройки).
-
-Смысл правила: увидев свою вещь живой на экране, человек хочет продолжать. Пока он не
-увидел ничего, любой следующий шаг выглядит лишней работой. Развёрнуто — H66 в
-`DEPLOY_REQUIREMENTS.md`, готовый каркас для первого показа — `templates/app-recipe/`.
+Codex has no skill mechanism — it reads `AGENTS.md` at the root of this
+repository, and the same digest with a link to the full text is there.
 
 
-Ты подключаешь пользователя к Extella и строишь на ней агента. Порядок ниже проверен на
-живых продуктах; рядом с каждым правилом написано, что ломается без него.
+## If you're an assistant — read from here
 
-### Шаг 1. Подключение — команда, а не разговор
+### Step 0. Lead the human yourself and show a result as early as possible
+
+The human doesn't know the words "deploy," "listing," "version," "OS" — and doesn't have
+to. Owner's observation from 24 Aug 2026: people were building an app from this repository
+and getting stuck, because the finished build did **not** show up in Extella by itself, and
+no one thought to say "deploy to Extella." Waiting for those words means abandoning the
+human halfway.
+
+So:
+
+1. **Say out loud what's about to happen** before you start. Three or four steps in plain
+   words and how long it will take. No tool names.
+2. **Get to the first visible result before you get to done.** As soon as there's a
+   skeleton that opens, offer to show it in Extella. Not at the end of the build, but at
+   the very first step where there's something to show.
+3. **Offer it yourself, as a question, not jargon.** A phrasing that works:
+   "I can show you what this looks like in your Extella — it'll take a minute. Want to
+   see it?"
+4. **Never publish to the store without the human's word.** A demo is a closed version for
+   the owner; the human presses the publish button (see `DEPLOY_REQUIREMENTS.md`, build
+   completion).
+
+The point of the rule: once a human sees their thing alive on screen, they want to keep
+going. Until they've seen anything, every next step looks like extra work. Detailed in H66
+in `DEPLOY_REQUIREMENTS.md`; the ready-made skeleton for the first demo is
+`templates/app-recipe/`.
+
+
+You connect the user to Extella and build an agent on it. The order below is verified on
+live products; next to each rule is what breaks without it.
+
+### Step 1. Connect — a command, not a conversation
 
 ```bash
 python3 tools/connect_mcp.py
 ```
 
-Скрипт находит ключ Extella, **доказывает доступ вызовом читающего инструмента**
-(рукопожатие проходит с любой строкой вместо ключа — замер 28.09.2026) и
-прописывает сервер клиенту (Claude Code, Codex) со всеми заголовками, включая
-`X-Agent-Id`. **Последний шаг за человеком: перезапустить клиент** — до вызова
-инструмента из самого клиента подключение не доказано, и скрипт этого не
-утверждает.
+The script finds the Extella key, **proves access by calling a reading tool** (a
+handshake passes with any string in place of a key — measured 28 Sep 2026) and registers
+the server with the client (Claude Code, Codex) with every header, `X-Agent-Id` included.
+**One step stays with the human: restart the client** — until a tool is called from the
+client itself the connection is not proven, and the script does not claim it is.
 
-**Ключа на диске может не быть, и это обычное состояние новой машины.**
-Приложение Extella 1.3.0 не кладёт ключ на диск ни на одной системе (замер
-24.09.2026, H108). Старые машины несут файл от прежних сборок — новые нет.
+**The key may not be on disk, and that's a normal state for a new machine.**
+Extella app 1.3.0 does not place a key on disk on any system (measured
+24 Sep 2026, H108). Old machines carry a file from earlier builds — new ones don't.
 
-Тогда скрипт называет **одно** действие человека: в приложении открыть
-`Library → System → Tokens`, создать токен и сохранить его в
-`~/.extella/api_token.txt` (права 600) либо передать переменной
-`EXTELLA_API_TOKEN`. Никаких «поищите ключ где-нибудь».
+In that case the script names **one** human action: in the app, open
+`Library → System → Tokens`, create a token, and save it to
+`~/.extella/api_token.txt` (mode 600) or pass it via the `EXTELLA_API_TOKEN`
+variable. No "go look for a key somewhere."
 
-Если у тебя уже есть связь с Extella на другой машине, подключение делается без
-человека вовсе: эксперт `dev_connect_assistant` с `targets: [device_id]` нужной
-машины — платформа сама передаёт ему ключ, он пишет файл и проверяет его живым
-вызовом (H108).
+If you already have a connection to Extella on another machine, the connection is done
+without a human at all: the expert `dev_connect_assistant` with `targets: [device_id]` of
+the needed machine — the platform passes it the key itself, it writes the file and verifies
+it with a live call (H108).
 
-Файл-источник не важен, важен заголовок: магазин принимает любой действующий
-ключ аккаунта в `X-Extella-Token`, ядро — в `X-Auth-Token` (H109). Поэтому
-отсутствие `os_token.txt` ничего не запрещает.
+The source file doesn't matter, the header does: the store accepts any valid account
+key in `X-Extella-Token`, the core in `X-Auth-Token` (H109). So the absence of
+`os_token.txt` doesn't forbid anything.
 
-Значение ключа не показывается нигде: ни в выводе, ни в логе, ни в конфиге
-Claude Code (там ссылка на скрипт-помощник, отдающий заголовки в момент
-вызова), ни в аргументах команды — а значит, и в `ps`.
+The key's value is shown nowhere: not in output, not in a log, not in Claude Code's
+config (there it's a reference to a helper script that hands over the headers at call
+time), not in command arguments — and so not in `ps` either.
 
-> **Никогда** не проси прислать ключ в переписку и не создавай своих токенов.
-> Раньше этот шаг был написан наоборот — «пусть пришлёт строку тебе», — и
-> противоречил готовому промпту, который просить запрещает. Человек, не знающий
-> Extella, упирался в тупик: где чат, что писать, куда вставлять секрет.
+> **Never** ask for the key to be sent in chat, and never create your own tokens.
+> This step used to be written the other way around — "have them send you the
+> string" — and it contradicted the ready-made prompt, which forbids asking. A human who
+> doesn't know Extella hit a dead end: which chat, what to write, where to paste the
+> secret.
 
-Если клиента нет в списке скрипта, настрой руками. Claude Code:
+If the client isn't in the script's list, set it up by hand. Claude Code:
 
 ```bash
 claude mcp add-json --scope user extella \
-  '{"type":"http","url":"https://api.extella.ai/mcp/","headersHelper":"/полный/путь/до/helper.sh"}'
+  '{"type":"http","url":"https://api.extella.ai/mcp/","headersHelper":"/full/path/to/helper.sh"}'
 ```
 
-Codex держит MCP в TOML (`~/.codex/config.toml`), а не в JSON:
+Codex keeps MCP in TOML (`~/.codex/config.toml`), not JSON:
 
 ```toml
 [mcp_servers.extella]
@@ -148,245 +157,264 @@ enabled = true
 url = "https://api.extella.ai/mcp/"
 
 [mcp_servers.extella.http_headers]
-X-Auth-Token = "КЛЮЧ"
+X-Auth-Token = "KEY"
 X-Profile-Id = "default"
 ```
 
-### Шаг 2. Проверь связь фактом, а не надеждой
+### Step 2. Verify the connection with a fact, not hope
 
-Вызови `list_agents` и разбери ОТВЕТ, а не факт ответа. Четыре разных исхода:
+Call `list_agents` and parse the ANSWER, not the fact that one arrived. Four distinct
+outcomes:
 
-| что пришло | что это значит |
+| what came back | what it means |
 |---|---|
-| список агентов | связь есть |
-| **пустой список** | **связь есть**, аккаунт новый — так и должно быть, продолжай |
-| отказ авторизации (REST отдаёт HTTP 401) | ключ не признан → Library → System → Tokens |
-| ошибка инструмента (MCP: HTTP 200 и `isError`) | связь есть, отказал вызов → спроси причину у REST |
+| a list of agents | the connection works |
+| **an empty list** | **the connection works**, the account is new — that is how it should be, carry on |
+| an authorisation refusal (REST returns HTTP 401) | the key is not recognised → Library → System → Tokens |
+| a tool error (MCP: HTTP 200 with `isError`) | the connection works, the call refused → ask REST for the cause |
 
-Пустой список нового аккаунта — законный успех. Прежняя редакция велела на нём
-остановиться, и новичок вставал ровно там, где всё было в порядке.
+An empty list on a new account is a legitimate success. The previous wording told you to
+stop there, and the newcomer halted exactly where everything was fine.
 
-### Шаг 3. Спроси у машины, сколько проверок применимо
+### Step 3. Ask the machine how many checks apply
 
 ```bash
 git clone https://github.com/AnvarBakiyev/extella-agent-standards && cd extella-agent-standards
 python3 tools/stage_gates.py --stage build --json
 ```
 
-Гейт — это машинная проверка, которая обязана уметь провалиться. На стадии стройки их два. Дальше **добавки включаются фактами**: появились данные
-клиента → маскирование; продукт встал на чужую машину → паспорт и узкие права; продуктов
-стало больше одного → сверка копий общего кода; агентов больше одного → сверка дрейфа.
-Гейты с пометкой «аккаунтный» — не твои, назови их в отчёте и отдай владельцу.
+A gate is a machine check that must be able to fail. At the build stage there are two.
+After that, **additions turn on by facts**: customer data appears → masking; the product
+lands on someone else's machine → passport and narrow rights; there's more than one
+product → cross-check copies of shared code; there's more than one agent → drift check.
+Gates marked "account-level" aren't yours — name them in the report and hand them to the
+owner.
 
-Ничего из этого не надо решать на глаз: спрашивай проверялку и делай, что она сказала.
+None of this is to be decided by eye: ask the checker and do what it says.
 
 ---
 
-## Что здесь строится: ИИ-приложения
+## What's being built here: AI apps
 
-Ни «ИИ-агент», ни «приложение» не описывают то, что здесь строится, и путаница стоит лишних
-разговоров с клиентами. Название этой формы продукта:
+Neither "AI agent" nor "app" describes what's built here, and the confusion costs extra
+conversations with clients. The name for this product form:
 
-> **ИИ-приложение** — программа, у которой часть логики выполняет модель, а не только код.
-> У неё есть интерфейс, как у приложения, и способность думать, как у агента. Данные при
-> этом живут там, где им место, — чаще всего на машине пользователя.
+> **AI app** — a program where part of the logic is executed by a model, not just by
+> code. It has an interface like an app, and the ability to think like an agent. The data
+> still lives where it belongs — most often on the user's machine.
 
-Три формы, все три платформа умеет сегодня:
+Three forms, all three the platform can do today:
 
-| Форма | Что это | Пример |
+| Form | What it is | Example |
 |---|---|---|
-| **Приложение** | один интерфейс + свои эксперты + свой агент | журнал решений, панель найма |
-| **Издание** | набор: тема + приложения + отдел агентов + полка | издание для основателя, для беременных |
-| **Отдел** | несколько агентов одним листингом (листинг — это карточка продукта в магазине) | «купи коммерческий блок», а не одного помощника |
+| **App** | one interface + its own experts + its own agent | a decision log, a hiring panel |
+| **Edition** | a bundle: theme + apps + department of agents + shelf | an edition for a founder, for expecting parents |
+| **Department** | several agents under one listing (a listing is a product card in the store) | "buy the commercial block," not one assistant |
 
-**И это можно продавать.** Цена ставится при публикации; платформа списывает её у покупателя
-после успешной установки. **Деньги автору пока выплачиваются вручную:** продажи выгружаются и
-переводятся автору, автоматическое зачисление в работе. Бесплатное тоже работает: это
-руководство стоит ноль и служит входом для всех, кто строит.
+**And this can be sold.** The price is set at publication; the platform charges it to
+the buyer after a successful install. **Money is paid out to the author manually for now:**
+sales are exported and transferred to the author, automatic crediting is in progress. Free
+also works: this guide costs zero and serves as the entry point for everyone building.
 
-Отсюда рамка, которая говорится наружу: **любой человек может собрать ИИ-приложение и
-выложить его — бесплатно, чтобы им пользовались, или за деньги, чтобы зарабатывать.**
-Стандарты ниже нужны ровно для того, чтобы собранное не разваливалось у покупателя.
+From this comes the framing said outward: **anyone can build an AI app and put it
+up** — free, to be used, or for money, to earn. The standards below exist for exactly one
+reason: so what's built doesn't fall apart on the buyer.
 
-Выкладка — одной командой: `python3 tools/deploy_page_product.py путь/к/приложению`.
-Она доводит продукт до предрелиза — это версия, которую видит только автор, — и останавливается перед публикацией.
-
----
-
-## Правило, которое дешевле всех остальных
-
-> **Каждое утверждение о состоянии системы подтверждается чтением этого состояния,
-> а не памятью о прошлом действии.**
-
-Оно стоит первым, потому что чаще всего ломается именно оно — и не у новичков.
-За один день 13.08.2026 это правило поймало три ложных вывода во внутренних чатах:
-«покупок нет» (были), «скоуп неразличим» (различим), «витрина принадлежит токену»
-(уже нет). Каждый раз человек или машина ссылались на вчерашний замер вместо нового
-чтения. **Факт о платформе старше суток — перепроверяй живьём.**
-
-Метод целиком — `AGENT_BUILD_GUIDE.md` §5б.
-
-## Канон платформы: нарушишь — сломается у клиента
-
-Шесть правил, каждое куплено реальной поломкой.
-
-**1. Клиентские агенты — только платформенная модель Qwen.** Claude в клиентском агенте
-платный и запрещён.
-
-**2. Скоуп — это набор объектов, доступных конкретному агенту, и у каждого он свой.** Один и тот же список экспертов отдаёт одному
-агенту 343 записи, другому 5096. Всё для продукта создавай **в скоупе его агента**
-(`global: false`).
-
-**3. Одно имя эксперта — один скоуп.** Дубль имени = недетерминированный запуск: сегодня
-работает одна копия, завтра другая.
-
-**4. MCP-инструмент `save_expert` пишет не туда, куда ты думаешь** — он кладёт запись в
-общий скоуп. Для продукта сохраняй через REST:
-`POST https://api.extella.ai/api/expert/save` с заголовком `X-Agent-Id` своего агента.
-
-**5. «Успешно» от платформы фактом не является.** После записи перечитай и сравни по
-содержимому (код приходит в поле `expert_code`). И **проверь саму сверку**: сломай нарочно
-одно поле, убедись, что она падает. Сверка, которая не может упасть, не проверяет ничего.
-
-**6. Агент, созданный по API, не думает — но экспертов запускает.** Уточнено замером
-14.08.2026, и это снимает единственный ручной шаг из сборки продукта.
-
-`pro_key_required` касается **модели**: диалог с таким агентом не работает. А `expert/run`
-у него работает — проверено: агент создан по API с пустым набором инструментов, эксперт
-записан в его скоуп через REST, запущен и **исполнился на устройстве владельца за 8 секунд**.
-
-Отсюда правило: **человек нужен только там, где продукту нужна модель.** Продукту, чья
-страница лишь запускает экспертов (панель, журнал, отчёт, снимок состояния), человек для
-создания агента **не нужен вовсе** — сборка целиком машинная.
-
-Если модель всё же нужна — агента создаёт **человек в интерфейсе Extella**. Попроси
-пользователя:
-
-> Создай агента с именем «…», модель Qwen
-
-и пришли тебе его `agent_id`.
+Publishing is one command: `python3 tools/deploy_page_product.py path/to/app`.
+It takes the product up to a pre-release — a version only the author sees — and
+stops before publication.
 
 ---
 
-## Как строить: сначала способность, интерфейс сверху
+## The rule that's cheaper than all the others
 
-Поверхность меняется чаще способности; готовая способность переживает смену поверхности без
-переделки, а интерфейс, построенный первым, тянет за собой лишние серверы, которые остаются
-навсегда.
+> **Every claim about the system's state is confirmed by reading that state,
+> not by memory of a past action.**
 
-1. **Способность** — эксперт в скоупе агента продукта.
-2. **Роль агента** — файлом в репозитории, прошивается целиком: у изменения должна быть
-   версия и путь назад.
-3. **Права** — сузь. Свежий агент рождается с `delete_agent` и `delete_expert`. Купленный
-   продукт, умеющий удалить агента покупателя, — реальный случай.
-4. **Живой прогон** — докажи вызовом, а не рассуждением.
-5. **И только теперь интерфейс.**
+It comes first because it's the one that breaks most often — and not just for newcomers.
+In a single day, 13 Aug 2026, this rule caught three false conclusions in internal chats:
+"there are no purchases" (there were), "the scope is indistinguishable" (it is
+distinguishable), "the storefront belongs to the token" (no longer). Each time a human or a
+machine was citing yesterday's measurement instead of a fresh read. **A fact about the
+platform older than a day — re-verify it live.**
 
-Долгую работу модели не жди синхронно: ставь задание и наполняй экран по готовности.
-Ожидание видно словами, иначе человек нажмёт второй раз и заплатит дважды.
+The full method — `AGENT_BUILD_GUIDE.md` §5b.
 
----
+## The platform canon: break it and it breaks at the customer
 
-## Как довести до магазина
+Six rules, each bought with a real breakage.
 
-**Развилка «архив или страница» ложная — одна версия несёт и то, и другое.** Публикация
-принимает три отдельных файла: `archive` (локальная часть с `install.py`), `page` (интерфейс:
-HTML ≤ 3 МБ или zip с `index.html` в корне ≤ 20 МБ) и `icon`. Гибрид — штатный тип продукта:
-данные и ключи живут на машине, интерфейс отдаётся из ОС.
+**1. Customer agents — only the platform's Qwen model.** Claude in a customer agent
+is paid and forbidden.
 
-Решает один вопрос: **где живут данные.** Нельзя уезжать с машины — значит есть архив.
-Установщик неинтерактивен (любой `input()` — повисшая покупка) и возвращает честный код:
-списание происходит **после** установки.
+**2. Scope is the set of objects available to a specific agent, and each agent has its
+own.** The same list of experts returns 343 records to one agent, 5096 to another. Create
+everything for a product **in its agent's scope** (`global: false`).
 
-Страница получает личность подстановкой в `index`: `{{app_token}}`, `{{agent_id}}`,
-`{{email}}`. Своего агента зовёт через `POST https://os.extella.ai/api/app-agent/run` —
-ядро напрямую из браузера закрыто, и это правильно.
+**3. One expert name — one scope.** A duplicate name means a nondeterministic run: today
+one copy runs, tomorrow another.
 
-> ⚠️ **Объяви права приложения (`app_scopes`) при публикации — иначе продукт не сможет работать.**
-> По умолчанию не выдаётся ничего: пустые права = страница откроется целой, а каждый вызов
-> агента вернёт `403`. Нужен запуск на компьютере покупателя — это отдельное право
-> `device.run`, без него `targets` вырезается и эксперт уходит в облако. Проси **минимум**:
-> покупатель видит список прав до установки и может отозвать их в любой момент, поэтому
-> `403` — штатное состояние, которое надо назвать словами, а не показать пустым экраном.
+**4. The MCP tool `save_expert` doesn't write where you think** — it puts the record in
+the shared scope. For a product, save via REST:
+`POST https://api.extella.ai/api/expert/save` with your agent's `X-Agent-Id` header.
 
-> ⚠️ Плейсхолдер в **видимом** тексте страницы будет заменён настоящим значением и показан
-> пользователю. Пиши литералы HTML-мнемониками — это условные обозначения вместо настоящих значений. `{{token}}` не запрашивай: он полноправный
-> и вызывает у покупателя диалог согласия. Он оправдан ровно в одном случае — продукту нужно
-> **больше, чем свой агент** (например, показать все агенты пользователя); `app_token` прибит
-> к своему агенту намеренно.
+**5. "Success" from the platform is not a fact.** After writing, read it back and
+compare by content (the code arrives in the `expert_code` field). And **test the
+comparison itself**: break one field on purpose, make sure it fails. A comparison that
+can't fail isn't checking anything.
 
-> ⚠️ **Скорость решает архитектуру.** Вызов со страницы до устройства — **13–17 секунд**
-> (локальный мост отвечал за 6 мс). Значит не двадцать мелких запросов, а **один
-> вызов-снимок**: эксперт собирает состояние на машине и отдаёт одним ответом.
+**6. An agent created via the API doesn't think — but it does run experts.** Clarified
+by a measurement on 14 Aug 2026, and this removes the only manual step from building a
+product.
 
-**Порядок сдачи:** архив без секретов → права объявлены → **предрелиз** — это версия, которую видит только автор →
-покупка себе → **первый запуск чистым состоянием**, без твоих конфигов → сценарий живьём →
-**остановись**. Кнопку «Publish» жмёт человек: это видно всем. Необратимой публикация НЕ является — снимается с витрины тем же адресом (H26); безвозвратно только удаление листинга.
+`pro_key_required` concerns the **model**: a dialogue with such an agent doesn't work.
+But `expert/run` on it does work — verified: an agent was created via API with an empty
+toolset, an expert was written into its scope via REST, run, and **executed on the
+owner's device in 8 seconds**.
 
-Всё, что до неё, — **твоя работа и делается по API**, а не кликами в чужом окне: публикация
-предрелизом, замена страницы, права, покупка себе. Предрелиз виден только автору. Отказаться
-деплоить, сославшись на «Publish жмёт человек», — значит не сделать работу: необратимо ровно
-одно действие, и это не публикация предрелиза.
+Hence the rule: **a human is needed only where the product needs the model.** For a
+product whose page only runs experts (a panel, a log, a report, a state snapshot), a
+human is **not needed at all** to create the agent — the build is entirely machine-done.
 
-Ключи самого клиента (внешние API, номера, CRM) — **не блокер**: продукт без них обязан
-быть честным, а не сломанным.
+If the model is still needed, the agent is created by **the human in the Extella
+interface**. Ask the user:
+
+> Create an agent named "…", model Qwen
+
+and have them send you its `agent_id`.
 
 ---
 
-## Границы, которые не переходят никогда
+## How to build: capability first, interface on top
 
-- **Наружу — только черновики.** Письма, платежи, публикации готовит агент, отправляет человек.
-- **Данные клиента остаются в контуре клиента.** В облако, в архив витрины, в чужие показы —
-  нельзя.
-- **Чужое живое не трогать.** Удаление вне своего пространства имён — только с
-  подтверждением человека, и сначала проверь, кто эти имена зовёт.
-- **Секреты не печатаются и не едут в архив.**
-- **Отказ виден словами.** Пустой экран — дефект: человек решит, что продукт сломан.
+The surface changes more often than the capability; a finished capability survives a
+surface change without rework, while an interface built first drags along extra servers
+that stay forever.
+
+1. **Capability** — an expert in the product agent's scope.
+2. **Agent role** — a file in the repository, flashed as a whole: a change must have a
+   version and a way back.
+3. **Rights** — narrow them. A fresh agent is born with `delete_agent` and
+   `delete_expert`. A purchased product able to delete the buyer's agent is a real case.
+4. **Live run** — prove it by calling it, not by reasoning about it.
+5. **And only now the interface.**
+
+Don't wait synchronously for a long model run: post the task and fill the screen as it's
+ready. Waiting is shown in words, otherwise the human will press it a second time and pay
+twice.
 
 ---
 
-## Что отдать человеку в конце
+## How to bring it to the store
 
-Три строки: что построено · что осталось за ним (обычно создать агента и нажать Publish) ·
-**что не сошлось**. Честно названный незакрытый пункт полезнее списка зелёных галочек.
+**The "archive or page" fork is false — one version carries both.** Publishing takes
+three separate files: `archive` (the local part with `install.py`), `page` (the interface:
+HTML ≤ 3 MB or a zip with `index.html` at the root ≤ 20 MB), and `icon`. A hybrid is the
+standard product type: data and keys live on the machine, the interface is served from
+the OS.
+
+It answers one question: **where the data lives.** Can't leave the machine — then there's
+an archive. The installer is non-interactive (any `input()` is a hung purchase) and
+returns an honest exit code: the charge happens **after** installation.
+
+The page gets its identity by substitution into `index`: `{{app_token}}`, `{{agent_id}}`,
+`{{email}}`. It calls its own agent via `POST https://os.extella.ai/api/app-agent/run` —
+the core is closed off directly from the browser, and that's correct.
+
+> ⚠️ **Declare the app's rights (`app_scopes`) at publication — otherwise the product won't
+> be able to work.** Nothing is granted by default: empty rights = the page opens intact,
+> and every agent call returns `403`. Need to run on the buyer's computer — that's a
+> separate right, `device.run`; without it `targets` is stripped out and the expert goes to
+> the cloud. Ask for the **minimum**: the buyer sees the list of rights before installing
+> and can revoke them at any time, so `403` is a normal state that needs to be said in
+> words, not shown as a blank screen.
+
+> ⚠️ A placeholder in the page's **visible** text will be replaced with the real value and
+> shown to the user. Write HTML literals as mnemonics — these are placeholders standing in
+> for real values. Don't request `{{token}}`: it's full-privilege and triggers a consent
+> dialog for the buyer. It's justified in exactly one case — the product needs **more than
+> its own agent** (for example, to show all of the user's agents); `app_token` is pinned to
+> its own agent on purpose.
+
+> ⚠️ **Speed dictates architecture.** A call from the page to the device is **13–17
+> seconds** (a local bridge answered in 6 ms). So it's not twenty small requests, but **one
+> snapshot call**: the expert gathers the state on the machine and returns it in a single
+> response.
+
+**Delivery order:** archive with no secrets → rights declared → **pre-release** — a
+version only the author sees → buy it for yourself → **first run on a clean state**,
+without your own configs → live scenario → **stop**. The human presses the "Publish"
+button: this is visible to everyone. Publication is NOT irreversible — it's pulled from
+the storefront at the same address (H26); only deleting a listing is permanent.
+
+Everything before that is **your work and is done via the API**, not by clicking in
+someone else's window: publishing as a pre-release, replacing the page, rights, buying it
+for yourself. A pre-release is visible only to the author. Refusing to deploy by citing
+"the human presses Publish" means not doing the work: exactly one action is irreversible,
+and it isn't publishing a pre-release.
+
+The client's own keys (external APIs, phone numbers, CRM) are **not a blocker**: a
+product without them must be honest, not broken.
 
 ---
 
-## Глубже — по мере надобности, не подряд
+## Boundaries never crossed
 
-Всё ниже — та же система, разобранная детально. Читать целиком не нужно: открывай, когда
-проверялка или задача привела сюда.
+- **Outward — only drafts.** Letters, payments, publications are prepared by the agent,
+  sent by the human.
+- **Customer data stays inside the customer's boundary.** Into the cloud, into the
+  storefront archive, into someone else's demos — not allowed.
+- **Don't touch someone else's live things.** Deletion outside your own namespace — only
+  with the human's confirmation, and first check who's calling those names.
+- **Secrets aren't printed and don't go into the archive.**
+- **A refusal is shown in words.** A blank screen is a defect: the human will decide the
+  product is broken.
 
-| Документ | Когда открыть |
+---
+
+## What to hand the human at the end
+
+Three lines: what was built · what's left for them (usually create the agent and press
+Publish) · **what didn't add up.** An honestly named open item is more useful than a list
+of green checkmarks.
+
+---
+
+## Deeper — as needed, not in order
+
+Everything below is the same system, broken down in detail. No need to read it all: open
+it when a checker or a task leads you here.
+
+| Document | When to open it |
 |---|---|
-| [`BUILD_STAGES.md`](BUILD_STAGES.md) | стадии, стоп-правила, какие проверки включает какой факт масштаба |
-| [`DEPLOY_REQUIREMENTS.md`](DEPLOY_REQUIREMENTS.md) | каналы доставки, разделы A–H, приёмка перед публикацией, замеры платформы |
-| [`AGENT_BUILD_GUIDE.md`](AGENT_BUILD_GUIDE.md) | решения при стройке, канон, цикл «построил → проверил → починил» и метод работы с большим артефактом |
-| [`PUBLISH_YOUR_AGENT.md`](PUBLISH_YOUR_AGENT.md) | как оформить репозиторий, чтобы агента поставили одной ссылкой |
-| [`APP_FROM_MODULES.md`](APP_FROM_MODULES.md) | приложение для сотрудника собирается из готовых модулей: реестр паспортов, план в пяти формах, окно, провижининг, гейт |
-| [`AGENT_ARCHITECTURE.md`](AGENT_ARCHITECTURE.md) · [`EVOLUTION_PHILOSOPHY.md`](EVOLUTION_PHILOSOPHY.md) | зачем система устроена именно так |
-| [`INSTALLER_CANON.md`](INSTALLER_CANON.md) | продукт ставит что-то на машину одной кнопкой: шесть шагов, источники токена, честные отказы |
-| [`docs/DOCKER_APP_TRACK.md`](docs/DOCKER_APP_TRACK.md) | серверное приложение в контейнере: установщик, песочница окна, белое окно |
-| [`SYMPTOMS.md`](SYMPTOMS.md) | **сломалось — начинать отсюда**: что видно слева, раздел свода справа |
-| [`OS_CAPABILITIES.md`](OS_CAPABILITIES.md) | карта возможностей рабочего стола ОС — читать, не выполняя |
-| [`docs/ICON_STYLE_BRONZE.md`](docs/ICON_STYLE_BRONZE.md) | иконка продукта: один стиль, глиф Lucide, `tools/bronze_icon.py` |
-| [`experts/local_model_classify.py`](experts/local_model_classify.py) | локальная модель инструментом агента: поток за секунды и без оплаты токенов, мозг остаётся сильным. Путь проверен запуском — эксперт, не MCP |
-| [`tools/local_model_mcp.py`](tools/local_model_mcp.py) | та же модель по MCP: сервер собран и отвечает, но дойдёт ли инструмент до агента в чате — не проверено |
-| [`tools/connect_mcp.py`](tools/connect_mcp.py) | подключить агента к Extella без единого действия человека: ключ с диска, проверка рукопожатием, конфиг клиента без секрета внутри |
-| `tools/` | **проверялки — и есть спецификация**; у каждой `--selftest` |
-| [`tools/GATES.md`](tools/GATES.md) | таблица команд запуска проверок |
+| [`BUILD_STAGES.md`](en/BUILD_STAGES.md) | stages, stop rules, which fact of scale turns on which check |
+| [`DEPLOY_REQUIREMENTS.md`](en/DEPLOY_REQUIREMENTS.md) | delivery channels, sections A–H, acceptance before publishing, platform measurements |
+| [`AGENT_BUILD_GUIDE.md`](en/AGENT_BUILD_GUIDE.md) | decisions while building, the canon, the "built → verified → fixed" cycle, and the method for working with a large artifact |
+| [`PUBLISH_YOUR_AGENT.md`](en/PUBLISH_YOUR_AGENT.md) | how to lay out the repository so the agent installs from one link |
+| [`APP_FROM_MODULES.md`](en/APP_FROM_MODULES.md) | an app for an employee is built from ready modules: passport registry, a plan in five forms, the window, provisioning, the gate |
+| [`AGENT_ARCHITECTURE.md`](en/AGENT_ARCHITECTURE.md) · [`EVOLUTION_PHILOSOPHY.md`](en/EVOLUTION_PHILOSOPHY.md) | why the system is built this way |
+| [`INSTALLER_CANON.md`](en/INSTALLER_CANON.md) | a product installs something on the machine with one button: six steps, token sources, honest failures |
+| [`docs/DOCKER_APP_TRACK.md`](en/docs/DOCKER_APP_TRACK.md) | a server app in a container: installer, window sandbox, white window |
+| [`SYMPTOMS.md`](en/SYMPTOMS.md) | **something broke — start here**: what's visible on the left, the section of the canon on the right |
+| [`OS_CAPABILITIES.md`](en/OS_CAPABILITIES.md) | a map of the OS desktop's capabilities — read, don't execute |
+| [`docs/ICON_STYLE_BRONZE.md`](en/docs/ICON_STYLE_BRONZE.md) | product icon: one style, a Lucide glyph, `tools/bronze_icon.py` |
+| [`experts/local_model_classify.py`](experts/local_model_classify.py) | a local model as an agent tool: a flow that takes seconds and costs no tokens, the brain stays strong. The path is verified by a run — an expert, not MCP |
+| [`tools/local_model_mcp.py`](tools/local_model_mcp.py) | the same model over MCP: the server is assembled and responds, but whether the tool reaches the agent in chat — not verified |
+| [`tools/connect_mcp.py`](tools/connect_mcp.py) | connect an agent to Extella: the key from disk, access proven by a tool call, client config with no secret inside it |
+| `tools/` | **the checkers are the specification**; each one has `--selftest` |
+| [`tools/GATES.md`](tools/GATES.md) | a table of commands for running the checks |
 
 ```bash
-bash tools/run_all_gates.sh              # все самопроверки разом
-bash tools/run_all_gates.sh --stage build   # только то, что нужно на стройке
+bash tools/run_all_gates.sh              # all self-checks at once
+bash tools/run_all_gates.sh --stage build   # only what's needed at the build stage
 ```
 
-Правило, которое объясняет весь репозиторий: **если правило нельзя проверить машинно, оно
-сформулировано как решение при стройке, а не как требование.** Прозе верить не обязательно —
-верьте проверялкам.
+The rule that explains the whole repository: **if a rule can't be checked by machine, it's
+worded as a decision made while building, not as a requirement.** You don't have to trust
+the prose — trust the checkers.
 
 ---
 
-Полная документация платформы: [extella.ai/guide.html](https://extella.ai/guide.html) ·
-[extella.ai/api.html](https://extella.ai/api.html). Владелец стандарта: Extella
-(Chariot Technologies Lab). Лицензия: [MIT](LICENSE).
+Full platform documentation: [extella.ai/guide.html](https://extella.ai/guide.html) ·
+[extella.ai/api.html](https://extella.ai/api.html). Standard owner: Extella
+(Chariot Technologies Lab). License: [MIT](LICENSE).

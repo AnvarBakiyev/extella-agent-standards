@@ -144,7 +144,7 @@ run_command "копии экрана выбора агента" python3 "$ROOT/t
 run_command "копии обвязки платформы" python3 "$ROOT/tools/check_platform_client_copies.py"
 
 run_command "язык текстов для покупателя" python3 "$ROOT/tools/check_writing_style.py" \
-  "$ROOT/README.md" "$ROOT/WRITING_RULES.md" "$ROOT/store_app/content.json"
+  "$ROOT/README.ru.md" "$ROOT/WRITING_RULES.md" "$ROOT/store_app/content.json"
 run_command "язык инженерных записей" python3 "$ROOT/tools/check_writing_style.py" \
   --без-местоимений "$ROOT/DEPLOY_REQUIREMENTS.md" "$ROOT/AGENT_BUILD_GUIDE.md" \
   "$ROOT/INSTALLER_CANON.md" "$ROOT/docs/DOCKER_APP_TRACK.md" \
@@ -198,6 +198,9 @@ run check_windows_console
 # Эксперт выкладки исполняется в сухом режиме: выложено ≠ установлено ≠ работает (H119).
 run_command "эксперт выкладки не обманывает" python3 "$ROOT/tools/check_publish_expert.py"
 run check_publish_expert
+# Английское ведёт в английское, главная репозитория — английская (H121).
+run_command "английское ведёт в английское" python3 "$ROOT/tools/check_english_route.py"
+run check_english_route
 run_command "вход и приложение согласны" python3 "$ROOT/tools/check_entry_app_agreement.py"
 run check_entry_app_agreement
 run_command "числа проверок не написаны руками" python3 "$ROOT/tools/check_counted_claims.py"

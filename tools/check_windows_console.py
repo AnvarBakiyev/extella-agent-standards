@@ -25,6 +25,11 @@ README, вход агента, копируемый промпт, онборди
     python3 tools/check_windows_console.py --selftest
 
 Коды выхода: 0 — путь новичка переживает узкую консоль, 1 — нет.
+
+ПРИЁМКА 28.09.2026: прогон в cp1252 уронил два инструмента пути новичка
+(stage_gates, deploy_page_product); проверка по дереву разбора затем нашла два
+промаха сплошного прохода — защиту в строке-заготовке check_self_check и голую
+точку входа new_product. Все исправлены; ложных тревог нет.
 """
 
 from __future__ import annotations
@@ -37,7 +42,7 @@ import sys
 
 КОРЕНЬ = pathlib.Path(__file__).resolve().parents[1]
 ДОКУМЕНТЫ_НОВИЧКА = (
-    "README.md", "AGENT_START.md", "PROMPT_FOR_EXTERNAL_AGENT.md",
+    "README.md", "README.ru.md", "AGENT_START.md", "PROMPT_FOR_EXTERNAL_AGENT.md",
     "EXTELLA_AI_ONBOARDING.md", "store_app/content.json",
 )
 ВЫЗОВ = re.compile(r"python3?\s+((?:tools|store_app)/[A-Za-z0-9_/]+\.py)")
