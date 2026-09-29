@@ -6,7 +6,7 @@ docs:
   - {ru: START_HERE.md, en: en/START_HERE.md}
   - {ru: CONTRIBUTING.md, en: en/CONTRIBUTING.md}
   - {ru: AGENTS.md, en: en/AGENTS.md}
-  - {ru: README.md, en: en/README.md}
+  - {ru: README.ru.md, en: README.md}
   - {ru: AGENT_BUILD_GUIDE.md, en: en/AGENT_BUILD_GUIDE.md}
   - {ru: NAMING.md, en: en/NAMING.md}
   - {ru: CSPL_GUIDE.md, en: en/CSPL_GUIDE.md}
@@ -145,6 +145,7 @@ docs:
   - {ru: rules/H19-секста.md, en: en/rules/H19-секста.md}
   - {ru: rules/H19-тер.md, en: en/rules/H19-тер.md}
   - {ru: rules/H120.md, en: en/rules/H120.md}
+  - {ru: rules/H121.md, en: en/rules/H121.md}
   - {ru: EXTELLA_AI_ONBOARDING.md, en: en/EXTELLA_AI_ONBOARDING.md}
   - {ru: DOCTOR_STANDARD.md, en: en/DOCTOR_STANDARD.md}
   - {ru: AGENT_START.md, en: en/AGENT_START.md}

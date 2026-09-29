@@ -31,7 +31,8 @@ import re
 import sys
 
 КОРЕНЬ = pathlib.Path(__file__).resolve().parents[1]
-ДОКУМЕНТЫ = ("AGENT_START.md", "PROMPT_FOR_EXTERNAL_AGENT.md", "README.md")
+# README.md с 29.09.2026 английский, русский вход — README.ru.md; проверяем оба.
+ДОКУМЕНТЫ = ("AGENT_START.md", "PROMPT_FOR_EXTERNAL_AGENT.md", "README.md", "README.ru.md")
 ДОПУСК = 0.25
 
 РАЗМЕР = re.compile(r"(\d+(?:[.,]\d+)?)\s*КБ")

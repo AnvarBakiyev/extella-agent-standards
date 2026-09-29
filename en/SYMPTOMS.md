@@ -1,4 +1,4 @@
-<!-- source: SYMPTOMS.md sha256:7319e34939280ca239d9f5e0c36b8339ea812967f818f393635ac63c5c82307a -->
+<!-- source: SYMPTOMS.md sha256:2b346fa27f555e8ca250a507b4a82cad5e484671d29f8ac68dc1884ff00f4f7e -->
 
 # Entry by symptom: what you see — where to look
 
@@ -156,6 +156,7 @@ or in the "no external symptom" list below: it cannot silently fall out of both.
 | The script died with a NameError AFTER the action had already gone through | H120 | An edit removed a name that was read twice: the first place was fixed, the second was not. The branch after success never runs on a dry run — caught by `check_undefined_names` |
 | A publish "went through" but the version is not in the listing; or the publish Expert answered 400 "At least one tag is required" | H119 | Publish success is a version read back, not a `done` event; tags are mandatory. The sample is `experts/dev_publish_private.py`, guarded by `tools/check_publish_expert.py` |
 | Three purchases of one product — three agents in the account | H119 | The repeat-purchase contract is not described (letter to the platform §55). Do not blindly reinstall a product that has an agent — install the version by hand |
+| A person from GitHub sees a Russian page; the English prompt sends the agent to the Russian rules | H121 | The main `README.md` is English, the Russian one is `README.ru.md`; English copies lead to `main/en/…`. Guarded by `tools/check_english_route.py` |
 | `expert/save` hangs with no answer | H5-quater | A timeout ≠ a refusal. First look the Expert up by its EXACT name in the same profile and agent — it may have been saved; only then retry. Do not require an embeddings key from every newcomer: that is not proven (letter to the platform §56) |
 | The whole app is built, yet a large or a second file never reaches the Expert on the device | H106 | A file in the window ≠ a file on the device. Before the full build, prove an end-to-end slice: the person picks a file → the Expert reads it on its device → returns something checkable. The platform has not named a supported path for several/large files (§57) |
 | A path in the output is glued together wrong, a letter is missing, no error | H115 | zsh read the colon as a history modifier: `$BR:tools/x` with `BR=refs/heads/main` gives `mainools/x`. Curly braces save you, quotes don't; the defect doesn't reproduce in bash |
