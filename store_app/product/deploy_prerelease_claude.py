@@ -33,8 +33,12 @@ DESCRIPTION = (
     "Предрелиз для приёмки владельцем. Исправлена установка Codex и Claude "
     "на чистых машинах и восстановление после отложенной задачи. Живой продукт не затронут."
 )
-VERSION = "3.7.3"
-SCOPES = ["expert.run", "device.run"]
+VERSION = "3.8.0"
+# api.full — для кнопки «Подключить Claude Code и Codex»: эксперт на компьютере
+# выпускает ключ через прокси ОС /api/ext/core (H15), потому что платформа ключ
+# эксперту не передаёт (замер 28–29.09.2026). Право видно покупателю в карточке и
+# отзывается в любой момент; без него кнопка отвечает словами «право не выдано».
+SCOPES = ["expert.run", "device.run", "api.full"]
 # publish-stream требует хотя бы один тег: без него он отвечает HTTP 400.
 # У живого листинга теги пустые, потому что он создавался другим путём.
 TAGS = ["prerelease", "claude", "codex", "bridge"]
@@ -66,6 +70,8 @@ EXPERTS = {
     "journey_publish": HERE.parent.parent / "experts/journey_publish.py",
     "journey_ask_agent": HERE.parent.parent / "experts/journey_ask_agent.py",
     "local_model_ask": HERE.parent.parent / "experts/local_model_ask.py",
+    # Кнопка «Подключить Claude Code и Codex»: кладёт ключ на компьютер без показа.
+    "dev_connect_assistant": HERE.parent.parent / "experts/dev_connect_assistant.py",
 }
 PAGE = HERE.parent / "index.html"
 ICON = HERE.parent / "icon.png"
