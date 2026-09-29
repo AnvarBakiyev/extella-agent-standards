@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:889297bd2a686b4f3799eff30496298a2e8edc7ad2ca026696976382f5b2c9a8 -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:5a60de5d74d2b6ec7beb9061cb736c73c944d2d4460b2b24b82f2f2065fbc300 -->
 
 # Agent requirements for a rollout to happen
 
@@ -4724,3 +4724,31 @@ and which is absent from `dir(builtins)`. There was one real finding, the one ab
 **And about the acceptance line.** I wrote its first edition BEFORE the run, guessing what would be
 found: «2 false alarms». The measurement gave 17. An acceptance line describes a measurement, not
 an expectation — otherwise it is once again a number living apart from the fact (H113).
+
+### H121. ENGLISH LEADS TO ENGLISH: THE REPOSITORY'S MAIN PAGE IS IN ENGLISH
+
+**Measured 29 Sep 2026.** The public repository opened with a Russian README, although a full
+English mirror `en/` sat right next to it: 173 translations that a gate kept in agreement with
+the source. No path led there. The English prompt and the app's English text sent the agent to
+the Russian `AGENT_START.md`, `rules/…` and `SYMPTOMS.md`; all 127 English rules linked to the
+Russian index; the English README lived in `en/` with links to the code that were broken
+relative to that folder. By then the app was already English by default (H117) — the
+repository was not.
+
+To a model the language barely matters, which is why nobody tripped over it. A human does: a
+developer from GitHub lands on a Russian page, and an English-speaking client's agent absorbs
+the canon in Russian.
+
+**Norm.**
+1. The root `README.md` is English; the Russian entry point is `README.ru.md`, with a switch on
+   the first line of each.
+2. The English copies of the prompt (`en/PROMPT_FOR_EXTERNAL_AGENT.md` and the English "Copy"
+   block in the app) lead only to `main/en/…`; the Russian ones — to `main/…`.
+3. An English document does not send the reader to a Russian one that has an English mirror —
+   neither by a raw link nor by a relative one.
+4. **The source of truth does not change:** the canon is written in Russian, and the English is
+   mirrored and stamped by the `check_en_sync` gate. The app's translation gate treats a link to
+   `main/en/X` in the English text as the same document as `main/X` in the Russian one — and a
+   mirror of a DIFFERENT document is still caught as leading elsewhere.
+
+Held by `tools/check_english_route.py`.

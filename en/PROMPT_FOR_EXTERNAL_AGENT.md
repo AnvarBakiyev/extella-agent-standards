@@ -31,10 +31,10 @@ rule corpus is 369 KB — web reading truncates it. That's why the rules are spl
 one file each.
 
 Start with a single page:
-https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/AGENT_START.md
+https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/en/AGENT_START.md
 
 From there, pick the route for my task. A rule is fetched at an address like:
-https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/rules/H106.md
+https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/en/rules/H106.md
 Index of all rules: .../main/rules/INDEX.md
 When something doesn't work: .../main/SYMPTOMS.md — enter by symptom.
 
