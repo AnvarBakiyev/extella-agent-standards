@@ -839,6 +839,10 @@
     "подкл.код.неизвестно": {
       "ru": "Ответ без кода исхода. Нажми ещё раз; если повторится, сообщи нам.",
       "en": "An answer without an outcome code. Press again; if it repeats, tell us."
+    },
+    "отказ.нет_подключения": {
+      "ru": "Эта кнопка новее твоей установки. Удали Extella Guide с рабочего стола и добавь заново из магазина, разреши «Full Extella API access» — после этого кнопка заработает. Перезагрузки окна для этого недостаточно.",
+      "en": "This button is newer than your installation. Remove Extella Guide from the desktop and add it again from the store, allow «Full Extella API access», and the button will work. Reloading the window is not enough."
     }
   }
 }
