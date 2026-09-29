@@ -1,4 +1,4 @@
-<!-- source: rules/INDEX.md sha256:321ae3e1d5ac9141f7b9d4396be3d82280fa7ec869e396e3d178bbfe4d3028d4 -->
+<!-- source: rules/INDEX.md sha256:16fa42a81353e50dddb9570905bf0c116dc3e6f2010058240000218393c8b132 -->
 
 <!-- Собрано автоматически: python3 tools/split_rules.py -->
 
@@ -6,7 +6,7 @@
 
 Each rule sits in its own file of a few kilobytes — take them one at a time, not the whole corpus (a 369 KB web read gets truncated).
 
-Raw link to a rule: `https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/rules/H<номер>.md`
+Raw link to a rule: `https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/en/rules/H<номер>.md`
 
 | rule | about |
 |---|---|
@@ -137,3 +137,4 @@ Raw link to a rule: `https://raw.githubusercontent.com/AnvarBakiyev/extella-agen
 | [H118](H118.md) | A TOOL WE TELL PEOPLE TO RUN MUST SURVIVE A NARROW CONSOLE |
 | [H119](H119.md) | PUBLISHED ≠ INSTALLED ≠ WORKING: THREE STATES, THREE PROOFS |
 | [H120](H120.md) | AN EDIT LEAVES NO REFERENCE TO A NAME IT DELETED |
+| [H121](H121.md) | ENGLISH LEADS TO ENGLISH: THE REPOSITORY'S MAIN PAGE IS IN ENGLISH |

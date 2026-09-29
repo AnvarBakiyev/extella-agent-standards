@@ -12,7 +12,7 @@ styling, the raw README is 31 KB. The rule corpus `DEPLOY_REQUIREMENTS.md` is 36
 it over the web truncates it, and the agent never reaches the rules. That's why the rules are
 laid out one per file — each one reads in full:
 
-    https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/rules/H106.md
+    https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/en/rules/H106.md
 
 Index of all rules: `rules/INDEX.md` — it has the number, topic, and link.
 
