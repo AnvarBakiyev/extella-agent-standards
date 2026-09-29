@@ -39,7 +39,9 @@ test("отказ платформы переводится словами в О�
   assert.ok(источник, "функция отказов обязана быть одна и с этим именем");
   assert.equal((template.match(/function отказПлатформы/g) || []).length, 1,
     "вторая копия обработки отказов запрещена");
-  const зовы = template.match(/отказПлатформы\(r\.status, raw, '(установщик|витрина)'\)/g) || [];
+  // Витринный путь принимает роль от вызывающего (кнопка подключения передаёт
+  // свою), поэтому допустимо «роль || 'витрина'» — умолчание остаётся буквальным.
+  const зовы = template.match(/отказПлатформы\(r\.status, raw, (роль \|\| )?'(установщик|витрина)'\)/g) || [];
   assert.equal(зовы.length, 2, "оба пути вызова обязаны звать общую функцию");
   assert.ok(!template.includes("'ОС ответила '"),
     "сырой ответ платформы человеку не показывается");
@@ -56,6 +58,10 @@ test("отказ платформы переводится словами в О�
   const недоступно = JSON.stringify({detail:
     "core /api/expert/run failed: HTTP 500: {'status': 'error', 'message': " +
     "'Target 00000000-0000-0000-0000-000000000000 is unavailable'}"});
+  // Кнопка подключения новее старой установки: «не найден» ведёт в магазин.
+  const нетЭксперта = JSON.stringify({detail: "core /api/expert/run failed: Expert not found"});
+  assert.match(собрать('ru')(502, нетЭксперта, 'подключение'), /добавь заново из магазина/);
+  assert.match(собрать('en')(502, нетЭксперта, 'подключение'), /add it again from the store/);
   const ждём = {ru: /Extella на этом компьютере не отвечает/,
                 en: /Extella on this computer is not responding/};
   const шаг = {ru: /повтори/i, en: /try again/i};
@@ -530,12 +536,20 @@ test('кнопка подключения редактора: на главно�
   const начало = page.slice(page.indexOf(экран), page.indexOf('<div class="экран" data-экран="проба">'));
   assert.ok(начало.includes('id="подключить"'), 'кнопка стоит на экране «Начало», рядом с промптом');
 
-  const обработчик = page.slice(page.indexOf("getElementById('подключить').onclick"),
+  const обработчик = page.slice(page.indexOf("function подключениеРедактора("),
                                 page.indexOf("getElementById('всё').onclick"));
-  assert.ok(обработчик.includes("зовСценария('dev_connect_assistant', {app_token: APP_TOKEN})"),
+  assert.ok(обработчик.includes("зовСценария('dev_connect_assistant', {app_token: APP_TOKEN}, 'подключение', адрес)"),
             'эксперту уходит только пропуск окна');
-  // Без targets — как «Попробовать»: в окне вызов исполняется там, где окно открыто (H106).
-  assert.ok(!/targets/.test(обработчик), 'Device ID человек не вписывает');
+  // Главная кнопка зовёт без адреса; Device ID — только запасной путь H106.
+  assert.ok(обработчик.includes("подключениеРедактора(this, '');"), 'главная кнопка — без адреса');
+  assert.ok(обработчик.includes("if (e && e.не_туда && !адрес)"), 'поле Device ID открывается только при «не туда»');
+  // Старая установка не знает нового эксперта: совет обязан вести в магазин, а не
+  // к перезагрузке окна — она агента не меняет (Windows, 29.09.2026).
+  assert.ok(page.includes("if (роль === 'подключение') return т('отказ.нет_подключения');"),
+            'отказ «эксперт не найден» у кнопки подключения ведёт к переустановке');
+  // Адрес попадает в targets только из поля запасного пути (H106).
+  const зов = page.slice(page.indexOf('function зовСценария('), page.indexOf('(function деньПервый'));
+  assert.ok(зов.includes('if (адрес) тело.targets = [адрес];'), 'targets — только когда адрес дан');
   // Ключ выпускает эксперт на компьютере; странице его неоткуда взять и нечего показать.
   assert.ok(!/\{\{token\}\}|\.token\b/.test(обработчик), 'окно не держит и не показывает ключ');
   assert.ok(обработчик.includes('кнопка.disabled = true') && обработчик.includes('кнопка.disabled = false'),
