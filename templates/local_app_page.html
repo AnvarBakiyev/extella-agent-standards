@@ -17,29 +17,12 @@ body{background:var(--bg);color:var(--tx);
   font:400 13px/1.5 Nunito,system-ui,-apple-system,sans-serif;
   display:flex;flex-direction:column}
 button,input,select,textarea{font-family:inherit}
-/* Строка агента — общая шапка каждого окна. Команда живёт там, где взгляд:
-   «возьми из астры первые 8» кладёт данные СЮДА, в это приложение, — окно и есть
-   контекст. Отдельный пульт-посредник снят решением владельца 20.08.2026. */
-.строка{display:flex;gap:8px;align-items:center;padding:8px 12px;
-  background:var(--bg);border-bottom:1px solid var(--гр)}
-.строка input{flex:1;min-width:0;font-size:13px;color:var(--tx);
-  background:transparent;border:1px solid var(--гр);border-radius:8px;
-  padding:8px 12px}
-.язык_окна{background:transparent;border:1px solid var(--гр);border-radius:8px;
-  padding:7px 10px;font:600 11px/1 Nunito,system-ui,sans-serif;letter-spacing:.04em;
-  color:var(--tx3);cursor:pointer}
-.язык_окна:hover{color:var(--tx);border-color:var(--a)}
-.строка input::placeholder{color:var(--tx3)}
-.строка input:focus{outline:none;border-color:var(--a)}
+/* Строки агента в окне нет (решение владельца 30.09.2026): окно показывает
+   приложение, а не пульт. Команды агенту приложение, если они ему нужны,
+   строит в своём интерфейсе. */
 .сказать{font-size:13px;font-weight:600;color:#fff;background:var(--a);
   border:0;border-radius:999px;padding:8px 16px;cursor:pointer}
 .сказать[disabled]{opacity:.6;cursor:default}
-.ответ{display:none;gap:12px;align-items:flex-start;padding:8px 12px;
-  background:var(--bg);border-bottom:1px solid var(--гр);
-  color:var(--tx2);font-size:13px}
-.ответ span{flex:1;white-space:pre-wrap;word-break:break-word}
-.ответ button{background:none;border:0;color:inherit;opacity:.5;cursor:pointer;
-  font-size:15px;line-height:1;padding:0 2px}
 #окно{flex:1;width:100%;border:0;display:none;background:#fff}
 .запасной{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   padding:24px;background:var(--bg)}
@@ -63,17 +46,6 @@ p{color:var(--tx2);margin:0 0 16px}
 </style>
 </head>
 <body>
-<div class="строка" id="строка">
-  <input id="фраза" type="text" autocomplete="off" spellcheck="false"
-         placeholder="Tell the agent: take the first 8 from astra — it will put them here" data-т="Tell the agent: take the first 8 from astra — it will put them here" data-т-поле="placeholder">
-  <button type="button" class="язык_окна" id="язык_окна" title="Русский / English">RU</button>
-  <button type="button" class="сказать" id="сказать" data-т="Send">Send</button>
-</div>
-<div class="ответ" id="ответ">
-  <span id="ответ_текст"></span>
-  <button type="button" id="ответ_закрыть" title="Hide" data-т="Hide" data-т-поле="title">×</button>
-</div>
-
 <iframe id="окно" allow="clipboard-read; clipboard-write"></iframe>
 
 <div class="запасной" id="запасной">
@@ -95,18 +67,17 @@ p{color:var(--tx2);margin:0 0 16px}
 </div>
 
 <script>
-/* ── два языка строки агента ─────────────────────────────────────────────
-   Эта полоска стоит В КАЖДОМ окне, поэтому её перевод — единственное место,
-   где английский появляется сразу везде. Решение владельца 23.08.2026:
-   английский оригинал, русский переключателем.
+/* ── два языка обёртки окна ──────────────────────────────────────────────
+   Обёртка стоит В КАЖДОМ окне, поэтому её перевод — единственное место, где
+   английский появляется сразу везде. Английский оригинал (решение владельца
+   23.08.2026). Переключатель языка жил в строке агента и ушёл вместе с ней
+   30.09.2026: язык окна — общий выбор Extella из localStorage, иначе язык
+   браузера.
 
    Ключи английские (канон), русский лежит переводом. Нет перевода — вернётся
    английский ключ: лучше английское слово в русском окне, чем пустое место. */
 window.__СЛОВАРЬ_ОКНА = {
   ru: {
-    "Tell the agent: take the first 8 from astra — it will put them here":
-      "Скажите агенту: возьми из астры первые 8 — положит сюда",
-    "Send": "Сказать",
     "Hide": "Скрыть",
     "Opening…": "Открываю…",
     "Refresh": "Обновить",
@@ -498,64 +469,6 @@ setTimeout(function(){
     });
 }, 6000);
 
-// ── СТРОКА АГЕНТА ─────────────────────────────────────────────────────────
-// Одна и та же строка в шапке КАЖДОГО окна — команда живёт там, где взгляд.
-// Фраза уезжает местному серверу этого же приложения (действие «скажи»), и
-// вместе с ней едет имя окна: «возьми из астры первые 8» без названного
-// получателя кладёт данные СЮДА. Пульт-посредник этим и заменён (20.08.2026).
-var ОКНО_ИМЯ = '%ИМЯ%';
-var ДЕЙСТВИЕ = new URL('/_extella_action', АДРЕС).href;
-var фраза_ = document.getElementById('фраза');
-var сказать_ = document.getElementById('сказать');
-var ответ_ = document.getElementById('ответ');
-var ответ_текст_ = document.getElementById('ответ_текст');
-
-function ответом(текст){
-  ответ_текст_.textContent = текст;
-  ответ_.style.display = 'flex';
-}
-document.getElementById('ответ_закрыть').onclick = function(){
-  ответ_.style.display = 'none';
-};
-
-// Ожидание видно с первого кадра, повтор заблокирован, кнопка возвращается
-// в finally — иначе первая же ошибка оставила бы её выключенной навсегда.
-function сказать(){
-  var т = (фраза_.value || '').trim();
-  if (!т) { фраза_.focus(); return; }
-  сказать_.disabled = true;
-  var было = сказать_.textContent;
-  сказать_.textContent = 'Делаю…';
-  ответом('Агент делает. Первая встреча с новым форматом занимает до минуты.');
-  fetch(ДЕЙСТВИЕ, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({действие: 'скажи', фраза: т, окно: ОКНО_ИМЯ})
-  }).then(function(о){ return о.json(); })
-    .then(function(д){
-      var текст = д.вывод || д.ошибка || 'пустой ответ — скажите чату';
-      // Метка от диспетчера: результат лёг в ЭТО окно — перечитать рамку,
-      // чтобы человек увидел его сразу, а память окна не воскресила старое.
-      if (текст.indexOf('[окно-обновится]') >= 0) {
-        текст = текст.replace('[окно-обновится]', '').trim();
-        перечитать_окно();
-      }
-      ответом(текст);
-      if (д.код === 0) фраза_.value = '';
-    })
-    .catch(function(){
-      ответом('Не достучался до агента на этом компьютере. Обновите окно; ' +
-              'если не поможет — скажите чату.');
-    })
-    .finally(function(){
-      сказать_.disabled = false;
-      сказать_.textContent = было;
-    });
-}
-сказать_.onclick = сказать;
-фраза_.addEventListener('keydown', function(e){
-  if (e.key === 'Enter') сказать();
-});
 
 /* Перевод по меткам: разметка держит английский канон, метка называет ключ.
    getAttribute, а не dataset: кириллические имена атрибутов браузер к
@@ -565,16 +478,8 @@ function применитьЯзыкОкна(){
     var ключ = э.getAttribute("data-т"), поле = э.getAttribute("data-т-поле");
     if (поле) э.setAttribute(поле, т(ключ)); else э.textContent = т(ключ);
   });
-  var к = document.getElementById("язык_окна");
-  if (к) к.textContent = window.__ЯЗЫК_ОКНА === "ru" ? "EN" : "RU";
   document.documentElement.lang = window.__ЯЗЫК_ОКНА;
 }
-var кнЯзык = document.getElementById("язык_окна");
-if (кнЯзык) кнЯзык.addEventListener("click", function(){
-  window.__ЯЗЫК_ОКНА = window.__ЯЗЫК_ОКНА === "ru" ? "en" : "ru";
-  try { localStorage.setItem("extella-язык", window.__ЯЗЫК_ОКНА); } catch (e) {}
-  применитьЯзыкОкна();
-});
 применитьЯзыкОкна();
 </script>
 </body>
