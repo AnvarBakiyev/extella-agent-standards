@@ -1,4 +1,4 @@
-<!-- source: README.ru.md sha256:f62ab22c9f77598331569673793bc927e3bf1a43ad3be749ea1c7d95160db4fa -->
+<!-- source: README.ru.md sha256:7ed3da3521f92ff7849b8c4e2853ecc4ad4cdb986071972f141575e3a8207839 -->
 
 **Русский:** [README.ru.md](README.ru.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
 
@@ -108,9 +108,18 @@ live products; next to each rule is what breaks without it.
 python3 tools/connect_mcp.py
 ```
 
-The script finds the Extella key, **proves access by calling a reading tool** (a
-handshake passes with any string in place of a key — measured 28 Sep 2026) and registers
-the server with the client (Claude Code, Codex) with every header, `X-Agent-Id` included.
+**Claude Code: one path — the bridge plugin.**
+
+```bash
+claude plugin marketplace add AnvarBakiyev/extella-bridges
+claude plugin install extella-claude-bridge@extella-claude
+```
+
+Then ask Claude "connect me to Extella": the plugin's `extella-connect` skill proves the
+connection by a real tool call and names the one human action if something is missing.
+`python3 tools/connect_mcp.py` does the same for Claude Code — it installs this plugin and
+calls its registrar — and also configures Codex. Proof is `list_profiles` with a parsed,
+positive answer (a handshake passes with any string in place of a key; H81).
 **One step stays with the human: restart the client** — until a tool is called from the
 client itself the connection is not proven, and the script does not claim it is.
 

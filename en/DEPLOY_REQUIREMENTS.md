@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:5a60de5d74d2b6ec7beb9061cb736c73c944d2d4460b2b24b82f2f2065fbc300 -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:d262e17a82bcacdf784fa5e4a65d1db73a099fe8c3f9a9c69c6aa4d4f21cd2ae -->
 
 # Agent requirements for a rollout to happen
 
@@ -2968,6 +2968,25 @@ instruction but a command: `tools/connect_mcp.py`. Three rules inside it:
    channel exists and must be used: if REST returns 200, the key is VALID and the MCP
    headers need fixing, not the token. Retelling the MCP wording as the cause is
    forbidden — it names the wrong thing to fix.
+1-quater. **Which tool proves it is decided by a measurement with a wrong key.**
+   Measured 30 Sep 2026, a live run of the skill in a Claude Code session:
+   `get_current_profile_and_agent` answers "successfully" to a WRONG key — it echoes the
+   headers it was sent, so it is never a proof; `list_agents` checks the key, but on a
+   large account answers ~270 000 characters and does not fit the tool output (and with
+   `profile_id: "default"` it answers 404 "Profile not found": the filter wants a real
+   id). The proof is `list_profiles` with no arguments: it rejects a wrong key and answers
+   a valid one in ~600 characters. Only a POSITIVE parsed answer counts (`isError: false`
+   and non-empty content): "no error seen" is not success — that is how the bridge's
+   0.5.0 doctor counted an answer it had not finished reading.
+1-quinquies. **Claude Code connects by one path — the bridge plugin
+   `extella-claude-bridge`** (marketplace `AnvarBakiyev/extella-bridges`). Until
+   30 Sep 2026 there were three — the standards installer's own (name `extella`), the
+   bridge's (`extella_acct_…`), the old local bridge — and the "already configured" check
+   looked only at its own name: the owner ended up with two connections to one account,
+   one keeping the key in plain text in `~/.claude.json`. Now the connection format lives
+   only in the bridge's registrar (one connection per account, the account recognised by
+   the KEY a connection sends, not by its name; a test holds parity with the bridge's Node
+   library), and `tools/connect_mcp.py` installs the plugin and calls its registrar.
 2. **The secret goes into neither the config nor the arguments.** Claude Code has
    `headersHelper` for this — the script hands over headers at call time. Codex has
    no such thing; the key goes into `~/.codex/config.toml` — the file is set to 600,
