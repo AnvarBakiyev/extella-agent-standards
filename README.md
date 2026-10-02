@@ -1,4 +1,4 @@
-<!-- source: README.ru.md sha256:7ed3da3521f92ff7849b8c4e2853ecc4ad4cdb986071972f141575e3a8207839 -->
+<!-- source: README.ru.md sha256:fb0dbe63911326463a9c50c1e8ac6e34da9bda757e6998e405c60790e43e34a2 -->
 
 **Русский:** [README.ru.md](README.ru.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
 
@@ -133,6 +133,11 @@ by itself and is never shown (verified 29 Sep 2026 on macOS and Windows 11).
 Without Guide: in the app, open `Library → System → Tokens`, create a token, and
 save it to `~/.extella/api_token.txt` (mode 600) or pass it via the
 `EXTELLA_API_TOKEN` variable. No "go look for a key somewhere."
+
+**An agent in the cloud** (Codex Cloud, Claude Code on the web, Codespaces) runs in a container,
+and the button cannot reach it: it puts the key on a computer. The script recognises a cloud
+environment and names a different action — create a separate token and set it in that
+environment's settings as `EXTELLA_API_TOKEN` (measured 2 Oct 2026).
 
 If you already have a connection to Extella on another machine, the connection is done
 without a human at all: the expert `dev_connect_assistant` with `targets: [device_id]` of
