@@ -10,6 +10,11 @@
 
 Гейт читает код страницы и приложенных Expert, выводит нужный набор и сверяет с объявленным.
 
+Expert, которые лежат вне папки продукта, перечисляются в listing.json полем
+`эксперты_вне_папки` (пути от папки продукта). Без него гейт их не видит: у Extella
+Guide эксперт кнопки подключения живёт в experts/, гейт не замечал его прокси
+/api/ext/core и называл верным набор без api.full (замер 16.10.2026).
+
     python3 tools/check_app_scopes.py products/пример
     python3 tools/check_app_scopes.py --selftest
 """
@@ -88,6 +93,20 @@ def объявленные(папка: pathlib.Path):
     return None
 
 
+def эксперты_вне_папки(папка: pathlib.Path):
+    """Expert из поля `эксперты_вне_папки` listing.json: найденные и пропавшие."""
+    лист = папка / "listing.json"
+    if not лист.exists():
+        return [], []
+    import json
+    пути = json.loads(лист.read_text(encoding="utf-8")).get("эксперты_вне_папки", [])
+    найдены, пропали = [], []
+    for путь in пути:
+        файл = (папка / путь).resolve()
+        (найдены if файл.is_file() else пропали).append(файл if файл.is_file() else путь)
+    return найдены, пропали
+
+
 def исходники_страницы(папка: pathlib.Path, страницы: list[pathlib.Path]):
     """HTML и его локальные script src; публичные URL и выход из корня запрещены."""
     найдено = list(страницы)
@@ -114,6 +133,11 @@ def проверить(папка: pathlib.Path) -> int:
         п for п in папка.rglob("expert_*.py")
         if not any(часть in {"__pycache__", "migrations", "tests"} for часть in п.parts)
     ]
+    снаружи, пропали = эксперты_вне_папки(папка)
+    if пропали:
+        return отказ([f"в listing.json назван Expert «{п}», но файла нет — права не по чему "
+                      f"проверить" for п in пропали])
+    эксперты += снаружи
     код = "\n".join(п.read_text(encoding="utf-8", errors="ignore")
                      for п in страницы_и_скрипты + эксперты)
 
@@ -152,11 +176,20 @@ def _selftest() -> int:
         app_token: EXT.app_token, expert_name: 'x', params: {}, targets: [У]})});
     </script>"""
 
-    def случай(имя, страница, права, ждём_провал, эксперт=""):
+    def случай(имя, страница, права, ждём_провал, эксперт="", снаружи=None):
         with tempfile.TemporaryDirectory() as d:
-            p = pathlib.Path(d)
+            корень = pathlib.Path(d)
+            p = корень / "app"
+            p.mkdir()
             (p / "index.html").write_text(страница)
-            (p / "listing.json").write_text(json.dumps({"права": права}, ensure_ascii=False))
+            лист = {"права": права}
+            if снаружи is not None:
+                (корень / "experts").mkdir()
+                for имя_файла, текст in снаружи.items():
+                    if текст is not None:
+                        (корень / "experts" / имя_файла).write_text(текст)
+                лист["эксперты_вне_папки"] = ["../experts/" + и for и in снаружи]
+            (p / "listing.json").write_text(json.dumps(лист, ensure_ascii=False))
             if эксперт:
                 (p / "expert_install.py").write_text(эксперт)
             код = проверить(p)
@@ -178,6 +211,15 @@ def _selftest() -> int:
            "<script>fetch('/api/app-agent/run')</script>",
            ["expert.run", "device.run"], False,
            "def expert_install():\n    return subprocess.run(['true'])\n")
+    прокси = {"connect.py": "def connect():\n    url = 'https://os.extella.ai/api/ext/core/api/token/create'\n"}
+    случай("Expert вне папки с прокси ядра требует api.full",
+           "<script>fetch('/api/app-agent/run')</script>", ["expert.run"], True, снаружи=прокси)
+    случай("Expert вне папки с прокси ядра и api.full проходит",
+           "<script>fetch('/api/app-agent/run')</script>", ["expert.run", "api.full"], False,
+           снаружи=прокси)
+    случай("пропавший Expert вне папки ловится",
+           "<script>fetch('/api/app-agent/run')</script>", ["expert.run"], True,
+           снаружи={"gone.py": None})
 
     if провалы:
         print("ИТОГ САМОПРОВЕРКИ: провалы —", "; ".join(провалы))

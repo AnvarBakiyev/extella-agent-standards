@@ -4,10 +4,22 @@
   "версия": "3.8.0",
   "цена": 0,
   "состояние": "в магазине",
-  "состав": "page + 1 Expert, без архива",
+  "состав": "page + 12 Expert + архив моста Claude",
   "права": [
     "expert.run",
-    "device.run"
+    "device.run",
+    "api.full"
+  ],
+  "эксперты_вне_папки": [
+    "../experts/dev_connect_assistant.py",
+    "../experts/journey_capabilities.py",
+    "../experts/journey_concept.py",
+    "../experts/journey_scan.py",
+    "../experts/journey_organize.py",
+    "../experts/journey_board_scheme.py",
+    "../experts/journey_publish.py",
+    "../experts/journey_ask_agent.py",
+    "../experts/local_model_ask.py"
   ],
   "содержимое": "store_app/content.json, страница читает его из этого же репозитория",
   "version_id": "35cdb641-6dee-417f-bdcb-322b6a6c4a26",
