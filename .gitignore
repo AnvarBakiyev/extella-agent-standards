@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+node_modules/
 
 # Собираемые архивы изданий: пересобираются из payload/
 editions/*/*.zip

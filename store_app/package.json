@@ -1,0 +1,7 @@
+{
+  "name": "extella-guide-page",
+  "private": true,
+  "engines": { "node": ">=22.18.0" },
+  "scripts": { "typecheck": "tsc -p constructor.tsconfig.json" },
+  "devDependencies": { "typescript": "5.9.3" }
+}

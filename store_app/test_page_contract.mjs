@@ -7,6 +7,66 @@ const template = await readFile(new URL("./page.template.html", import.meta.url)
 const строкиОболочки = JSON.parse(
   await readFile(new URL("./shell.json", import.meta.url), "utf8")).строки;
 
+test("Builder is a separate tab; existing screens and default entry remain", () => {
+  const nav = template.match(/<nav class="меню"[\s\S]*?<\/nav>/)?.[0] || "";
+  assert.deepEqual([...nav.matchAll(/class="вкладка" data-экран="([^"]+)"/g)].map(m => m[1]),
+    ["начало", "проба", "конструктор", "поиск", "ещё"]);
+  assert.match(template, /имя = есть \? имя : 'начало'/);
+  assert.match(template, /роль.*!== 'конструктор'/);
+  assert.match(template, /последнееТелоКонструктора/,
+    "search rerenders the guide without resetting the builder");
+});
+
+test("guide search does not hide unrelated sections or headings", () => {
+  const body = template.match(/q\.addEventListener\('input', function\(\)\{([\s\S]*?)\n  \}\);/)?.[1];
+  assert.ok(body);
+  const section = text => ({textContent: text, style: {}, classList: {toggle() {}}});
+  const guide = [section("alpha"), section("beta")];
+  const builder = section("LEGO");
+  const nodes = new Map(["count", "empty"].map(id => [id, {style: {}, textContent: ""}]));
+  const doc = {
+    getElementById: id => nodes.get(id),
+    querySelectorAll: selector => {
+      if (selector === "#разделы section") return guide;
+      if (selector === "section") return [...guide, builder];
+      assert.equal(selector, "#разделы .тема", "headings must also stay inside the guide");
+      return [];
+    }
+  };
+  const run = Function("document", "нарисовать", "текущее", "подсветить", "q", body);
+  run(doc, () => {}, {}, () => {}, {value: "alpha"});
+  assert.equal(guide[0].style.display, "");
+  assert.equal(guide[1].style.display, "none");
+  assert.equal(builder.style.display, undefined);
+});
+
+test("Builder content has both languages and no executable content", async () => {
+  const data = JSON.parse(await readFile(new URL("./content.json", import.meta.url), "utf8"));
+  const landing = data.разделы.filter(section => section.роль === "конструктор");
+  assert.equal(landing.length, 1);
+  const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]).sort();
+  for (const field of ["тело", "тело_en"]) {
+    const html = landing[0][field];
+    assert.ok(html.length > 1000);
+    assert.doesNotMatch(html, /<script|\son\w+\s*=|javascript:|<iframe/i);
+    assert.equal(new Set(ids(html)).size, ids(html).length, `${field}: IDs are unique`);
+    for (const marker of ["DESKTOP", "CHAT"]) assert.ok(html.includes(`@@XTL_${marker}_POSTER@@`));
+    const fallback = html.split('<template data-xtl-template>')[0];
+    assert.ok(fallback.length < html.length, "new interactive markup stays inert in shell 4");
+    assert.match(fallback, /href="https:\/\/extella.dev\/map\/"/);
+    assert.doesNotMatch(fallback, /<button|<video|<img|<dialog|@@XTL/);
+  }
+  assert.deepEqual(ids(landing[0].тело), ids(landing[0].тело_en));
+  assert.equal(data.оболочка_минимум, 5);
+});
+
+test("Builder runtime has no API or token access and no external runtime dependency", async () => {
+  const source = await readFile(new URL("./constructor.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|WebSocket|APP_TOKEN|localStorage/);
+  assert.doesNotMatch(source, /import\s.+from\s|import\s*\(/);
+  assert.match(source, /copy\(/, "use the host clipboard fallback");
+});
+
 // Разборщик теперь берёт текст отказов из таблицы строк (H117), поэтому ему
 // передаётся настоящий помощник т() на выбранном языке.
 function parser(язык = "ru") {

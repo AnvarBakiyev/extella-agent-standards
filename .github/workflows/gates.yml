@@ -19,6 +19,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+          cache: npm
+          cache-dependency-path: store_app/package-lock.json
+      - name: Сборщик страницы и проверка TypeScript
+        run: |
+          npm --prefix store_app ci --ignore-scripts
+          npm --prefix store_app run typecheck
+          node --test store_app/test_page_contract.mjs
       - name: Библиотеки, которые гейты ожидают на машине
         # pyyaml нужен гейту реестра. У автора он стоял давно, поэтому гейт был
         # зелёным только там — прогон на чистой машине это показал первым же разом.
