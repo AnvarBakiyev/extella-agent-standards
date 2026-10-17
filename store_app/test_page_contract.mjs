@@ -1,11 +1,73 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 const template = await readFile(new URL("./page.template.html", import.meta.url), "utf8");
 
 const строкиОболочки = JSON.parse(
   await readFile(new URL("./shell.json", import.meta.url), "utf8")).строки;
+
+test("Builder is a separate tab; existing screens and default entry remain", () => {
+  const nav = template.match(/<nav class="меню"[\s\S]*?<\/nav>/)?.[0] || "";
+  assert.deepEqual([...nav.matchAll(/class="вкладка" data-экран="([^"]+)"/g)].map(m => m[1]),
+    ["начало", "проба", "конструктор", "поиск", "ещё"]);
+  assert.match(template, /имя = есть \? имя : 'начало'/);
+  assert.match(template, /роль.*!== 'конструктор'/);
+  assert.match(template, /последнееТелоКонструктора/,
+    "search rerenders the guide without resetting the builder");
+});
+
+test("guide search does not hide unrelated sections or headings", () => {
+  const body = template.match(/q\.addEventListener\('input', function\(\)\{([\s\S]*?)\n  \}\);/)?.[1];
+  assert.ok(body);
+  const section = text => ({textContent: text, style: {}, classList: {toggle() {}}});
+  const guide = [section("alpha"), section("beta")];
+  const builder = section("LEGO");
+  const nodes = new Map(["count", "empty"].map(id => [id, {style: {}, textContent: ""}]));
+  const doc = {
+    getElementById: id => nodes.get(id),
+    querySelectorAll: selector => {
+      if (selector === "#разделы section") return guide;
+      if (selector === "section") return [...guide, builder];
+      assert.equal(selector, "#разделы .тема", "headings must also stay inside the guide");
+      return [];
+    }
+  };
+  const run = Function("document", "нарисовать", "текущее", "подсветить", "q", body);
+  run(doc, () => {}, {}, () => {}, {value: "alpha"});
+  assert.equal(guide[0].style.display, "");
+  assert.equal(guide[1].style.display, "none");
+  assert.equal(builder.style.display, undefined);
+});
+
+test("Builder content has both languages and no executable content", async () => {
+  const data = JSON.parse(await readFile(new URL("./content.json", import.meta.url), "utf8"));
+  const landing = data.разделы.filter(section => section.роль === "конструктор");
+  assert.equal(landing.length, 1);
+  const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]).sort();
+  for (const field of ["тело", "тело_en"]) {
+    const html = landing[0][field];
+    assert.ok(html.length > 1000);
+    assert.doesNotMatch(html, /<script|\son\w+\s*=|javascript:|<iframe/i);
+    assert.equal(new Set(ids(html)).size, ids(html).length, `${field}: IDs are unique`);
+    for (const marker of ["DESKTOP", "CHAT"]) assert.ok(html.includes(`@@XTL_${marker}_POSTER@@`));
+    const fallback = html.split('<template data-xtl-template>')[0];
+    assert.ok(fallback.length < html.length, "new interactive markup stays inert in shell 4");
+    assert.match(fallback, /href="https:\/\/extella.dev\/map\/"/);
+    assert.doesNotMatch(fallback, /<button|<video|<img|<dialog|@@XTL/);
+  }
+  assert.deepEqual(ids(landing[0].тело), ids(landing[0].тело_en));
+  assert.equal(data.оболочка_минимум, 5);
+});
+
+test("Builder runtime has no API or token access and no external runtime dependency", async () => {
+  const source = await readFile(new URL("./constructor.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|WebSocket|APP_TOKEN|localStorage/);
+  assert.doesNotMatch(source, /import\s.+from\s|import\s*\(/);
+  assert.match(source, /copy\(/, "use the host clipboard fallback");
+});
 
 // Разборщик теперь берёт текст отказов из таблицы строк (H117), поэтому ему
 // передаётся настоящий помощник т() на выбранном языке.
@@ -512,6 +574,88 @@ test("проверка выкладки узнаёт заголовок с ат�
   const з = собрано.match(/<title[^>]*>\s*([^<]+?)\s*<\/title>/);
   assert.ok(з, "у собранной страницы обязан быть заголовок");
   assert.match(з[1], /Extella/, "заголовок обязан называть Extella");
+});
+
+function publicationCheck(scenario) {
+  // Исполняем реальный путь обновления, но полностью заменяем сеть и паспорт.
+  // Тест не читает ключи и не может отправить страницу в живой магазин.
+  const script = String.raw`
+import contextlib, importlib.util, io, json, pathlib, sys, tempfile
+spec = importlib.util.spec_from_file_location("guide_update", sys.argv[1])
+u = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(u)
+scenario = sys.argv[2]
+page = u.СТРАНИЦА.read_text()
+if scenario == "unclosed-section":
+    page = page.replace("</html>", "<section></html>")
+elif scenario == "truncated":
+    page = page.replace("</html>", "")
+calls = []
+def no_credentials():
+    raise AssertionError("publication test must never access credentials")
+u.токен = no_credentials
+u.паспорт = lambda: {"listing_id": "test-listing", "version_id": "test-version"}
+def request(method, path, files=None):
+    calls.append([method, path])
+    if method == "POST":
+        assert path == "/api/edit-version/test-version"
+        assert files == {"page": u.СТРАНИЦА}
+        assert files["page"].read_text() == page
+        return 200, "{}"
+    assert method == "GET" and path == "/app-page/test-listing"
+    served = page.replace('<head>', '<head><base href="https://example.test/">', 1)
+    served = served.replace('{{app_token}}', 'test-window-token')
+    if scenario == "stale-response":
+        served += "<!-- different page -->"
+    return 200, served
+u.запрос = request
+out, err = io.StringIO(), io.StringIO()
+status = 0
+with tempfile.TemporaryDirectory() as tmp:
+    u.СТРАНИЦА = pathlib.Path(tmp) / "index.html"
+    u.СТРАНИЦА.write_text(page)
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        try:
+            u.обновить()
+        except SystemExit as error:
+            status = error.code
+print(json.dumps({"status": status, "calls": calls,
+                  "out": out.getvalue(), "err": err.getvalue()}))
+`;
+  return JSON.parse(execFileSync("python3", ["-c", script,
+    fileURLToPath(new URL("./update.py", import.meta.url)), scenario],
+    {encoding: "utf8", timeout: 10000}));
+}
+
+test("выкладка принимает собранный HTML с экранированными разделами снимка", async () => {
+  const page = await readFile(new URL("./index.html", import.meta.url), "utf8");
+  assert.ok(page.includes("<\\/section>"), "регрессия требует разделов внутри JSON-снимка");
+  const result = publicationCheck("generated-page");
+  assert.equal(result.status, 0, result.err);
+  assert.deepEqual(result.calls, [
+    ["POST", "/api/edit-version/test-version"], ["GET", "/app-page/test-listing"]
+  ]);
+  assert.match(result.out, /Страница обновлена/);
+});
+
+test("битый HTML останавливает выкладку до первого сетевого запроса", () => {
+  for (const scenario of ["unclosed-section", "truncated"]) {
+    const result = publicationCheck(scenario);
+    assert.equal(result.status, 1, scenario);
+    assert.deepEqual(result.calls, [], scenario);
+    assert.match(result.err, /страницу не отправил/);
+    assert.doesNotMatch(result.out, /Страница обновлена/);
+  }
+});
+
+test("выкладка отвергает другую страницу после успешного POST", () => {
+  const result = publicationCheck("stale-response");
+  assert.equal(result.status, 1);
+  assert.deepEqual(result.calls, [
+    ["POST", "/api/edit-version/test-version"], ["GET", "/app-page/test-listing"]
+  ]);
+  assert.match(result.err, /окно отдаёт не ту страницу/);
+  assert.doesNotMatch(result.out, /Страница обновлена/);
 });
 
 test("переключатель языка виден на главном экране, а не спрятан в «Ещё»", () => {

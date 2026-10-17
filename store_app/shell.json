@@ -863,6 +863,138 @@
     "подкл.отложено": {
       "ru": "Подключение идёт дольше обычного и доделывается в фоне. Подожди минуту и нажми кнопку ещё раз: если ключ уже лёг, она скажет об этом и нового не выпустит.",
       "en": "Connecting is taking longer than usual and is finishing in the background. Wait a minute and press the button again: if the key is already in place, it will say so and issue no new one."
+    },
+    "вкладка.конструктор": {
+      "ru": "Конструктор",
+      "en": "Builder"
+    },
+    "constructor.assemble": {
+      "ru": "Соединить детали",
+      "en": "Connect the blocks"
+    },
+    "constructor.disassemble": {
+      "ru": "Разделить детали",
+      "en": "Separate the blocks"
+    },
+    "constructor.assembled": {
+      "ru": "Детали соединены. Выбери блок, чтобы открыть его описание.",
+      "en": "The blocks are connected. Choose a block to read about it."
+    },
+    "constructor.exploded": {
+      "ru": "Детали разделены. Выбери блок, чтобы заглянуть внутрь.",
+      "en": "The blocks are separated. Choose a block to look inside."
+    },
+    "constructor.copy": {
+      "ru": "Копировать пример",
+      "en": "Copy example"
+    },
+    "constructor.copied": {
+      "ru": "Скопировано",
+      "en": "Copied"
+    },
+    "constructor.mediaPlay": {
+      "ru": "Смотреть демонстрацию",
+      "en": "Play demonstration"
+    },
+    "constructor.mediaPause": {
+      "ru": "Остановить демонстрацию",
+      "en": "Stop demonstration"
+    },
+    "constructor.mediaLoading": {
+      "ru": "Демонстрация загружается…",
+      "en": "Loading the demonstration…"
+    },
+    "constructor.mediaUnavailable": {
+      "ru": "Запись не загрузилась. Проверь подключение к сети или открой источник по ссылке под записью.",
+      "en": "The recording did not load. Check the network connection or open the source link below it."
+    },
+    "constructor.sceneLabel": {
+      "ru": "Объёмная схема деталей Extella",
+      "en": "Three-dimensional Extella block diagram"
+    },
+    "constructor.partDetails": {
+      "ru": "Открыть описание",
+      "en": "Open details"
+    },
+    "constructor.choose": {
+      "ru": "Выбрать свою сборку",
+      "en": "Choose what to build"
+    },
+    "constructor.explore": {
+      "ru": "Посмотреть детали",
+      "en": "Explore the blocks"
+    },
+    "constructor.close": {
+      "ru": "Закрыть описание",
+      "en": "Close details"
+    },
+    "constructor.map": {
+      "ru": "Вся карта платформы",
+      "en": "Full platform map"
+    },
+    "constructor.source": {
+      "ru": "Открыть в карте Extella",
+      "en": "Open in the Extella map"
+    },
+    "constructor.modeLabel": {
+      "ru": "Способ работы с Extella",
+      "en": "Way to work with Extella"
+    },
+    "constructor.recipeLabel": {
+      "ru": "Сценарии сборки",
+      "en": "Assembly scenarios"
+    },
+    "constructor.desktop": {
+      "ru": "Рабочий стол",
+      "en": "Desktop"
+    },
+    "constructor.chat": {
+      "ru": "Чат",
+      "en": "Chat"
+    },
+    "constructor.api": {
+      "ru": "API",
+      "en": "API"
+    },
+    "constructor.capabilities": {
+      "ru": "Смотреть возможности",
+      "en": "Explore capabilities"
+    },
+    "constructor.open": {
+      "ru": "Открыть Extella",
+      "en": "Open Extella"
+    },
+    "constructor.docs": {
+      "ru": "Читать документацию",
+      "en": "Read the documentation"
+    },
+    "constructor.start": {
+      "ru": "Начать с Extella",
+      "en": "Start with Extella"
+    },
+    "constructor.appsLink": {
+      "ru": "Посмотреть приложения",
+      "en": "Explore applications"
+    },
+    "constructor.businessLink": {
+      "ru": "Открыть пример отчёта",
+      "en": "Open a sample report"
+    },
+    "constructor.robotsLink": {
+      "ru": "Попробовать симуляцию",
+      "en": "Try the simulation"
+    },
+    "constructor.iotLink": {
+      "ru": "Об исполнении на устройствах",
+      "en": "Read about device execution"
+    },
+    "constructor.sitesLink": {
+      "ru": "Открыть пример сайта",
+      "en": "Open the example website"
+    },
+    "constructor.agentsLink": {
+      "ru": "Как устроен агент",
+      "en": "See how an agent works"
     }
   }
 }
