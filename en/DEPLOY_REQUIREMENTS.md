@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:d262e17a82bcacdf784fa5e4a65d1db73a099fe8c3f9a9c69c6aa4d4f21cd2ae -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:2f1b645313a9aab5101c0fd7d6ea20dc9f4f1841553b4c54e2aea70c8a6816e7 -->
 
 # Agent requirements for a rollout to happen
 
@@ -2206,7 +2206,7 @@ added):
 |---|---|
 | KV: write | 1.8–3.0 s |
 | KV: read | ~1.4 s |
-| KV: value size limit | about 50 KB; 52 KB of JSON returned **HTTP 500** three times with no explanation |
+| KV: value size limit | depends on the kind of data (correction 22 Oct 2026): **plain text up to ~47 KB, structured JSON up to ~16 KB**; above that, **HTTP 500** `Embedding error` |
 | expert on the device | 8–17 s |
 | browser storage | milliseconds, but closed off in the sandbox |
 
@@ -2223,8 +2223,28 @@ added):
 **Why KV costs this much — found out on 16 Aug 2026.** On a 64 KB value, the refusal
 finally named the cause: `Embedding error`. That is, **`kv/set` computes an embedding for
 every value** — our KV isn't a "key-value" store, it's a vector store. Hence the
-one-and-a-half to two seconds per operation, and the ceiling of about 50 KB: app state
-can't be put there — not out of malice, but by design.
+one-and-a-half to two seconds per operation, and the value ceiling: app state can't be
+put there — not out of malice, but by design.
+
+**Correction 22 Oct 2026: the ceiling is set by tokens, not bytes.** The earlier figure of
+"about 50 KB" holds only for plain text. Measured on live `api.extella.ai`; every value that
+was written read back byte-for-byte equal:
+
+| what was written | passed | failed |
+|---|---|---|
+| plain text | 48,128 bytes | 50,176 bytes |
+| structured JSON list (short fields) | 16,675 bytes | 18,743 bytes |
+
+The error is the same in both cases — `Embedding error: Client error '400 Bad Request'`,
+HTTP 500. Structured data yields more tokens per byte, so its ceiling is three times lower.
+Two independent findings from memory saw the refusal at ~26 and ~31 KB — their data had a
+different density. A failed write leaves nothing behind (`kv/remove` answers
+`deleted: false`).
+
+**Rule:** keep a structured KV value **under 12 KB** (headroom below 16 KB) and text under
+40 KB; split anything larger into shard keys. Confirm every write by reading it back:
+HTTP 500 on `kv/set` means "not written", not "written with an error". The boundary is known
+to within 2 KB and may move with the embedding model — re-measure when in doubt.
 
 Measurement after the OS was sped up 74x (16 Aug 2026, evening): write 2.0–2.2 s, read
 1.37–1.44 s — **unchanged**. The speedup affected the shell, not the KV core; the rules
