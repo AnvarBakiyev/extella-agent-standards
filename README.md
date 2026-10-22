@@ -1,4 +1,4 @@
-<!-- source: README.ru.md sha256:fb0dbe63911326463a9c50c1e8ac6e34da9bda757e6998e405c60790e43e34a2 -->
+<!-- source: README.ru.md sha256:54413e1dde9569e8e217e8d816f2ea9fd4d62d4ba02f5748158e1d9d2e893268 -->
 
 **Русский:** [README.ru.md](README.ru.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
 
@@ -179,18 +179,18 @@ X-Profile-Id = "default"
 
 ### Step 2. Verify the connection with a fact, not hope
 
-Call `list_agents` and parse the ANSWER, not the fact that one arrived. Four distinct
-outcomes:
+Call `list_profiles` with no arguments and parse the ANSWER, not the fact that one arrived.
+`list_agents` is no proof: on a large account it answers ~270 000 characters, overflows the
+client's output limit and cannot be parsed (H81). Three distinct outcomes:
 
 | what came back | what it means |
 |---|---|
-| a list of agents | the connection works |
-| **an empty list** | **the connection works**, the account is new — that is how it should be, carry on |
+| account data (profiles) | the connection works |
 | an authorisation refusal (REST returns HTTP 401) | the key is not recognised → Library → System → Tokens |
-| a tool error (MCP: HTTP 200 with `isError`) | the connection works, the call refused → ask REST for the cause |
+| a tool error (MCP: HTTP 200 with `isError`) | the call refused → ask REST `token/validate` for the cause; a valid key here means a missing `X-Agent-Id` header |
 
-An empty list on a new account is a legitimate success. The previous wording told you to
-stop there, and the newcomer halted exactly where everything was fine.
+After that, an **empty** `list_agents` on a new account is a legitimate success. An earlier
+wording told you to stop there, and the newcomer halted exactly where everything was fine.
 
 ### Step 3. Ask the machine how many checks apply
 
