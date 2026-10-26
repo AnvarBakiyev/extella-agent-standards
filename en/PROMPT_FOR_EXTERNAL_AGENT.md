@@ -1,4 +1,4 @@
-<!-- source: PROMPT_FOR_EXTERNAL_AGENT.md sha256:9cfe95505146b65d8a95892ef85150f25641f3e15983a5957d29fba5b1cc3db9 -->
+<!-- source: PROMPT_FOR_EXTERNAL_AGENT.md sha256:7d3756e87ac4d8489284f4817d8fe9054bce72bc055ad3e88f7fb823556e9aed -->
 
 # Prompt for a client's chat agent
 
@@ -38,12 +38,25 @@ https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/en/r
 Index of all rules: .../main/rules/INDEX.md
 When something doesn't work: .../main/SYMPTOMS.md — enter by symptom.
 
+ENVIRONMENT. First establish where your commands run. The connection is made from
+Claude Code or Codex on my computer. If you are a regular chat or a cloud environment
+(Claude Code on the web, Codex cloud, Cowork), the key on my computer does not reach you
+and the network to Extella may be closed: say so, name the step for this environment,
+and do not suggest issuing the key again.
+
 CONNECTION. The Extella app does not put the key on disk — don't look for it and don't
-ask me for it in chat. Procedure: run python3 tools/connect_mcp.py; if there is no key,
-the script will name one action for me to take (the «Connect Claude Code and Codex» button
-in the Extella Guide app; without it — Library → System → Tokens). If you run in a cloud
-environment rather than on my computer, the button cannot reach it: the script will name a key
-in the environment settings instead. Don't create your own tokens, don't print the key anywhere.
+ask me for it in chat. Get a working copy of the repository:
+git clone https://github.com/AnvarBakiyev/extella-agent-standards.git
+(do not overwrite a copy I already have) and from its root run
+python3 tools/connect_mcp.py --client claude — or --client codex if you are Codex.
+The copy is for running the tools; read the rules at the source. If the Claude Code CLI
+is missing, the script names the official install command; do not count another client's
+success. If there is no key, the script will name one action for me to take (the «Connect
+Claude Code and Codex» button in the Extella Guide app; without it — Library → System →
+Tokens). In a cloud environment the button cannot reach: the script will name a key in
+the environment settings instead. Don't create your own tokens, don't print the key
+anywhere. Tell four steps apart: key ready, client configured, client restarted, tool
+called.
 
 BEFORE YOU BUILD, name the rule numbers for my task, one line per rule — so I can see
 that you read them rather than paraphrased generic advice.
@@ -70,7 +83,8 @@ archive or into correspondence; a refusal is explained in words along with the n
 next step.
 
 In this message, do only the preparation: read the input, connect, verify the connection
-with a real request, and name the rules for my task. Don't create anything yet.
+with a real request — a list_profiles call from this session — and name the rules for my
+task. Don't create anything yet.
 ```
 
 ---
