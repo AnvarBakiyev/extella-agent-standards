@@ -769,12 +769,12 @@
       "en": "Putting the key on this computer…"
     },
     "подкл.готово": {
-      "ru": "Подключено",
-      "en": "Connected"
+      "ru": "Ключ готов",
+      "en": "Key ready"
     },
     "подкл.пояснение": {
-      "ru": "Сначала подключи редактор: кнопка кладёт ключ Extella на этот компьютер, в ~/.extella/api_token.txt, и проверяет его. Claude Code и Codex найдут ключ сами, показывать и копировать его не нужно. Потом скопируй промпт и вставь агенту.",
-      "en": "Connect your editor first: the button puts an Extella key on this computer, in ~/.extella/api_token.txt, and checks it. Claude Code and Codex find the key themselves; there is nothing to show or copy. Then copy the prompt and paste it to your agent."
+      "ru": "Шаг 1 из 2. Кнопка кладёт ключ Extella на этот компьютер, в ~/.extella/api_token.txt, и проверяет его. Это ещё не подключение: Claude Code или Codex на этом компьютере настроит промпт из шага 2. Обычный чат Claude и облачные среды этим ключом не подключаются.",
+      "en": "Step 1 of 2. The button puts an Extella key on this computer, in ~/.extella/api_token.txt, and checks it. This is not the connection yet: the prompt in step 2 sets up Claude Code or Codex on this computer. A regular Claude chat and cloud environments are not connected by this key."
     },
     "подкл.компьютер": {
       "ru": "Компьютер: {компьютер} ({система})",
@@ -785,12 +785,12 @@
       "en": "In the token list the key is named «{имя}»; you can revoke it there."
     },
     "подкл.код.уже_подключено": {
-      "ru": "Ключ уже на месте и работает. Новый не выпускал.",
-      "en": "The key is already in place and works. No new key issued."
+      "ru": "Ключ уже на месте и работает. Новый не выпускал. Настройку клиента делает промпт в Claude Code или Codex на этом компьютере.",
+      "en": "The key is already in place and works. No new key issued. The prompt in Claude Code or Codex on this computer sets up the client."
     },
     "подкл.код.подключено": {
-      "ru": "Ключ на месте и проверен. Claude Code и Codex подключатся сами.",
-      "en": "The key is in place and verified. Claude Code and Codex will connect on their own."
+      "ru": "Ключ на месте и проверен. Настройка клиента ещё не завершена: вставь промпт в Claude Code или Codex на этом компьютере.",
+      "en": "The key is in place and verified. Client setup is not complete yet: paste the prompt into Claude Code or Codex on this computer."
     },
     "подкл.код.ключ_мёртв": {
       "ru": "В файле лежит ключ, но платформа его больше не принимает. Нажми кнопку ещё раз: ключ заменится рабочим.",

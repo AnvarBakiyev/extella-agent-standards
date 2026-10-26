@@ -1,4 +1,4 @@
-<!-- source: DEPLOY_REQUIREMENTS.md sha256:2f1b645313a9aab5101c0fd7d6ea20dc9f4f1841553b4c54e2aea70c8a6816e7 -->
+<!-- source: DEPLOY_REQUIREMENTS.md sha256:1da3e9b379c78a98b9eada7ea40ed4ffa13e9e63ef802e9a58903b07c7e99794 -->
 
 # Agent requirements for a rollout to happen
 
@@ -4228,13 +4228,17 @@ happen.
 **Rule. The product and the agent must close this themselves, in this order:**
 
 1. **Do it.** The `experts/dev_connect_assistant.py` expert is run on the needed machine
-   (`targets: [device_id]`): the platform passes it the key, it writes the key to
-   `~/.extella/api_token.txt` with `600` permissions via a temp file, **verifies it with
-   a live call**, and returns only the path and a fingerprint. The key's value is never
+   (`targets: [device_id]`). It is called by the «Connect Claude Code and Codex» button in
+   Extella Guide: the window passes an `app_token`, with the `api.full` permission it opens
+   the OS proxy `/api/ext/core`, and the expert issues the key with `/api/token/create`
+   (correction 26 Oct 2026: the earlier text said "the platform passes the key" — it does
+   not). The key is written to `~/.extella/api_token.txt` with `600` permissions via a temp
+   file, **verified with a live call**, and only the path and a fingerprint go out. The key's value is never
    returned and never lands in the log. Live probe on 24 Sep:
    `{"подключено": true, "ответ": "HTTP 200"}`.
-2. **Say it in one action, if it can't be done.** The platform does not always pass the
-   key (H5, amendment 17 Aug). Then the person is told exactly one step: in the app,
+2. **Say it in one action, if it can't be done.** The button does not always reach the
+   machine (a cloud container, a different default device, no `api.full` permission).
+   Then the person is told exactly one step: in the app,
    `Library → System → Tokens`, create a token and save it to the same file, or pass it
    via the `EXTELLA_API_TOKEN` variable. No "go look for the key somewhere."
 3. **Verify by fact, not by the file's presence.** A dead key in the file looks like a
@@ -4244,6 +4248,14 @@ happen.
 4. **The key is never forwarded.** Not into chat, not to a colleague, not into a ticket:
    it gives full access to the account, up to deleting the agent. Every machine and
    every person has its own key.
+5. **Key ready is not connected yet (Guide audit, 26 Oct 2026).** A working link takes four
+   distinct steps, each named on its own: the key is on the machine → the chosen client is
+   configured (`tools/connect_mcp.py --client claude|codex`) → the client is restarted →
+   `list_profiles` is called from its session. One client's success does not count for
+   another. Claude needs the real Claude Code CLI (`claude --version` answers
+   "… (Claude Code)"); if it is missing, the next step is the official install, not a
+   restart. A regular Claude chat and a cloud environment are not connected by a key on the
+   computer: they have their own network and their own environment settings.
 
 **Where this already lives:** the expert — in `experts/`, the step in the connection
 installer — `tools/connect_mcp.py` (its refusal leads to the tokens screen), the
@@ -4251,8 +4263,9 @@ installer — `tools/connect_mcp.py` (its refusal leads to the tokens screen), t
 (`store_app/content.json`, RU+EN), onboarding for external chat agents —
 `EXTELLA_AI_ONBOARDING.md`.
 
-**A request to the platform** — §32 of the letter: put the key in place at login, or
-give a "connect assistant" button. Until it exists, the rule above is our workaround.
+**A request to the platform** — §32 of the letter: put the key in place at login. The
+button in Extella Guide covers issuing the key, not setting up the client — that is step 5
+above.
 
 ### H109. THE KEY FOR THE STORE AND FOR THE CORE IS THE SAME ONE, ONLY THE HEADERS DIFFER
 

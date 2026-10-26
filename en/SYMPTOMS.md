@@ -1,4 +1,4 @@
-<!-- source: SYMPTOMS.md sha256:2b346fa27f555e8ca250a507b4a82cad5e484671d29f8ac68dc1884ff00f4f7e -->
+<!-- source: SYMPTOMS.md sha256:cd10f4939f6d8011ac87f5eb2dc6c5ddef1fed5edfc153db8fe65c9c0fd44bd7 -->
 
 # Entry by symptom: what you see — where to look
 
@@ -149,6 +149,8 @@ or in the "no external symptom" list below: it cannot silently fall out of both.
 | The agent's task ran on the wrong computer | H107 | There's nothing to pin an agent run to: `run_agent` has no `targets`; an expert with `targets` does that job |
 
 | The chat agent on a new machine doesn't see Extella, "connect an account" | H108 | The app doesn't put the key on disk: run `dev_connect_assistant` on this machine, or create a token in `Library → System → Tokens` |
+| Guide says "key ready", but Claude or Codex does not see Extella | H108 | The key is only step 1 of 4: `tools/connect_mcp.py --client claude` (or codex) from a working copy of the repository, restart the client, call `list_profiles` from its session. A regular chat and a cloud environment are not connected by a key on the computer |
+| `connect_mcp.py`: "claude: not on the machine" while Claude Desktop is installed | H108 | The Claude Code CLI is needed, not the desktop app: install it with the official command the script names, check `claude --version` → "(Claude Code)", run the script again |
 | Wrong text was removed, but it meets the person again in another file | H110 | The ban lived in one file's self-check; a rule about text is closed by a search across the whole tree — `check_assistant_onboarding` |
 | A new product from a template was born with the wrong hint, one that had long been fixed | H110 | The templates in `tools/new_product.py` weren't covered by the gate — check text in the generators too, not only in finished files |
 | The sections are in English while the buttons and the demo stay Russian | H117 | Only the content was bilingual; the shell's strings were scattered across the template. Their place is `store_app/shell.json`, and a ratchet holds the remainder |
