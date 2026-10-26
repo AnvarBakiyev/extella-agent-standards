@@ -186,6 +186,8 @@ run_command "размеры файлов в тексте правдивы" pytho
 run check_file_size_claims
 run_command "подключение ассистента закрыто продуктом" python3 "$ROOT/tools/check_assistant_onboarding.py"
 run check_assistant_onboarding
+# Аудит Guide 26.10.2026 (F06): эксперт подключения решает по устройству и аккаунту.
+run_command "эксперт подключения: устройство и аккаунт" python3 "$ROOT/tools/test_dev_connect_assistant.py"
 # Копируемый промпт живёт в двух местах; расходятся копии молча (H78).
 run_command "копии промпта обещают одно" python3 "$ROOT/tools/check_prompt_agreement.py"
 run check_prompt_agreement
