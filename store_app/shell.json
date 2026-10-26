@@ -761,8 +761,8 @@
       "en": "The prompt links to the Extella rules. Your agent reads them itself, so the app comes out to the platform's standard from the start: with permissions, checks and refusals that explain themselves."
     },
     "подкл.кнопка": {
-      "ru": "Подключить Claude Code и Codex",
-      "en": "Connect Claude Code and Codex"
+      "ru": "Подготовить ключ на этом компьютере",
+      "en": "Prepare a key on this computer"
     },
     "подкл.идёт": {
       "ru": "Кладу ключ на этот компьютер…",
@@ -773,8 +773,8 @@
       "en": "Key ready"
     },
     "подкл.пояснение": {
-      "ru": "Шаг 1 из 2. Кнопка кладёт ключ Extella на этот компьютер, в ~/.extella/api_token.txt, и проверяет его. Это ещё не подключение: Claude Code или Codex на этом компьютере настроит промпт из шага 2. Обычный чат Claude и облачные среды этим ключом не подключаются.",
-      "en": "Step 1 of 2. The button puts an Extella key on this computer, in ~/.extella/api_token.txt, and checks it. This is not the connection yet: the prompt in step 2 sets up Claude Code or Codex on this computer. A regular Claude chat and cloud environments are not connected by this key."
+      "ru": "Шаг 1 из 2: кнопка кладёт ключ Extella на выбранный компьютер и проверяет его. Это ещё не подключение: шаг 2 — промпт, который настроит Claude Code или Codex на этом компьютере. Ключ не показывается и не копируется.",
+      "en": "Step 1 of 2: the button puts an Extella key on the chosen computer and checks it. This is not the connection yet: step 2 is the prompt that sets up the client on this computer. The key is never shown or copied."
     },
     "подкл.компьютер": {
       "ru": "Компьютер: {компьютер} ({система})",
@@ -841,8 +841,8 @@
       "en": "An answer without an outcome code. Press again; if it repeats, tell us."
     },
     "отказ.нет_подключения": {
-      "ru": "Эта кнопка новее твоей установки. Удали Extella Guide с рабочего стола и добавь заново из магазина, разреши «Full Extella API access» — после этого кнопка заработает. Перезагрузки окна для этого недостаточно.",
-      "en": "This button is newer than your installation. Remove Extella Guide from the desktop and add it again from the store, allow «Full Extella API access», and the button will work. Reloading the window is not enough."
+      "ru": "Эта кнопка новее твоей установки: в установленной копии Extella Guide нет нужного эксперта. Обнови приложение из магазина и разреши «Full Extella API access». Перезагрузки окна для этого недостаточно.",
+      "en": "This button is newer than your installation: the installed copy of Extella Guide lacks the required expert. Update the app from the store and allow «Full Extella API access». Reloading the window is not enough."
     },
     "подкл.адрес.пояснение": {
       "ru": "Extella отправила вызов не на этот компьютер, а на другое устройство, и оно не ответило. Нажми на глаз рядом с Device ID внизу окна, скопируй номер сюда и нажми кнопку — ключ ляжет именно на этот компьютер.",
@@ -995,6 +995,102 @@
     "constructor.agentsLink": {
       "ru": "Как устроен агент",
       "en": "See how an agent works"
+    },
+    "подкл.выбор.вопрос": {
+      "ru": "Где ты будешь работать?",
+      "en": "Where will you work?"
+    },
+    "подкл.выбор.claude": {
+      "ru": "Claude Code на этом компьютере",
+      "en": "Claude Code on this computer"
+    },
+    "подкл.выбор.codex": {
+      "ru": "Codex на этом компьютере",
+      "en": "Codex on this computer"
+    },
+    "подкл.выбор.чат": {
+      "ru": "Обычный чат Claude или облачная среда",
+      "en": "A regular Claude chat or a cloud environment"
+    },
+    "подкл.чат.пояснение": {
+      "ru": "Ключ на компьютере этот чат не подключает. Проверенного пути для обычного чата и облака пока нет: открой Claude Code или Codex на своём компьютере и выбери его выше.",
+      "en": "A key on your computer does not connect this chat. There is no verified route for a regular chat or the cloud yet: open Claude Code or Codex on your computer and choose it above."
+    },
+    "подкл.проверяю": {
+      "ru": "Проверяю этот компьютер…",
+      "en": "Checking this computer…"
+    },
+    "подкл.подтвердить": {
+      "ru": "Ключ ляжет на компьютер «{компьютер}» ({система}){номер}. Это компьютер, на котором ты будешь работать?",
+      "en": "The key will go to «{компьютер}» ({система}){номер}. Is this the computer you will work on?"
+    },
+    "подкл.чужой_вопрос": {
+      "ru": "На «{компьютер}» лежит рабочий ключ другого аккаунта Extella{номер}. Заменить его ключом этого аккаунта? Инструменты, которые им пользуются, перестанут видеть прежний аккаунт.",
+      "en": "«{компьютер}» holds a working key of another Extella account{номер}. Replace it with a key of this account? Tools that use it will stop seeing the previous account."
+    },
+    "подкл.да": {
+      "ru": "Да, этот компьютер",
+      "en": "Yes, this computer"
+    },
+    "подкл.другой": {
+      "ru": "Другое устройство",
+      "en": "Another device"
+    },
+    "подкл.заменить": {
+      "ru": "Заменить ключом этого аккаунта",
+      "en": "Replace with this account's key"
+    },
+    "подкл.ключ_готов_на": {
+      "ru": "Ключ готов на «{компьютер}». Настройка {клиент} ещё не завершена: скопируй промпт и вставь его в {клиент} на этом компьютере.",
+      "en": "The key is ready on «{компьютер}». {клиент} setup is not complete yet: copy the prompt and paste it into {клиент} on this computer."
+    },
+    "подкл.не_сверено": {
+      "ru": "Устройство не сверено.",
+      "en": "The device was not verified."
+    },
+    "подкл.аккаунт_не_сверен": {
+      "ru": "Аккаунт ключа сверить не по чему: в аккаунте ещё нет своих агентов.",
+      "en": "The key's account could not be checked: the account has no agents of its own yet."
+    },
+    "подкл.обнови": {
+      "ru": "Установленная копия Extella Guide старше страницы: обнови приложение из магазина, чтобы ключ ложился на выбранное устройство.",
+      "en": "Your installed copy of Extella Guide is older than this page: update the app from the store so the key goes to the chosen device."
+    },
+    "подкл.код.не_то_устройство": {
+      "ru": "Ответил другой компьютер, не тот, что выбран. Ключ не тронут. Выбери нужное устройство и повтори.",
+      "en": "Another computer answered, not the one chosen. The key was not touched. Choose the intended device and try again."
+    },
+    "подкл.код.чужой_аккаунт": {
+      "ru": "На компьютере лежит рабочий ключ другого аккаунта Extella. Не тронут.",
+      "en": "The computer holds a working key of another Extella account. Not touched."
+    },
+    "подкл.шаг.ключ": {
+      "ru": "Ключ на этом компьютере",
+      "en": "Key on this computer"
+    },
+    "подкл.шаг.клиент": {
+      "ru": "{клиент} настроен: вставь промпт в {клиент}",
+      "en": "{клиент} configured: paste the prompt into {клиент}"
+    },
+    "подкл.шаг.перезапуск": {
+      "ru": "{клиент} перезапущен полностью",
+      "en": "{клиент} fully restarted"
+    },
+    "подкл.шаг.проверка": {
+      "ru": "Из {клиент} вызван list_profiles — проверяется в самом {клиент}",
+      "en": "list_profiles called from {клиент} — checked in {клиент} itself"
+    },
+    "промпт.выбор.claude": {
+      "ru": "Я выбрал: Claude Code на моём компьютере{компьютер}.",
+      "en": "My choice: Claude Code on my computer{компьютер}."
+    },
+    "промпт.выбор.codex": {
+      "ru": "Я выбрал: Codex на моём компьютере{компьютер}.",
+      "en": "My choice: Codex on my computer{компьютер}."
+    },
+    "промпт.выбор.чат": {
+      "ru": "Я в обычном чате Claude или в облачной среде.",
+      "en": "I am in a regular Claude chat or a cloud environment."
     }
   }
 }
