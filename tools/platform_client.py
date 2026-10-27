@@ -19,6 +19,7 @@
 import json
 import os
 import pathlib
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -128,6 +129,51 @@ def токен(назначение: str = "магазин") -> str:
         "Tokens и файл ~/.extella/api_token.txt. Значение токена в лог не печатать.")
 
 
+# СЕРТИФИКАТЫ (живой случай 27.10.2026). Python с python.org на Mac приходит без набора
+# корневых сертификатов, пока не запущен «Install Certificates.command» из его папки:
+# любой https падает CERTIFICATE_VERIFY_FAILED, и человек не понимает, при чём тут Python.
+# Проверку не отключаем никогда: если своего набора нет, берём системный набор macOS
+# (/etc/ssl/cert.pem), затем certifi, если он стоит. Систему не меняем.
+СИСТЕМНЫЕ_НАБОРЫ = ("/etc/ssl/cert.pem", "/private/etc/ssl/cert.pem")
+
+
+def ssl_контекст(фабрика=None, наборы=СИСТЕМНЫЕ_НАБОРЫ):
+    фабрика = фабрика or ssl.create_default_context
+    к = фабрика()
+    try:
+        есть = к.cert_store_stats().get("x509_ca", 0) > 0
+    except Exception:
+        есть = True
+    if есть:
+        return к
+    кандидаты = list(наборы)
+    try:
+        import certifi  # noqa: PLC0415 — необязательная зависимость
+        кандидаты.append(certifi.where())
+    except Exception:
+        pass
+    for путь in кандидаты:
+        if os.path.isfile(путь):
+            try:
+                к.load_verify_locations(cafile=путь)
+            except Exception:
+                continue
+            if к.cert_store_stats().get("x509_ca", 0) > 0:
+                return к
+    return к
+
+
+def причина_сети(ошибка) -> str:
+    """Сетевой отказ словами. Сертификатный — с точным шагом, а не стектрейсом."""
+    текст = str(ошибка)
+    if "CERTIFICATE_VERIFY_FAILED" in текст:
+        return ("Python на этом компьютере не может проверить сертификат Extella "
+                "(CERTIFICATE_VERIFY_FAILED): у него нет набора корневых сертификатов. "
+                "На Mac с Python с python.org запусти один раз «Install Certificates.command» "
+                "из папки Applications/Python 3.x и повтори. Проверку сертификатов не отключай.")
+    return f"не дошёл до платформы ({текст[:160]}). Проверь сеть и повтори"
+
+
 def запрос(база, путь, *, тело=None, поля=None, файлы=None, заголовки=None, метод=None, таймаут=180):
     з = {"X-Extella-Token": токен()}
     з.update(заголовки or {})
@@ -153,13 +199,13 @@ def запрос(база, путь, *, тело=None, поля=None, файлы
     r = urllib.request.Request(база + путь, data=данные, headers=з,
                                method=метод or ("POST" if данные else "GET"))
     try:
-        with urllib.request.urlopen(r, timeout=таймаут) as о:
+        with urllib.request.urlopen(r, timeout=таймаут, context=ssl_контекст()) as о:
             текст = о.read().decode()
             return о.status, текст
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode()[:400]
     except Exception as e:
-        raise Отказ(f"не дошёл до платформы ({e}). Проверь сеть и повтори")
+        raise Отказ(причина_сети(e))
 
 
 def как_json(текст, что="ответ"):
@@ -231,6 +277,22 @@ def _selftest() -> int:
         случай("не-JSON отвергается понятно", False)
     except Отказ as e:
         случай("не-JSON отвергается понятно", "не в JSON" in str(e))
+
+    # 5. Python без набора сертификатов (python.org на Mac, 27.10.2026): берётся
+    #    системный набор, проверка не отключается.
+    class _Пустой:
+        def __init__(self): self.загружено = []
+        def cert_store_stats(self): return {"x509_ca": 1 if self.загружено else 0}
+        def load_verify_locations(self, cafile=None): self.загружено.append(cafile)
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".pem") as набор:
+        к = ssl_контекст(фабрика=_Пустой, наборы=(набор.name,))
+        случай("без своего набора берётся системный", к.загружено == [набор.name])
+    к = ssl_контекст()
+    случай("проверка сертификатов не отключена",
+           к.verify_mode == ssl.CERT_REQUIRED and к.check_hostname)
+    случай("сертификатный отказ назван словами и шагом",
+           "Install Certificates" in причина_сети(Exception("[SSL: CERTIFICATE_VERIFY_FAILED] x")))
 
     if провалы:
         print("ИТОГ САМОПРОВЕРКИ: провалы —", "; ".join(провалы))

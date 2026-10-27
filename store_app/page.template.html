@@ -78,6 +78,12 @@ section.open .chev{transform:rotate(-135deg)}
 .подкл-шаги li[data-сост="ошибка"]::before{content:"●";color:var(--a)}
 .подкл-шаги li[data-сост="идёт"]::before{content:"◐";color:var(--a)}
 .подкл-чат{font-size:15px;color:var(--tx);margin:0 0 14px}
+/* Куда вставлять промпт — главная строка экрана (заметки Томирис 27.10.2026): крупно,
+   жирно, тёмным, с полосой акцента; вторая строка — про вход в терминале. */
+.подкл-куда{background:var(--s3);border-left:4px solid var(--a);border-radius:8px;padding:12px 16px;margin:12px 0 14px}
+.подкл-куда strong{display:block;font-size:17px;font-weight:700;color:var(--tx);line-height:1.35}
+.подкл-куда span{display:block;font-size:15px;font-weight:600;color:var(--tx);margin-top:6px}
+.подкл-куда span:empty{display:none}
 .подкл-адрес{margin:8px 0 12px}
 .подкл-адрес input{width:100%;max-width:420px;font:13px var(--mono);padding:8px 10px;border:1px solid var(--ln);
   border-radius:8px;background:transparent;color:var(--tx);margin:0 8px 8px 0}
@@ -317,6 +323,10 @@ button,input,select,textarea{font-family:inherit}
   <div class="actions">
     <button class="btn" id="подключить" data-t="подкл.кнопка">Подготовить ключ на этом компьютере</button>
     <button class="btn main" id="промпт" data-t="промпт.кнопка">Скопировать промпт для агента</button>
+  </div>
+  <div class="подкл-куда" id="подкл-куда" role="note">
+    <strong id="подкл-куда-главное"></strong>
+    <span id="подкл-куда-вход"></span>
   </div>
   <div class="codex-state" id="подкл-состояние" role="status" aria-live="polite"></div>
   <div class="подкл-подтвердить" id="подкл-подтвердить" hidden>
@@ -1230,6 +1240,8 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
   var ПОДПИСИ_ШАГОВ = {ключ: 'подкл.шаг.ключ', клиент: 'подкл.шаг.клиент',
                        перезапуск: 'подкл.шаг.перезапуск', проверка: 'подкл.шаг.проверка'};
   var ВЫБОР_В_ПРОМПТ = {claude: 'промпт.выбор.claude', codex: 'промпт.выбор.codex', чат: 'промпт.выбор.чат'};
+  var КУДА_ВСТАВИТЬ = {claude: 'подкл.куда.claude', codex: 'подкл.куда.codex', чат: 'подкл.куда.чат'};
+  var ВХОД_В_КЛИЕНТ = {claude: 'подкл.вход.claude', codex: 'подкл.вход.codex', чат: ''};
   var подкл = {клиент: 'claude', попытка: 0, разведка: null, занято: false};
   // Таблица явная, а не склейка имени: склеенный ключ не виден ни гейту
   // мёртвых строк, ни поиску, и опечатка в коде эксперта молча дала бы пустоту.
@@ -1252,6 +1264,20 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
       var у = узел_шага(и);
       if (у) у.textContent = тф(ПОДПИСИ_ШАГОВ[и], {клиент: имя_клиента()});
     });
+  }
+  // Главная строка экрана: куда вставлять промпт и что сделать до проверки связи.
+  function подписать_куда(){
+    document.getElementById('подкл-куда-главное').textContent = т(КУДА_ВСТАВИТЬ[подкл.клиент]);
+    var вход = ВХОД_В_КЛИЕНТ[подкл.клиент];
+    document.getElementById('подкл-куда-вход').textContent = вход ? т(вход) : '';
+  }
+  // Переключение языка переписывает подписи с data-t, в том числе кнопку ключа:
+  // всё, что ставит код, пересобирается здесь же, иначе «готово» терялось бы.
+  function подкл_перевести(){
+    подписать_шаги();
+    подписать_куда();
+    var главная = document.getElementById('подключить');
+    if (главная.getAttribute('data-done') === '1') главная.textContent = т('подкл.готово');
   }
   function кнопки(погасить){
     ['подключить', 'подкл-да', 'подкл-другой', 'подкл-заменить', 'подкл-через'].forEach(function(id){
@@ -1278,6 +1304,7 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     ШАГИ.forEach(function(и){ шаг(и, 'ждёт'); });
     состояние('подкл-состояние', '', '');
     подписать_шаги();
+    подписать_куда();
   }
   function выбрать_клиента(значение){
     подкл.клиент = значение;
@@ -1431,6 +1458,7 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     выпуск(адрес, false);
   };
   подписать_шаги();
+  подписать_куда();
 
   document.getElementById('всё').onclick = function(){
     скопировать(руководство_текстом(текущее), this,
@@ -1461,6 +1489,7 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     подписать_оболочку();
     нарисовать(текущее);
     обновитьКнопкуЯзыка();
+    подкл_перевести();
   };
   обновитьКнопкуЯзыка();
   document.documentElement.lang = ЯЗЫК;

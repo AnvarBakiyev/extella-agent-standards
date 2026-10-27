@@ -216,7 +216,8 @@ def _запрос(тело: dict, ключ: str, агент: str, сессия: 
         з["Mcp-Session-Id"] = сессия
     запрос = urllib.request.Request(ЯДРО_MCP, data=json.dumps(тело).encode(),
                                     method="POST", headers=з)
-    with urllib.request.urlopen(запрос, timeout=таймаут) as ответ:
+    with urllib.request.urlopen(запрос, timeout=таймаут,
+                                context=platform_client.ssl_контекст()) as ответ:
         return (ответ.read(600_000).decode("utf-8", "replace"),
                 ответ.headers.get("Mcp-Session-Id") or "")
 
@@ -233,7 +234,8 @@ def уточнить_по_rest(ключ: str, таймаут: int = 40) -> str:
         headers={"Content-Type": "application/json",
                  "X-Auth-Token": ключ, "X-Profile-Id": "default"})
     try:
-        with urllib.request.urlopen(запрос, timeout=таймаут) as ответ:
+        with urllib.request.urlopen(запрос, timeout=таймаут,
+                                    context=platform_client.ssl_контекст()) as ответ:
             если_200 = ответ.status == 200
     except urllib.error.HTTPError as о:
         if о.code in (401, 403):
@@ -283,7 +285,7 @@ def проверить_доступ(ключ: str, таймаут: int = 60) -> 
         итог["почему"] = f"Extella ответила {о.code} на рукопожатие MCP"
         return итог
     except Exception as о:
-        итог["почему"] = f"не дошёл до Extella ({str(о)[:80]})"
+        итог["почему"] = platform_client.причина_сети(о)
         return итог
     if not последний_ответ(текст):
         итог["почему"] = "ответ на рукопожатие не разобран как JSON-RPC"
