@@ -1091,6 +1091,26 @@
     "промпт.выбор.чат": {
       "ru": "Я в обычном чате Claude или в облачной среде.",
       "en": "I am in a regular Claude chat or a cloud environment."
+    },
+    "подкл.куда.claude": {
+      "ru": "Вставь скопированный промпт в Claude Code на этом компьютере — в терминал или в приложение. Не в обычный чат Claude.",
+      "en": "Paste the copied prompt into Claude Code on this computer — in the terminal or the app. Not into a regular Claude chat."
+    },
+    "подкл.куда.codex": {
+      "ru": "Вставь скопированный промпт в Codex на этом компьютере. Не в облачный Codex и не в обычный чат.",
+      "en": "Paste the copied prompt into Codex on this computer. Not into Codex cloud or a regular chat."
+    },
+    "подкл.куда.чат": {
+      "ru": "Обычный чат и облако к Extella не подключатся. Выбери выше Claude Code или Codex на своём компьютере.",
+      "en": "A regular chat or the cloud will not connect to Extella. Choose Claude Code or Codex on your computer above."
+    },
+    "подкл.вход.claude": {
+      "ru": "Перед этим открой Терминал, набери claude и войди командой /login — даже если уже работаешь в приложении Claude: вход в терминале отдельный.",
+      "en": "Before that, open Terminal, type claude and sign in with /login — even if you already use the Claude app: the terminal sign-in is separate."
+    },
+    "подкл.вход.codex": {
+      "ru": "Перед этим войди в Codex на этом компьютере своим аккаунтом.",
+      "en": "Before that, sign in to Codex on this computer with your account."
     }
   }
 }

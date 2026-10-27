@@ -1,4 +1,4 @@
-<!-- source: SYMPTOMS.md sha256:cd10f4939f6d8011ac87f5eb2dc6c5ddef1fed5edfc153db8fe65c9c0fd44bd7 -->
+<!-- source: SYMPTOMS.md sha256:4855a3775623b50337f0a50187950dd50fad99f54fe5252703dfe630f0bcc3d3 -->
 
 # Entry by symptom: what you see — where to look
 
@@ -151,6 +151,8 @@ or in the "no external symptom" list below: it cannot silently fall out of both.
 | The chat agent on a new machine doesn't see Extella, "connect an account" | H108 | The app doesn't put the key on disk: run `dev_connect_assistant` on this machine, or create a token in `Library → System → Tokens` |
 | Guide says "key ready", but Claude or Codex does not see Extella | H108 | The key is only step 1 of 4: `tools/connect_mcp.py --client claude` (or codex) from a working copy of the repository, restart the client, call `list_profiles` from its session. A regular chat and a cloud environment are not connected by a key on the computer |
 | `connect_mcp.py`: "claude: not on the machine" while Claude Desktop is installed | H108 | The Claude Code CLI is needed, not the desktop app: install it with the official command the script names, check `claude --version` → "(Claude Code)", run the script again |
+| `CERTIFICATE_VERIFY_FAILED` while connecting (Mac, python.org Python) | H108 | Python has no root certificates until «Install Certificates.command» from Applications/Python 3.x is run. Since 27 Oct 2026 `connect_mcp.py` and bridge 0.5.5 use the macOS system bundle themselves; if the error remains, run that file once. Never turn certificate verification off |
+| A new Claude Code session in the terminal: "Not logged in · Please run /login" | H108 | The terminal sign-in is separate from the Claude app: in Terminal run `claude`, then `/login`, sign in in the browser, `/exit`. The agent cannot sign in for the person — it is their account |
 | Wrong text was removed, but it meets the person again in another file | H110 | The ban lived in one file's self-check; a rule about text is closed by a search across the whole tree — `check_assistant_onboarding` |
 | A new product from a template was born with the wrong hint, one that had long been fixed | H110 | The templates in `tools/new_product.py` weren't covered by the gate — check text in the generators too, not only in finished files |
 | The sections are in English while the buttons and the demo stay Russian | H117 | Only the content was bilingual; the shell's strings were scattered across the template. Their place is `store_app/shell.json`, and a ratchet holds the remainder |
