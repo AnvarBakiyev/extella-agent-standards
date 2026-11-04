@@ -85,6 +85,18 @@ section.open .chev{transform:rotate(-135deg)}
 .подкл-куда span{display:block;font-size:15px;font-weight:600;color:var(--tx);margin-top:6px}
 .подкл-куда span:empty{display:none}
 .подкл-адрес{margin:8px 0 12px}
+/* Пошагово под выбором клиента (инструкция для интеграторов 27.10.2026): свёрнуто, чтобы
+   не отодвигать кнопки; открывается тем, кому одной строки «куда вставить» мало. */
+.подкл-пошагово{border:1px solid var(--bd2);border-radius:12px;padding:0 16px;margin:4px 0 16px}
+.подкл-пошагово summary{cursor:pointer;font-size:15px;font-weight:600;color:var(--tx);padding:12px 0}
+.подкл-пошагово summary:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.подкл-пошагово h4{font-size:15px;margin:16px 0 6px;color:var(--tx)}
+.подкл-пошагово p,.подкл-пошагово li,.подкл-пошагово dd{font-size:14px;color:var(--tx2);line-height:1.5}
+.подкл-пошагово p{margin:0 0 8px}
+.подкл-пошагово .cmd{margin:6px 0 10px}
+.cmd-подпись{display:block;font-size:11px;color:var(--tx3);margin-bottom:4px}
+.пш-проблемы dt{font-size:14px;font-weight:600;color:var(--tx);margin-top:10px}
+.пш-проблемы dd{margin:2px 0 0}
 .подкл-адрес input{width:100%;max-width:420px;font:13px var(--mono);padding:8px 10px;border:1px solid var(--ln);
   border-radius:8px;background:transparent;color:var(--tx);margin:0 8px 8px 0}
 .copy-note{font-size:13px;color:var(--tx3);margin:0 0 16px} /* без отрицательного отступа: он утаскивал подпись под кнопку (замер в настоящем окне приложения 22.08.2026) */
@@ -350,6 +362,23 @@ button,input,select,textarea{font-family:inherit}
     <input id="подкл-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
     <button class="btn" id="подкл-через" data-t="подкл.адрес.кнопка">Подключить этот компьютер</button>
   </div>
+  <!-- Шаги под выбранный клиент. Для обычного чата и облака блока нет вовсе:
+       проверенного пути там нет, и экран говорит это строкой «подкл-чат». -->
+  <details class="подкл-пошагово" id="подкл-пошагово">
+    <summary data-t="подкл.пш.заголовок"></summary>
+    <div data-пошагово="claude">
+      <div data-t="подкл.пш.claude.1"></div><div data-t="подкл.пш.claude.2"></div>
+      <div data-t="подкл.пш.claude.3"></div><div data-t="подкл.пш.claude.4"></div>
+      <div data-t="подкл.пш.claude.5"></div><div data-t="подкл.пш.claude.6"></div>
+    </div>
+    <div data-пошагово="codex" hidden>
+      <div data-t="подкл.пш.codex.1"></div><div data-t="подкл.пш.codex.2"></div>
+      <div data-t="подкл.пш.codex.3"></div><div data-t="подкл.пш.codex.4"></div>
+    </div>
+    <div data-t="подкл.пш.проблемы"></div>
+    <div data-t="подкл.пш.вручную"></div>
+    <div data-t="подкл.пш.отключить"></div>
+  </details>
   <p class="copy-note" data-t="подкл.пояснение">Сначала подключи редактор: кнопка кладёт ключ Extella на
   этот компьютер, в ~/.extella/api_token.txt, и проверяет его. Claude Code и Codex найдут ключ сами,
   показывать и копировать его не нужно. Потом скопируй промпт и вставь агенту.</p>
@@ -568,7 +597,7 @@ button,input,select,textarea{font-family:inherit}
 var СНИМОК = /*СОДЕРЖИМОЕ*/null/*КОНЕЦ*/;
 var APP_TOKEN = /*APP_TOKEN*/"";
 var ИСТОЧНИК = "https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/store_app/content.json";
-var ВЕРСИЯ_ОБОЛОЧКИ = 6;   // растёт, когда меняется сама страница, а не текст
+var ВЕРСИЯ_ОБОЛОЧКИ = 7;   // растёт, когда меняется сама страница, а не текст
 var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
 
 // Обёртка страницы: внутри фоновое перечитывание содержимого при открытии.
@@ -1064,7 +1093,10 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     var b = e.target;
     if (!b.classList || !b.classList.contains('copy')) return;
     var поле = b.parentNode.querySelector('code');
-    if (поле) скопировать(поле.textContent, b, 'Копировать');
+    // Подпись берётся с самой кнопки до первого нажатия: прежде здесь стояло
+    // «Копировать», и в английском окне кнопка после копии становилась русской.
+    if (!b.dataset.подпись) b.dataset.подпись = b.textContent;
+    if (поле) скопировать(поле.textContent, b, b.dataset.подпись, т('constructor.copied') || undefined);
   });
 
   function подсветить(корень, слово){
@@ -1311,6 +1343,10 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     var чат = значение === 'чат';
     document.getElementById('подкл-чат').hidden = !чат;
     document.getElementById('подкл-шаги').hidden = чат;
+    document.getElementById('подкл-пошагово').hidden = чат;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-пошагово]'), function(у){
+      у.hidden = у.getAttribute('data-пошагово') !== значение;
+    });
     сбросить();
     кнопки(подкл.занято);
   }
