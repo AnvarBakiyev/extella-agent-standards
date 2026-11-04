@@ -845,3 +845,32 @@ test('приёмка выпуска ищет кнопку, которая ест
     assert.ok(page.includes(`id="${id}"`), `приёмка ждёт id="${id}", а в шаблоне его нет`);
   }
 });
+
+test('пошагово под выбором клиента: свой набор шагов, для чата блока нет, ключа в тексте нет', async () => {
+  const page = await readFile(new URL('./page.template.html', import.meta.url), 'utf8');
+  const оболочка = JSON.parse(await readFile(new URL('./shell.json', import.meta.url), 'utf8'))['строки'];
+  const экран = '<div class="экран" data-экран="начало">';
+  const начало = page.slice(page.indexOf(экран), page.indexOf('<div class="экран" data-экран="проба">'));
+  assert.ok(начало.includes('<details class="подкл-пошагово" id="подкл-пошагово">'), 'блок стоит на экране «Начало»');
+  for (const к of ['claude', 'codex']) assert.ok(начало.includes(`data-пошагово="${к}"`), `шаги для ${к}`);
+  assert.ok(!начало.includes('data-пошагово="чат"'), 'для чата и облака шагов нет: проверенного пути нет');
+  const выбор = page.slice(page.indexOf('function выбрать_клиента('), page.indexOf('function ключ_готов('));
+  assert.ok(выбор.includes("getElementById('подкл-пошагово').hidden = чат"), 'для чата блок прячется целиком');
+  assert.ok(выбор.includes("у.getAttribute('data-пошагово') !== значение"), 'видны шаги только выбранного клиента');
+  const ключи = [...начало.matchAll(/data-t="(подкл\.пш\.[^"]+)"/g)].map((м) => м[1]);
+  assert.ok(ключи.length >= 14, 'все строки блока названы в разметке');
+  for (const к of ключи) {
+    assert.ok(оболочка[к]?.ru && оболочка[к]?.en, `${к} есть на двух языках`);
+    for (const язык of ['ru', 'en']) {
+      assert.ok(!/api_token\.txt[^<]*[A-Za-z0-9]{24,}/.test(оболочка[к][язык]), `${к}: в тексте нет значения ключа`);
+      assert.equal((оболочка[к][язык].match(/<code>/g) || []).length, (оболочка[к][язык].match(/<\/code>/g) || []).length,
+                   `${к} (${язык}): теги code парные`);
+    }
+  }
+  // Вход в терминале и проверка list_profiles — то, на чём люди вставали 27.10.2026.
+  assert.match(оболочка['подкл.пш.claude.2'].ru, /\/login/);
+  assert.match(оболочка['подкл.пш.claude.6'].en, /list_profiles/);
+  assert.match(оболочка['подкл.пш.claude.1'].ru, /install\.ps1/, 'на Windows — та же команда, что называет connect_mcp.py');
+  // Кнопка «Копировать» возвращает свою подпись, а не русскую в английском окне.
+  assert.ok(page.includes('скопировать(поле.textContent, b, b.dataset.подпись'), 'подпись кнопки копии берётся с неё самой');
+});
