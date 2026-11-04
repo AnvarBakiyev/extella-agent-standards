@@ -756,10 +756,6 @@
       "ru": "Проверяю…",
       "en": "Checking…"
     },
-    "промпт.пояснение": {
-      "ru": "В промпте — ссылка на правила Extella. Агент прочитает их сам, поэтому приложение сразу получится по стандарту платформы: с правами, проверками и понятными отказами.",
-      "en": "The prompt links to the Extella rules. Your agent reads them itself, so the app comes out to the platform's standard from the start: with permissions, checks and refusals that explain themselves."
-    },
     "подкл.кнопка": {
       "ru": "Подготовить ключ на этом компьютере",
       "en": "Prepare a key on this computer"
@@ -771,10 +767,6 @@
     "подкл.готово": {
       "ru": "Ключ готов",
       "en": "Key ready"
-    },
-    "подкл.пояснение": {
-      "ru": "Шаг 1 из 2: кнопка кладёт ключ Extella на выбранный компьютер и проверяет его. Это ещё не подключение: шаг 2 — промпт, который настроит Claude Code или Codex на этом компьютере. Ключ не показывается и не копируется.",
-      "en": "Step 1 of 2: the button puts an Extella key on the chosen computer and checks it. This is not the connection yet: step 2 is the prompt that sets up the client on this computer. The key is never shown or copied."
     },
     "подкл.компьютер": {
       "ru": "Компьютер: {компьютер} ({система})",
@@ -1001,20 +993,20 @@
       "en": "Where will you work?"
     },
     "подкл.выбор.claude": {
-      "ru": "Claude Code на этом компьютере",
-      "en": "Claude Code on this computer"
+      "ru": "Claude Code",
+      "en": "Claude Code"
     },
     "подкл.выбор.codex": {
-      "ru": "Codex на этом компьютере",
-      "en": "Codex on this computer"
+      "ru": "Codex",
+      "en": "Codex"
     },
     "подкл.выбор.чат": {
-      "ru": "Обычный чат Claude или облачная среда",
-      "en": "A regular Claude chat or a cloud environment"
+      "ru": "Обычный чат или облако",
+      "en": "Regular chat or cloud"
     },
     "подкл.чат.пояснение": {
-      "ru": "Ключ на компьютере этот чат не подключает. Проверенного пути для обычного чата и облака пока нет: открой Claude Code или Codex на своём компьютере и выбери его выше.",
-      "en": "A key on your computer does not connect this chat. There is no verified route for a regular chat or the cloud yet: open Claude Code or Codex on your computer and choose it above."
+      "ru": "Ключ лежит на твоём компьютере, а обычный чат Claude, Cowork и облачные среды работают на чужих серверах и до него не дотягиваются. Проверенного способа для них пока нет. Открой Claude Code или Codex на своём компьютере: это около пяти минут.",
+      "en": "The key lives on your computer, while a regular Claude chat, Cowork and cloud environments run on other servers and cannot reach it. There is no tested way for them yet. Open Claude Code or Codex on your own computer: it takes about five minutes."
     },
     "подкл.проверяю": {
       "ru": "Проверяю этот компьютер…",
@@ -1041,8 +1033,8 @@
       "en": "Replace with this account's key"
     },
     "подкл.ключ_готов_на": {
-      "ru": "Ключ готов на «{компьютер}». Настройка {клиент} ещё не завершена: скопируй промпт и вставь его в {клиент} на этом компьютере.",
-      "en": "The key is ready on «{компьютер}». {клиент} setup is not complete yet: copy the prompt and paste it into {клиент} on this computer."
+      "ru": "Ключ лежит на «{компьютер}».",
+      "en": "The key is on «{компьютер}»."
     },
     "подкл.не_сверено": {
       "ru": "Устройство не сверено.",
@@ -1065,20 +1057,12 @@
       "en": "The computer holds a working key of another Extella account. Not touched."
     },
     "подкл.шаг.ключ": {
-      "ru": "Ключ на этом компьютере",
-      "en": "Key on this computer"
-    },
-    "подкл.шаг.клиент": {
-      "ru": "{клиент} настроен: вставь промпт в {клиент}",
-      "en": "{клиент} configured: paste the prompt into {клиент}"
-    },
-    "подкл.шаг.перезапуск": {
-      "ru": "{клиент} перезапущен полностью",
-      "en": "{клиент} fully restarted"
+      "ru": "Положи ключ Extella на компьютер",
+      "en": "Put the Extella key on your computer"
     },
     "подкл.шаг.проверка": {
-      "ru": "Из {клиент} вызван list_profiles — проверяется в самом {клиент}",
-      "en": "list_profiles called from {клиент} — checked in {клиент} itself"
+      "ru": "Проверь, что Extella подключилась",
+      "en": "Check that Extella is connected"
     },
     "промпт.выбор.claude": {
       "ru": "Я выбрал: Claude Code на моём компьютере{компьютер}.",
@@ -1092,81 +1076,197 @@
       "ru": "Я в обычном чате Claude или в облачной среде.",
       "en": "I am in a regular Claude chat or a cloud environment."
     },
-    "подкл.куда.claude": {
-      "ru": "Вставь скопированный промпт в Claude Code на этом компьютере — в терминал или в приложение. Не в обычный чат Claude.",
-      "en": "Paste the copied prompt into Claude Code on this computer — in the terminal or the app. Not into a regular Claude chat."
+    "нач.зачем.1.з": {
+      "ru": "Пишешь словами",
+      "en": "You write in plain words"
     },
-    "подкл.куда.codex": {
-      "ru": "Вставь скопированный промпт в Codex на этом компьютере. Не в облачный Codex и не в обычный чат.",
-      "en": "Paste the copied prompt into Codex on this computer. Not into Codex cloud or a regular chat."
+    "нач.зачем.1.т": {
+      "ru": "Объясняешь агенту, какое приложение нужно. Код он пишет сам.",
+      "en": "You tell the agent what app you need. It writes the code itself."
     },
-    "подкл.куда.чат": {
-      "ru": "Обычный чат и облако к Extella не подключатся. Выбери выше Claude Code или Codex на своём компьютере.",
-      "en": "A regular chat or the cloud will not connect to Extella. Choose Claude Code or Codex on your computer above."
+    "нач.зачем.2.з": {
+      "ru": "Приложение сразу в Extella",
+      "en": "The app goes straight into Extella"
     },
-    "подкл.вход.claude": {
-      "ru": "Перед этим открой Терминал, набери claude и войди командой /login — даже если уже работаешь в приложении Claude: вход в терминале отдельный.",
-      "en": "Before that, open Terminal, type claude and sign in with /login — even if you already use the Claude app: the terminal sign-in is separate."
+    "нач.зачем.2.т": {
+      "ru": "Без подключения агент только сохраняет код в папку. С подключением он ставит приложение в твою Extella.",
+      "en": "Without the connection the agent only saves code to a folder. With it, the agent installs the app into your Extella."
     },
-    "подкл.вход.codex": {
-      "ru": "Перед этим войди в Codex на этом компьютере своим аккаунтом.",
-      "en": "Before that, sign in to Codex on this computer with your account."
+    "нач.зачем.3.з": {
+      "ru": "По правилам платформы",
+      "en": "Built to platform rules"
     },
-    "подкл.пш.заголовок": {
-      "ru": "Пошагово: что делать дальше",
-      "en": "Step by step: what to do next"
+    "нач.зачем.3.т": {
+      "ru": "Агент читает правила Extella, поэтому в приложении сразу будут права доступа, проверки и понятные сообщения об ошибках.",
+      "en": "The agent reads the Extella rules, so the app comes with access rights, checks and clear error messages from the start."
     },
-    "подкл.пш.claude.1": {
-      "ru": "<h4>1. Поставь Claude Code</h4><p>Скрипту подключения нужна команда <code>claude</code>, даже если ты работаешь в приложении Claude. Проверь в Терминале: <code>claude --version</code> должна ответить «(Claude Code)». Если команды нет, поставь её:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS, Терминал</span><button class=\"copy\">Копировать</button><code>curl -fsSL https://claude.ai/install.sh | bash</code></div><div class=\"cmd\"><span class=\"cmd-подпись\">Windows, PowerShell</span><button class=\"copy\">Копировать</button><code>irm https://claude.ai/install.ps1 | iex</code></div>",
-      "en": "<h4>1. Install Claude Code</h4><p>The connection script needs the <code>claude</code> command, even if you work in the Claude app. Check in Terminal: <code>claude --version</code> should answer «(Claude Code)». If the command is missing, install it:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS, Terminal</span><button class=\"copy\">Copy</button><code>curl -fsSL https://claude.ai/install.sh | bash</code></div><div class=\"cmd\"><span class=\"cmd-подпись\">Windows, PowerShell</span><button class=\"copy\">Copy</button><code>irm https://claude.ai/install.ps1 | iex</code></div>"
+    "подкл.чат.заголовок": {
+      "ru": "Из обычного чата и облака подключиться пока нельзя",
+      "en": "A regular chat or the cloud cannot connect yet"
     },
-    "подкл.пш.claude.2": {
-      "ru": "<h4>2. Войди в терминале</h4><p>Набери <code>claude</code>, затем <code>/login</code>, войди в браузере и выйди командой <code>/exit</code>. Вход в терминале отдельный от приложения Claude. Агент войти за тебя не может: это твой аккаунт.</p>",
-      "en": "<h4>2. Sign in in the terminal</h4><p>Type <code>claude</code>, then <code>/login</code>, sign in in the browser and leave with <code>/exit</code>. The terminal sign-in is separate from the Claude app. The agent cannot sign in for you: it is your account.</p>"
+    "подкл.чат.claude": {
+      "ru": "Подключить Claude Code",
+      "en": "Connect Claude Code"
     },
-    "подкл.пш.claude.3": {
-      "ru": "<h4>3. Открой Claude Code в рабочей папке</h4><p><b>Вариант А, приложение Claude.</b> Вверху слева нажми значок <code>&lt;/&gt;</code>: это Claude Code, значок слева от него — обычный чат. Нажми <b>+ New</b>, под полем ввода проверь <b>This computer</b>, в <b>Choose…</b> выбери рабочую папку.</p><p><b>Вариант Б, Терминал или PowerShell.</b> Создай папку и запусти Claude Code в ней:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS и Windows</span><button class=\"copy\">Копировать</button><code>mkdir extella-work; cd extella-work; claude</code></div><p>Не подходят: обычный чат на claude.ai, режим Cowork, Claude Code в браузере (claude.ai/code), Codespaces и другие облака. До ключа на твоём компьютере они не дотягиваются.</p>",
-      "en": "<h4>3. Open Claude Code in a working folder</h4><p><b>Option A, the Claude app.</b> At the top left press the <code>&lt;/&gt;</code> icon: that is Claude Code, the icon to its left is the regular chat. Press <b>+ New</b>, check <b>This computer</b> under the input box, pick a working folder in <b>Choose…</b>.</p><p><b>Option B, Terminal or PowerShell.</b> Create a folder and start Claude Code in it:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS and Windows</span><button class=\"copy\">Copy</button><code>mkdir extella-work; cd extella-work; claude</code></div><p>Not suitable: the regular chat on claude.ai, Cowork mode, Claude Code in the browser (claude.ai/code), Codespaces and other clouds. They cannot reach the key on your computer.</p>"
+    "подкл.чат.codex": {
+      "ru": "Подключить Codex",
+      "en": "Connect Codex"
     },
-    "подкл.пш.claude.4": {
-      "ru": "<h4>4. Вставь промпт</h4><p>Нажми «Скопировать промпт для агента» выше, вставь его в поле ввода (<code>Cmd+V</code> на Mac, <code>Ctrl+V</code> на Windows) и с новой строки допиши:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Допиши после промпта</span><button class=\"copy\">Копировать</button><code>Подключись к Extella и проверь связь.</code></div><p>Дальше агент работает сам. На запросы разрешения отвечай «Allow». Ключ в чат не присылай, даже если агент спросит: он уже на компьютере.</p>",
-      "en": "<h4>4. Paste the prompt</h4><p>Press «Copy the agent prompt» above, paste it into the input box (<code>Cmd+V</code> on Mac, <code>Ctrl+V</code> on Windows) and add on a new line:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Add after the prompt</span><button class=\"copy\">Copy</button><code>Connect to Extella and check the link.</code></div><p>The agent works on its own from here. Answer «Allow» to permission requests. Do not send the key into the chat, even if the agent asks: it is already on the computer.</p>"
+    "нач.шкала": {
+      "ru": "Подключение: один раз на этом компьютере, около 5 минут",
+      "en": "Connecting: once per computer, about 5 minutes"
     },
-    "подкл.пш.claude.5": {
-      "ru": "<h4>5. Перезапусти Claude Code полностью</h4><p>Когда агент попросит. В приложении на Mac: <code>Cmd+Q</code>. На Windows: правый клик по значку Claude в трее → Quit. В Терминале: <code>/exit</code>, потом снова <code>claude</code> в той же папке. Без перезапуска Claude Code не увидит подключение.</p>",
-      "en": "<h4>5. Restart Claude Code completely</h4><p>When the agent asks. In the app on Mac: <code>Cmd+Q</code>. On Windows: right-click the Claude icon in the tray → Quit. In Terminal: <code>/exit</code>, then <code>claude</code> again in the same folder. Without a restart Claude Code will not see the connection.</p>"
+    "нач.счёт": {
+      "ru": "шаг {номер} из 5",
+      "en": "step {номер} of 5"
     },
-    "подкл.пш.claude.6": {
-      "ru": "<h4>6. Проверь связь</h4><p>В той же папке напиши:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Сообщение агенту</span><button class=\"copy\">Копировать</button><code>Проверь связь с Extella: вызови list_profiles.</code></div><p>Связь есть, если агент вызвал <code>list_profiles</code> и показал твои профили. Пустой список у нового аккаунта — тоже успех. Статус «Connected» в списке серверов ничего не доказывает: сервер отвечает так и без ключа.</p>",
-      "en": "<h4>6. Check the link</h4><p>In the same folder write:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Message to the agent</span><button class=\"copy\">Copy</button><code>Check the link to Extella: call list_profiles.</code></div><p>The link works if the agent called <code>list_profiles</code> and showed your profiles. An empty list on a new account is a success too. «Connected» in the server list proves nothing: the server answers that way without a key as well.</p>"
+    "подкл.шаг.подготовка": {
+      "ru": "Поставь {клиент} и войди",
+      "en": "Install {клиент} and sign in"
     },
-    "подкл.пш.codex.1": {
-      "ru": "<h4>1. Codex на этом компьютере</h4><p>Codex должен стоять на этом компьютере и быть запущен хотя бы раз: скрипт подключения ищет его настройки в папке <code>~/.codex</code>. Войди в Codex своим аккаунтом.</p>",
-      "en": "<h4>1. Codex on this computer</h4><p>Codex must be installed on this computer and started at least once: the connection script looks for its settings in <code>~/.codex</code>. Sign in to Codex with your account.</p>"
+    "подкл.шаг.промпт": {
+      "ru": "Вставь промпт в {клиент}",
+      "en": "Paste the prompt into {клиент}"
     },
-    "подкл.пш.codex.2": {
-      "ru": "<h4>2. Открой Codex в рабочей папке, локально</h4><p>Облачный Codex не подходит: ключ на твоём компьютере до него не доходит.</p>",
-      "en": "<h4>2. Open Codex in a working folder, locally</h4><p>Codex cloud is not suitable: the key on your computer does not reach it.</p>"
+    "подкл.шаг.идея": {
+      "ru": "Опиши идею словами",
+      "en": "Describe your idea in words"
     },
-    "подкл.пш.codex.3": {
-      "ru": "<h4>3. Вставь промпт</h4><p>Нажми «Скопировать промпт для агента» выше, вставь его в Codex и с новой строки допиши:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Допиши после промпта</span><button class=\"copy\">Копировать</button><code>Подключись к Extella и проверь связь.</code></div><p>На запросы разрешения отвечай «Allow». Ключ в чат не присылай: он уже на компьютере.</p>",
-      "en": "<h4>3. Paste the prompt</h4><p>Press «Copy the agent prompt» above, paste it into Codex and add on a new line:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Add after the prompt</span><button class=\"copy\">Copy</button><code>Connect to Extella and check the link.</code></div><p>Answer «Allow» to permission requests. Do not send the key into the chat: it is already on the computer.</p>"
+    "нач.время.подготовка": {
+      "ru": "2 мин, один раз",
+      "en": "2 min, once"
     },
-    "подкл.пш.codex.4": {
-      "ru": "<h4>4. Перезапусти Codex полностью и проверь связь</h4><p>Когда агент попросит, закрой Codex целиком и открой снова в той же папке. Потом напиши:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Сообщение агенту</span><button class=\"copy\">Копировать</button><code>Проверь связь с Extella: вызови list_profiles.</code></div><p>Связь есть, если агент вызвал <code>list_profiles</code> и показал профили; пустой список у нового аккаунта — тоже успех. Пошаговой инструкции с картинками для Codex пока нет.</p>",
-      "en": "<h4>4. Restart Codex completely and check the link</h4><p>When the agent asks, quit Codex entirely and open it again in the same folder. Then write:</p><div class=\"cmd\"><span class=\"cmd-подпись\">Message to the agent</span><button class=\"copy\">Copy</button><code>Check the link to Extella: call list_profiles.</code></div><p>The link works if the agent called <code>list_profiles</code> and showed your profiles; an empty list on a new account is a success too. There is no illustrated walkthrough for Codex yet.</p>"
+    "нач.время.ключ": {
+      "ru": "до минуты",
+      "en": "up to a minute"
     },
-    "подкл.пш.проблемы": {
-      "ru": "<h4>Если что-то пошло не так</h4><dl class=\"пш-проблемы\"><dt>Агент пишет «связь отсюда не устанавливается», «это Cowork» или «я работаю в облаке»</dt><dd>Он запущен не на твоём компьютере. Открой клиент так, как в шаге «Открой…», и вставь промпт туда.</dd><dt>Агент просит прислать ключ</dt><dd>Не присылай. Нажми «Подготовить ключ на этом компьютере» и скажи агенту, что ключ на месте.</dd><dt>Кнопка ключа отвечает, что права нет</dt><dd>Правый клик по Extella Guide на рабочем столе → App permissions, включи Full Extella API access. Или переустанови гид из магазина.</dd><dt>Под кнопкой ключа появилось поле Device ID</dt><dd>Впиши номер, который виден внизу окна Extella за значком глаза, и нажми кнопку ещё раз.</dd><dt>«Connected» есть, а <code>list_profiles</code> отвечает ошибкой</dt><dd>Полностью закрой клиент, открой снова и повтори проверку.</dd><dt>Агент пишет, что нет Python или Git</dt><dd>Разреши ему поставить их. На Mac нажми «Установить» в системном окне.</dd><dt>«Not logged in · Please run /login»</dt><dd>Вход в терминале не сделан: шаг 2.</dd></dl>",
-      "en": "<h4>If something went wrong</h4><dl class=\"пш-проблемы\"><dt>The agent says «no connection from here», «this is Cowork» or «I run in the cloud»</dt><dd>It is not running on your computer. Open the client as in the «Open…» step and paste the prompt there.</dd><dt>The agent asks you to send the key</dt><dd>Don't. Press «Prepare a key on this computer» and tell the agent the key is in place.</dd><dt>The key button says the permission is missing</dt><dd>Right-click Extella Guide on the desktop → App permissions, turn on Full Extella API access. Or reinstall the guide from the store.</dd><dt>A Device ID field appeared under the key button</dt><dd>Enter the number shown at the bottom of the Extella window behind the eye icon and press the button again.</dd><dt>«Connected» is shown, but <code>list_profiles</code> returns an error</dt><dd>Quit the client completely, open it again and repeat the check.</dd><dt>The agent says Python or Git is missing</dt><dd>Let it install them. On a Mac press «Install» in the system dialog.</dd><dt>«Not logged in · Please run /login»</dt><dd>The terminal sign-in is not done: step 2.</dd></dl>"
+    "нач.время.промпт": {
+      "ru": "2–3 мин",
+      "en": "2–3 min"
     },
-    "подкл.пш.вручную": {
-      "ru": "<h4>Если кнопка ключа не сработала: ключ вручную</h4><ol><li>На рабочем столе Extella открой Library → System → Tokens.</li><li>Нажми New token и скопируй токен.</li><li>Сохрани его одной строкой в файл <code>~/.extella/api_token.txt</code>. На Windows это <code>C:\\Users\\&lt;имя&gt;\\.extella\\api_token.txt</code>.</li><li>Вернись к шагу «Вставь промпт».</li></ol><p>Токен даёт полный доступ к аккаунту. Не вставляй его в чат с агентом и никому не пересылай.</p>",
-      "en": "<h4>If the key button did not work: the key by hand</h4><ol><li>On the Extella desktop open Library → System → Tokens.</li><li>Press New token and copy the token.</li><li>Save it as a single line in <code>~/.extella/api_token.txt</code>. On Windows that is <code>C:\\Users\\&lt;name&gt;\\.extella\\api_token.txt</code>.</li><li>Go back to the «Paste the prompt» step.</li></ol><p>The token gives full access to the account. Do not paste it into the agent chat and do not forward it to anyone.</p>"
+    "нач.время.проверка": {
+      "ru": "1 мин",
+      "en": "1 min"
     },
-    "подкл.пш.отключить": {
-      "ru": "<h4>Как отключить</h4><p>Library → System → Tokens, отзови токен «Extella Guide · имя компьютера». Клиент сразу потеряет доступ к аккаунту.</p>",
-      "en": "<h4>How to disconnect</h4><p>Library → System → Tokens, revoke the token «Extella Guide · computer name». The client loses access to the account at once.</p>"
+    "нач.итог.готово": {
+      "ru": "готово",
+      "en": "done"
+    },
+    "нач.итог.уже": {
+      "ru": "уже стояло",
+      "en": "already set up"
+    },
+    "нач.итог.ключ": {
+      "ru": "ключ на «{компьютер}»",
+      "en": "key on «{компьютер}»"
+    },
+    "нач.итог.промпт": {
+      "ru": "агент закончил",
+      "en": "agent finished"
+    },
+    "нач.итог.связь": {
+      "ru": "связь есть",
+      "en": "connected"
+    },
+    "нач.дальше": {
+      "ru": "Готово, дальше",
+      "en": "Done, next"
+    },
+    "нач.уже": {
+      "ru": "У меня всё уже стоит",
+      "en": "I already have this"
+    },
+    "нач.перезапустил": {
+      "ru": "Агент закончил, я перезапустил",
+      "en": "The agent finished and I restarted"
+    },
+    "нач.связь_есть": {
+      "ru": "Связь есть",
+      "en": "It works"
+    },
+    "нач.не_вышло": {
+      "ru": "Не получилось",
+      "en": "It did not work"
+    },
+    "нач.подготовка.claude": {
+      "ru": "<p>Нужен Claude Code для терминала, даже если ты работаешь в приложении Claude: через него агент подключит Extella. Открой Терминал (на Windows — PowerShell) и проверь: <code class=\"inl\">claude --version</code> должна ответить «(Claude Code)». Если команды нет, поставь её:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS, Терминал</span><button class=\"copy\">Копировать</button><code>curl -fsSL https://claude.ai/install.sh | bash</code></div><div class=\"cmd\"><span class=\"cmd-подпись\">Windows, PowerShell</span><button class=\"copy\">Копировать</button><code>irm https://claude.ai/install.ps1 | iex</code></div><p>Потом войди: набери <code class=\"inl\">claude</code>, затем <code class=\"inl\">/login</code>, войди в браузере и выйди командой <code class=\"inl\">/exit</code>. Этот вход отдельный от приложения Claude, и сделать его можешь только ты. Если пропустишь шаг, агент поставит Claude Code сам, но войти всё равно попросит тебя.</p>",
+      "en": "<p>You need Claude Code for the terminal, even if you work in the Claude app: the agent connects Extella through it. Open Terminal (PowerShell on Windows) and check: <code class=\"inl\">claude --version</code> should answer «(Claude Code)». If the command is missing, install it:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS, Terminal</span><button class=\"copy\">Copy</button><code>curl -fsSL https://claude.ai/install.sh | bash</code></div><div class=\"cmd\"><span class=\"cmd-подпись\">Windows, PowerShell</span><button class=\"copy\">Copy</button><code>irm https://claude.ai/install.ps1 | iex</code></div><p>Then sign in: type <code class=\"inl\">claude</code>, then <code class=\"inl\">/login</code>, sign in in the browser and leave with <code class=\"inl\">/exit</code>. This sign-in is separate from the Claude app, and only you can do it. If you skip this step, the agent installs Claude Code itself, but it will still ask you to sign in.</p>"
+    },
+    "нач.подготовка.подпись": {
+      "ru": "Так выглядит готовый шаг: версия отвечает «(Claude Code)», вход прошёл.",
+      "en": "This is what a finished step looks like: the version says «(Claude Code)» and the sign-in went through."
+    },
+    "нач.подготовка.codex": {
+      "ru": "<p>Codex должен стоять на этом компьютере и быть открыт хотя бы раз: подключение ищет его настройки в папке <code class=\"inl\">~/.codex</code>. Войди в Codex своим аккаунтом.</p><p>Облачный Codex не подойдёт: до этого компьютера он не дотягивается.</p>",
+      "en": "<p>Codex must be installed on this computer and opened at least once: the connection looks for its settings in <code class=\"inl\">~/.codex</code>. Sign in to Codex with your account.</p><p>Codex cloud will not work: it cannot reach this computer.</p>"
+    },
+    "нач.ключ.пояснение": {
+      "ru": "Ключ — это пропуск агента в твой аккаунт Extella. Кнопка положит его в папку на этом компьютере и проверит. Видеть и копировать ключ не нужно: агент найдёт его сам.",
+      "en": "The key is your agent’s pass into your Extella account. The button puts it in a folder on this computer and checks it. You do not need to see or copy the key: the agent finds it on its own."
+    },
+    "нач.промпт.claude": {
+      "ru": "Промпт объяснит агенту, как подключиться к Extella. Скопируй его и вставь в Claude Code на этом компьютере. Обычный чат на claude.ai, режим Cowork и Claude Code в браузере не подойдут: до ключа на компьютере они не дотягиваются.",
+      "en": "The prompt tells the agent how to connect to Extella. Copy it and paste it into Claude Code on this computer. A regular chat on claude.ai, Cowork mode and Claude Code in the browser will not work: they cannot reach the key on your computer."
+    },
+    "нач.промпт.codex": {
+      "ru": "Промпт объяснит агенту, как подключиться к Extella. Скопируй его, открой Codex на этом компьютере в рабочей папке, вставь промпт и нажми Enter. Облачный Codex не подойдёт.",
+      "en": "The prompt tells the agent how to connect to Extella. Copy it, open Codex on this computer in a work folder, paste the prompt and press Enter. Codex cloud will not work."
+    },
+    "нач.схема.claude": {
+      "ru": "<li><i>1</i><span>Вверху слева нажми значок <code class=\"inl\">&lt;/&gt;</code>. Это Claude Code. Значок слева от него — обычный чат, туда не вставляй.</span></li><li><i>2</i><span>Нажми <strong>+ New session</strong>.</span></li><li><i>3</i><span>Под полем ввода должно стоять <strong>This computer</strong>. В <strong>Choose…</strong> выбери рабочую папку.</span></li><li><i>4</i><span>Вставь промпт в поле (<strong>Cmd+V</strong> на Mac, <strong>Ctrl+V</strong> на Windows) и нажми Enter.</span></li>",
+      "en": "<li><i>1</i><span>At the top left, click the <code class=\"inl\">&lt;/&gt;</code> icon. That is Claude Code. The icon to its left is the regular chat, do not paste there.</span></li><li><i>2</i><span>Click <strong>+ New session</strong>.</span></li><li><i>3</i><span>Below the input box it should say <strong>This computer</strong>. In <strong>Choose…</strong>, pick a work folder.</span></li><li><i>4</i><span>Paste the prompt into the box (<strong>Cmd+V</strong> on Mac, <strong>Ctrl+V</strong> on Windows) and press Enter.</span></li>"
+    },
+    "нач.терминал.заголовок": {
+      "ru": "Работаешь в терминале, а не в приложении",
+      "en": "Working in a terminal instead of the app"
+    },
+    "нач.терминал": {
+      "ru": "<p>Создай папку, запусти Claude Code в ней и вставь промпт:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS и Windows</span><button class=\"copy\">Копировать</button><code>mkdir extella-work; cd extella-work; claude</code></div>",
+      "en": "<p>Create a folder, start Claude Code in it and paste the prompt:</p><div class=\"cmd\"><span class=\"cmd-подпись\">macOS and Windows</span><button class=\"copy\">Copy</button><code>mkdir extella-work; cd extella-work; claude</code></div>"
+    },
+    "нач.промпт.дальше": {
+      "ru": "<p><strong>Дальше агент работает сам.</strong> Когда он спросит разрешения, нажимай Allow. Ключ он просить не должен, а если попросит, не присылай: ключ уже на компьютере.</p>",
+      "en": "<p><strong>From here the agent works on its own.</strong> When it asks for permission, click Allow. It should not ask for the key. If it does, do not send it: the key is already on your computer.</p>"
+    },
+    "нач.перезапуск.claude": {
+      "ru": "<p><strong>Когда агент скажет, что закончил,</strong> закрой Claude Code полностью и открой снова в той же папке. В приложении на Mac: <code class=\"inl\">Cmd+Q</code>. На Windows: правый клик по значку Claude у часов, затем Quit. В терминале: <code class=\"inl\">/exit</code>, потом снова <code class=\"inl\">claude</code>. Без перезапуска Claude Code не увидит Extella.</p>",
+      "en": "<p><strong>When the agent says it is done,</strong> quit Claude Code completely and open it again in the same folder. In the app on Mac: <code class=\"inl\">Cmd+Q</code>. On Windows: right-click the Claude icon by the clock, then Quit. In a terminal: <code class=\"inl\">/exit</code>, then <code class=\"inl\">claude</code> again. Without a restart Claude Code will not see Extella.</p>"
+    },
+    "нач.перезапуск.codex": {
+      "ru": "<p><strong>Когда агент скажет, что закончил,</strong> закрой Codex целиком и открой снова в той же папке. Без перезапуска Codex не увидит Extella.</p>",
+      "en": "<p><strong>When the agent says it is done,</strong> quit Codex completely and open it again in the same folder. Without a restart Codex will not see Extella.</p>"
+    },
+    "нач.проверка.текст": {
+      "ru": "<p>Напиши агенту в той же папке:</p><div class=\"cmd\"><button class=\"copy\">Копировать</button><code>Проверь связь с Extella: вызови list_profiles.</code></div>",
+      "en": "<p>Write to the agent in the same folder:</p><div class=\"cmd\"><button class=\"copy\">Copy</button><code>Check the Extella connection: call list_profiles.</code></div>"
+    },
+    "нач.проверка.фраза": {
+      "ru": "Проверь связь с Extella: вызови list_profiles.",
+      "en": "Check the Extella connection: call list_profiles."
+    },
+    "нач.проверка.ответ": {
+      "ru": "Связь с Extella есть. Профилей пока нет, для нового аккаунта это нормально.",
+      "en": "Extella is connected. There are no profiles yet, which is normal for a new account."
+    },
+    "нач.проверка.подпись": {
+      "ru": "Так выглядит успех: агент вызвал list_profiles и ответил без ошибки. Слова у агента будут свои. Пустой список — тоже успех. Надпись «Connected» в списке серверов ничего не доказывает: сервер отвечает так и без ключа.",
+      "en": "This is what success looks like: the agent called list_profiles and answered without an error. Its wording will differ. An empty list is a success too. «Connected» in the server list proves nothing: the server says that even without a key."
+    },
+    "нач.беда": {
+      "ru": "<dl class=\"беда-список\"><dt>Агент пишет «связь отсюда не устанавливается», «это Cowork» или «я работаю в облаке»</dt><dd>Он запущен не на твоём компьютере. Открой Claude Code или Codex так, как показано на шаге 3, и вставь промпт туда.</dd><dt>«Not logged in · Please run /login»</dt><dd>Вход в терминале не сделан: шаг 1.</dd><dt>«Connected» есть, а list_profiles отвечает ошибкой</dt><dd>Полностью закрой клиент, открой снова и повтори проверку.</dd><dt>Агент просит прислать ключ</dt><dd>Не присылай. Нажми на шаге 2 «Подготовить ключ на этом компьютере» и скажи агенту, что ключ на месте.</dd><dt>Кнопка ключа отвечает, что права нет</dt><dd>Правый клик по Extella Guide на рабочем столе → App permissions, включи Full Extella API access. Или переустанови гид из магазина.</dd><dt>Агент пишет, что нет Python или Git</dt><dd>Разреши ему поставить их. На Mac нажми «Установить» в системном окне.</dd><dt>Кнопка ключа не сработала совсем</dt><dd>Положи ключ вручную. На рабочем столе Extella открой Library → System → Tokens, нажми New token и сохрани токен одной строкой в файл <code class=\"inl\">~/.extella/api_token.txt</code> (на Windows <code class=\"inl\">C:\\Users\\&lt;имя&gt;\\.extella\\api_token.txt</code>). Токен даёт полный доступ к аккаунту: не вставляй его в чат и никому не пересылай.</dd><dt>Как отключить</dt><dd>Library → System → Tokens, отзови токен «Extella Guide · имя компьютера». Агент сразу потеряет доступ к аккаунту.</dd></dl>",
+      "en": "<dl class=\"беда-список\"><dt>The agent says «cannot connect from here», «this is Cowork» or «I am running in the cloud»</dt><dd>It is not running on your computer. Open Claude Code or Codex as shown in step 3 and paste the prompt there.</dd><dt>«Not logged in · Please run /login»</dt><dd>The terminal sign-in was not done: step 1.</dd><dt>«Connected» is shown, but list_profiles returns an error</dt><dd>Quit the client completely, open it again and repeat the check.</dd><dt>The agent asks you to send the key</dt><dd>Do not send it. In step 2, press «Prepare a key on this computer» and tell the agent the key is in place.</dd><dt>The key button says there is no permission</dt><dd>Right-click Extella Guide on the desktop → App permissions and turn on Full Extella API access. Or reinstall the guide from the store.</dd><dt>The agent says Python or Git is missing</dt><dd>Let it install them. On Mac, click «Install» in the system window.</dd><dt>The key button did not work at all</dt><dd>Put the key in place by hand. On the Extella desktop open Library → System → Tokens, click New token and save the token as a single line in <code class=\"inl\">~/.extella/api_token.txt</code> (on Windows <code class=\"inl\">C:\\Users\\&lt;name&gt;\\.extella\\api_token.txt</code>). The token gives full access to your account: do not paste it into a chat and do not forward it to anyone.</dd><dt>How to disconnect</dt><dd>Library → System → Tokens, revoke the token «Extella Guide · computer name». The agent loses access to the account at once.</dd></dl>"
+    },
+    "нач.идея.текст": {
+      "ru": "<strong>Всё подключено.</strong> Теперь пиши агенту своими словами, какое приложение нужно, и попроси поставить его в Extella. Например:",
+      "en": "<strong>You are connected.</strong> Now tell the agent in your own words what app you need and ask it to install the app into Extella. For example:"
+    },
+    "нач.идея.примеры": {
+      "ru": "<div class=\"cmd идея\"><button class=\"copy\">Копировать</button><code>Сделай приложение для учёта заявок отдела продаж и поставь его в мою Extella.</code></div><div class=\"cmd идея\"><button class=\"copy\">Копировать</button><code>Собери трекер расходов команды с отчётом по месяцам и поставь его в Extella.</code></div><div class=\"cmd идея\"><button class=\"copy\">Копировать</button><code>Сделай анкету для новых сотрудников со сводной таблицей ответов и поставь её в Extella.</code></div>",
+      "en": "<div class=\"cmd идея\"><button class=\"copy\">Copy</button><code>Build an app to track sales team requests and install it into my Extella.</code></div><div class=\"cmd идея\"><button class=\"copy\">Copy</button><code>Make a team expense tracker with a monthly report and install it into Extella.</code></div><div class=\"cmd идея\"><button class=\"copy\">Copy</button><code>Make a questionnaire for new hires with a summary table of answers and install it into Extella.</code></div>"
+    },
+    "нач.идея.после": {
+      "ru": "Агент соберёт приложение, поставит его в Extella и в конце скажет, что осталось сделать тебе.",
+      "en": "The agent builds the app, installs it into Extella and tells you at the end what is left for you to do."
     }
   }
 }

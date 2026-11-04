@@ -1,14 +1,14 @@
 {
-  "версия_содержимого": "2026-10-26.1",
+  "версия_содержимого": "2026-11-04.1",
   "шапка": {
     "метка": "руководство",
     "заголовок": "Разработка на Extella",
-    "лид": "Опиши идею словами — агент соберёт приложение и поставит его прямо в Extella",
-    "вступление": "Нажми «Скопировать промпт для агента» и вставь его в Claude Code, Codex, Cursor или другое приложение для разработки. Следом опиши своими словами, какое приложение тебе нужно, попроси сразу поставить его в Extella — и нажми ввод. Дальше агент всё сделает сам и в конце скажет, что осталось за тобой.",
+    "лид": "Подключи Claude Code или Codex к Extella и собирай приложения словами: агент напишет приложение и поставит его в твою Extella",
+    "вступление": "Подключение делается один раз на компьютере и занимает около пяти минут, шаги — на экране «Начало». Потом просто пиши агенту, что нужно.",
     "метка_en": "guide",
     "заголовок_en": "Extella Guide",
-    "лид_en": "Describe your idea in plain words — your agent will build the app and install it right into Extella",
-    "вступление_en": "Press «Copy prompt for your agent» and paste it into Claude Code, Codex, Cursor or another development tool. Then describe the app you need in your own words, ask to install it straight into Extella — and hit enter. Your agent does the rest and tells you at the end what is left for you."
+    "лид_en": "Connect Claude Code or Codex to Extella and build apps in plain words: your agent writes the app and installs it into your Extella",
+    "вступление_en": "You connect once per computer, in about five minutes; the steps are on the Start screen. After that, just tell your agent what you need."
   },
   "разделы": [
     {
@@ -316,6 +316,11 @@
   ],
   "оболочка_минимум": 5,
   "что_нового": [
+    {
+      "версия": "2026-11-04.1",
+      "текст": "Экран «Начало» переделан в путь из пяти шагов: поставь Claude Code или Codex и войди, положи ключ, вставь промпт, проверь связь, опиши идею. Открыт только текущий шаг, сделанный сворачивается в строку с итогом. Где нажимать в приложении Claude и как выглядит успешная проверка, показано на схемах.",
+      "текст_en": "The Start screen is now a five-step path: install Claude Code or Codex and sign in, put the key in place, paste the prompt, check the connection, describe your idea. Only the current step is open, and a finished step folds into a line with its result. Diagrams show where to click in the Claude app and what a successful check looks like."
+    },
     {
       "версия": "2026-10-26.1",
       "текст": "Промпт для агента теперь начинается с проверки среды: подключение делается из Claude Code или Codex на твоём компьютере, а не из обычного чата или облака. Агент берёт рабочую копию репозитория, запускает скрипт подключения для выбранного клиента и сам ставит CLI Claude Code, если его нет.",
