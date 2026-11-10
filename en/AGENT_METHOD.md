@@ -1,4 +1,4 @@
-<!-- source: AGENT_METHOD.md sha256:79f5d1ab4768ba1cdf0d4dc29aeb18f986d494164a471bdc67416628df3a7a4a -->
+<!-- source: AGENT_METHOD.md sha256:3a7702d50672e8c73e06ba7181a0c94d76a39b477f90491d41f3395f3d083005 -->
 
 # Building agents on Extella: what the measurements showed
 
@@ -30,7 +30,7 @@ The "model + checks without code" column shows a bad language, not a bad method:
 
 | part | what it is | what it gives, measured | when to use |
 |---|---|---|---|
-| agent | model + instructions + tools | the base | always; don't touch the instructions (see §5) |
+| agent | model + instructions + tools | the base | always; on instructions see §5 |
 | rules | short directions to the agent | knowing the rules barely raises a small model's accuracy: 4–5 of 50 | few and short; other people's profile rules get in the way |
 | concepts | fact cards (products, deadlines, reference data) | facts: the "deadline" field 5 → 38 of 50; without cards the model invents facts in 43 of 50 | for facts the model doesn't know; keep the query to a concept short and specific |
 | expert | a saved program (Python, fython) | exact computation: 50 of 50 | anything that is computed, checked, optimized |
@@ -127,7 +127,7 @@ Checked on the live platform. If a fact is more than a month old, re-check it be
 - The listener on a Mac runs with its own Python and without Homebrew in PATH. Call external programs by full path.
 
 **Agent**
-- Never overwrite the agent's `instructions` field: it holds the platform core (~109 thousand characters), and writing `agent/update {"instructions": …}` erases it. Add the hints you need as a rule (`add_rule`).
+- The agent's `instructions` field belongs to its author: rewriting it is allowed, it is the author's right. Know the price: the field holds the platform core (~109 thousand characters), and writing `agent/update {"instructions": …}` replaces it entirely. This standard's baseline is to keep the core and add your hints as a rule (`add_rule`). Rewrite the instructions when you deliberately change the agent's behaviour, and keep them in a file so there is a way back.
 - `/rules/list` returns the profile's general rules together with yours. A small model loops on them and drops to 0 of 50. In measurements and in working agents, filter the rules down to your own.
 - An agent is attached to a product only when the listing is created (`publish-stream` with `source_id`, `source_type=agent`, `attach_agent=1`).
 - Installing from the store: `deploy_mode: new` copies the author's instructions and tools; `existing` doesn't carry them over. Install a product with an agent as a new agent.
