@@ -332,10 +332,85 @@ button,input,select,textarea{font-family:inherit}
 </style>
 <style>
 /*XTL_FONTS*/
-/*XTL_CONSTRUCTOR_CSS*/
-/* Широкая рекламная вкладка не меняет размеры прежних экранов. */
-.wrap:has(.экран[data-экран="конструктор"].виден){max-width:1280px}
-.wrap:has(.экран[data-экран="конструктор"].виден)>#шапка{display:none}
+/* Вкладка «Агент на максимум» (10.11.2026) вместо «Конструктора»: тот повторял
+   главную extella.dev. Разметка — раздел с ролью «агенты» в content.json, здесь
+   только вид и переключатели. Шапка гида на этой вкладке не нужна: у вкладки свой
+   заголовок. */
+.wrap:has(.экран[data-экран="агенты"].виден)>#шапка{display:none}
+.аг-герой{margin:8px 0 24px}
+.аг-герой h1{font-size:26px}
+.аг-роли{display:flex;align-items:stretch;gap:8px;margin:0 0 32px}
+.аг-край{flex:0 0 112px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:13px;
+  color:var(--tx2);background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.аг-край-итог{color:var(--petrol);border-color:var(--petrol)}
+.аг-к{display:flex;align-items:center;color:var(--tx3)}
+.аг-среда{flex:1;border:1px dashed var(--petrol);border-radius:12px;padding:12px}
+.аг-среда-метка{font-family:var(--mono);font-size:11px;color:var(--petrol);margin:0 0 12px}
+.аг-пара{display:flex;align-items:center;gap:8px}
+.аг-узел{flex:1;background:var(--s1);border:1px solid var(--bd2);border-radius:12px;padding:12px 16px}
+.аг-узел b{display:block;font-family:var(--serif);font-size:15px;color:var(--tx)}
+.аг-узел span{display:block;font-size:13px;color:var(--tx2);line-height:1.45;margin-top:4px}
+.аг-узел-код{border-color:var(--a)}
+.аг-узел-код b{color:var(--a)}
+.аг-связь{display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:11px;color:var(--tx3);text-align:center;flex:0 0 120px}
+.аг-блок{margin:0 0 32px}
+.аг-блок>h2{margin:0 0 8px}
+.аг-выборы{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:12px 0 8px}
+.аг-переключатель{display:inline-flex;flex-wrap:wrap;gap:4px;background:var(--s2);border:1px solid var(--bd);border-radius:999px;padding:4px;margin:0 0 16px}
+.аг-переключатель button{font:inherit;font-size:13px;color:var(--tx2);background:transparent;border:1px solid transparent;border-radius:999px;padding:6px 14px;cursor:pointer}
+.аг-переключатель button[aria-pressed="true"]{background:var(--s1);color:var(--tx);border-color:var(--bd2)}
+.аг-переключатель button:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.аг-под{font-size:13px;color:var(--tx3);margin:0 0 12px}
+.аг-ряд{display:grid;grid-template-columns:minmax(0,220px) 1fr minmax(0,180px);gap:12px;align-items:center;padding:8px 0;border-top:1px solid var(--bd)}
+.аг-имя{font-size:13px;color:var(--tx)}
+.аг-полоса{height:12px;background:var(--s3);border-radius:999px;overflow:hidden}
+.аг-полоса i{display:block;height:100%;min-width:4px;background:var(--a);border-radius:999px}
+.аг-полоса-нет{background:transparent;border:1px dashed var(--bd2)}
+.аг-знач b{display:block;font-size:15px;color:var(--tx)}
+.аг-знач em{display:block;font-style:normal;font-size:11px;color:var(--tx3)}
+.аг-вывод{font-size:13px;color:var(--tx);border-left:2px solid var(--a);padding:2px 0 2px 12px;margin:12px 0 0}
+.аг-подпись{font-size:11px;color:var(--tx3)}
+.аг-часть{display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start}
+.аг [data-панель][hidden]{display:none}
+.аг-цифра b{display:block;font-family:var(--serif);font-size:26px;color:var(--a);line-height:1.2}
+.аг-цифра span{display:block;font-size:13px;color:var(--tx2);margin-top:4px}
+.аг-часть dl{margin:0}
+.аг-часть dt{font-family:var(--mono);font-size:11px;color:var(--tx3);margin:0 0 4px}
+.аг-часть dd{font-size:15px;color:var(--tx);margin:0 0 12px}
+.аг-поток{display:flex;align-items:center;gap:8px;margin:12px 0 16px}
+.аг-поток .аг-узел{text-align:center}
+.аг-шаг{display:flex;flex-direction:column;align-items:center;font-size:20px;color:var(--tx3);flex:0 0 112px}
+.аг-шаг i{font-style:normal;font-family:var(--mono);font-size:11px;text-align:center}
+.аг-сравнение,.аг-два{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.аг-колонка,.аг-язык,.аг-пример{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:16px}
+.аг-колонка-наша,.аг-язык-наш{border-color:var(--petrol)}
+.аг-колонка-заг{font-weight:600;color:var(--tx);margin:0 0 8px}
+.аг-колонка dl{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin:0}
+.аг-колонка dt{font-size:13px;color:var(--tx3)}
+.аг-колонка dd{font-size:15px;color:var(--tx);margin:0;text-align:right}
+.аг-код{font-family:var(--mono);font-size:12px;color:var(--tx);background:var(--s3);border:1px solid var(--bd);border-radius:8px;
+  padding:12px;margin:0 0 8px;white-space:pre-wrap;word-break:break-word}
+.аг-плохо{font-size:13px;color:var(--a);margin:0}
+.аг-хорошо{font-size:13px;color:var(--petrol);margin:0}
+.аг-пример{margin:12px 0 0}
+.аг-пример p:last-child{margin:0;font-size:13px}
+.аг-порядок{list-style:none;counter-reset:аг;padding:0;margin:12px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:8px 24px}
+.аг-порядок li{counter-increment:аг;position:relative;padding:8px 0 8px 40px;border-top:1px solid var(--bd);margin:0}
+.аг-порядок li::before{content:counter(аг);position:absolute;left:0;top:8px;width:28px;height:28px;border-radius:50%;
+  border:1px solid var(--bd2);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--a)}
+.аг-порядок b{display:block;font-size:15px;color:var(--tx)}
+.аг-порядок span{display:block;font-size:13px;color:var(--tx2)}
+.аг-границы{border-left:2px solid var(--petrol);padding:4px 0 4px 16px;margin:0 0 32px}
+.аг-границы h3{margin:0 0 8px}
+.аг-границы li{font-size:13px}
+@media (max-width:700px){
+  .аг-роли,.аг-пара,.аг-поток{flex-direction:column;align-items:stretch}
+  .аг-край,.аг-связь,.аг-шаг{flex:none}
+  .аг-к{transform:rotate(90deg);justify-content:center}
+  .аг-шаг{transform:none}
+  .аг-ряд{grid-template-columns:1fr;gap:4px}
+  .аг-часть,.аг-сравнение,.аг-два,.аг-порядок{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
@@ -348,7 +423,7 @@ button,input,select,textarea{font-family:inherit}
   <nav class="меню" id="меню">
     <button class="вкладка" data-экран="начало" data-t="вкладка.начало">Начало</button>
     <button class="вкладка" data-экран="проба" data-t="вкладка.проба">Попробовать</button>
-    <button class="вкладка" data-экран="конструктор" data-t="вкладка.конструктор"></button>
+    <button class="вкладка" data-экран="агенты" data-t="вкладка.агенты"></button>
     <button class="вкладка" data-экран="поиск" data-t="вкладка.поиск">Найти ответ</button>
     <button class="вкладка" data-экран="ещё" data-t="вкладка.ещё">Ещё</button>
     <!-- Язык — в строке вкладок, а не в «Ещё»: переключатель, спрятанный на
@@ -672,8 +747,8 @@ button,input,select,textarea{font-family:inherit}
 
   </div>
 
-  <div class="экран" data-экран="конструктор">
-    <div id="конструктор-содержимое" class="xtl-constructor"></div>
+  <div class="экран" data-экран="агенты">
+    <div id="агенты-содержимое"></div>
   </div>
 
   <div class="экран" data-экран="ещё">
@@ -698,16 +773,12 @@ button,input,select,textarea{font-family:inherit}
 </div>
 
 <script>
-/*XTL_CONSTRUCTOR_SCRIPT*/
-</script>
-<script>
 // Содержимое подставляется сборщиком из content.json — единственного источника правды.
 // Оболочка отдаётся магазином, текст живёт в репозитории и обновляется коммитом.
 var СНИМОК = /*СОДЕРЖИМОЕ*/null/*КОНЕЦ*/;
 var APP_TOKEN = /*APP_TOKEN*/"";
 var ИСТОЧНИК = "https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/store_app/content.json";
-var ВЕРСИЯ_ОБОЛОЧКИ = 8;   // растёт, когда меняется сама страница, а не текст
-var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
+var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняется сама страница, а не текст
 
 // Обёртка страницы: внутри фоновое перечитывание содержимого при открытии.
 // Человек его не запускает и повторно нажать не может — блокировать нечего.
@@ -1051,8 +1122,7 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     });
   }
 
-  var последнееТелоКонструктора = null;
-  var последнийЯзыкКонструктора = null;
+  var последнееТелоМетода = null;
   function нарисовать(содержимое){
     var ш = содержимое["шапка"] || {};
     document.getElementById('шапка').innerHTML =
@@ -1065,26 +1135,17 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     // простынёй читаются как «прочитай меня целиком» и человека отпугивают;
     // шесть тем показывают, что читать нужно не всё, а нужное место.
     var разделы = содержимое["разделы"] || [];
-    var лендинг = разделы.find(function(р){ return р["роль"] === 'конструктор'; });
-    var конструктор = document.getElementById('конструктор-содержимое');
-    var телоКонструктора = поле(лендинг || {}, 'тело');
-    if (конструктор && window.ExtellaConstructor &&
-        (телоКонструктора !== последнееТелоКонструктора || ЯЗЫК !== последнийЯзыкКонструктора)) {
-      window.ExtellaConstructor.unmount(конструктор);
-      // Старые оболочки показывают обычное пояснение, новая раскрывает template.
-      var фрагмент = document.createElement('template');
-      фрагмент.innerHTML = обезвредить(телоКонструктора);
-      var разметкаКонструктора = фрагмент.content.querySelector('template[data-xtl-template]');
-      конструктор.innerHTML = (разметкаКонструктора ? разметкаКонструктора.innerHTML : фрагмент.innerHTML).replace(
-        /@@XTL_(DESKTOP|CHAT)_POSTER@@/g, function(_, имя){ return МЕДИА_КОНСТРУКТОРА[имя] || ''; });
-      конструктор.querySelectorAll('[data-t]').forEach(function(узел){
-        узел.innerHTML = т(узел.getAttribute('data-t'));
-      });
-      window.ExtellaConstructor.mount(конструктор, {t: т, copy: скопировать});
-      последнееТелоКонструктора = телоКонструктора;
-      последнийЯзыкКонструктора = ЯЗЫК;
+    // Вкладка «Агент на максимум» рисуется из своего раздела и только при перемене
+    // текста или языка: поиск перерисовывает руководство, а нажатые переключатели
+    // вкладки от этого не сбрасываются.
+    var метод = разделы.find(function(р){ return р["роль"] === 'агенты'; });
+    var экранМетода = document.getElementById('агенты-содержимое');
+    var телоМетода = поле(метод || {}, 'тело');
+    if (экранМетода && телоМетода !== последнееТелоМетода) {
+      экранМетода.innerHTML = обезвредить(телоМетода);
+      последнееТелоМетода = телоМетода;
     }
-    var куски = разделы.filter(function(р){ return р["роль"] !== 'конструктор'; }).map(function(р, i){
+    var куски = разделы.filter(function(р){ return р["роль"] !== 'агенты'; }).map(function(р, i){
       var темаТекст = поле(р, "тема");
       var тема = темаТекст ? '<p class="тема">' + текстом(темаТекст) + '</p>' : '';
       return тема + '<section' + (i === 0 ? ' class="open"' : '') + '>' +
@@ -1205,7 +1266,7 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
     // Подпись берётся с самой кнопки до первого нажатия: прежде здесь стояло
     // «Копировать», и в английском окне кнопка после копии становилась русской.
     if (!b.dataset.подпись) b.dataset.подпись = b.textContent;
-    if (поле) скопировать(поле.textContent, b, b.dataset.подпись, т('constructor.copied') || undefined);
+    if (поле) скопировать(поле.textContent, b, b.dataset.подпись, т('копия.готово') || undefined);
   });
 
   function подсветить(корень, слово){
@@ -1912,7 +1973,6 @@ var МЕДИА_КОНСТРУКТОРА = /*XTL_MEDIA*/{};
 
   // Клавиатура: «/» — в поиск, Esc — сбросить. Мелочь, но руководство листают часто.
   document.addEventListener('keydown', function(e){
-    if (document.querySelector('.xtl-constructor dialog[open]')) return;
     if (e.key === '/' && document.activeElement !== q) { e.preventDefault(); q.focus(); }
     if (e.key === 'Escape' && q.value) { q.value = ''; q.dispatchEvent(new Event('input')); q.blur(); }
   });
@@ -2301,9 +2361,6 @@ document.getElementById('дп-ш7').onclick = function(){
       панели.forEach(function(п){
         п.classList.toggle('виден', п.getAttribute('data-экран') === имя);
       });
-      if (имя !== 'конструктор' && window.ExtellaConstructor) {
-        window.ExtellaConstructor.deactivate(document.getElementById('конструктор-содержимое'));
-      }
       try { history.replaceState(null, '', '#' + encodeURIComponent(имя)); } catch (_) {}
       window.scrollTo(0, 0);
     }
@@ -2311,6 +2368,21 @@ document.getElementById('дп-ш7').onclick = function(){
     меню.addEventListener('click', function(e){
       var в = e.target.closest('.вкладка');
       if (в) открыть(в.getAttribute('data-экран'));
+    });
+
+    // Переключатели вкладки «Агент на максимум»: кнопка data-выбор показывает панель
+    // data-панель с тем же именем внутри своего блока data-выборы. Разметка живёт в
+    // content.json и остаётся данными, без скриптов; поведение — здесь.
+    document.addEventListener('click', function(e){
+      var к = e.target.closest && e.target.closest('[data-выборы] [data-выбор]');
+      if (!к) return;
+      var блок = к.closest('[data-выборы]'), имя = к.getAttribute('data-выбор');
+      [].forEach.call(блок.querySelectorAll('[data-выбор]'), function(x){
+        x.setAttribute('aria-pressed', x === к ? 'true' : 'false');
+      });
+      [].forEach.call(блок.querySelectorAll('[data-панель]'), function(п){
+        п.hidden = п.getAttribute('data-панель') !== имя;
+      });
     });
 
     // Поиск — это отдельный экран: набор в поле уводит туда, где виден результат.
