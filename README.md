@@ -1,4 +1,4 @@
-<!-- source: README.ru.md sha256:54413e1dde9569e8e217e8d816f2ea9fd4d62d4ba02f5748158e1d9d2e893268 -->
+<!-- source: README.ru.md sha256:83a1bb7bb5e2f7010a66493b025c1892eca44ae1bf1e912b563c6006cf17e425 -->
 
 **Русский:** [README.ru.md](README.ru.md) · Full documentation: [extella.ai/guide.html](https://extella.ai/guide.html)
 
@@ -39,6 +39,7 @@ left for you.
 | `tools/*.py` + `run_all_gates.sh` | machine checks (full list in `run_all_gates.sh`), each one must be able to fail | **run** |
 | `tools/GATES.md` | how to run the checks: exact commands, argument — absolute path | **read before running them** |
 | `APP_FROM_MODULES.md` | an app built from modules: verified by building one app on ourselves (04 Sep 2026), not verified on a buyer | **execute while building; on prod — after verification on a buyer** |
+| `AGENT_METHOD.md` | how to build agents: what rules, concepts, experts and task languages give; measured on the Extella team's synthetic tasks (10.11.2026) | **read before building an agent, apply with judgement** |
 | **`LAB.md`** | **mechanisms that work, but are not proven as a product** | **read, don't execute** |
 
 The example this section exists for: **editions.** The mechanics are assembled and
