@@ -1,4 +1,4 @@
-<!-- source: AGENT_START.md sha256:70a91653756b3d786e826a30dea49fb9d10fee0441ee3ad97ea734ca0ae95fd4 -->
+<!-- source: AGENT_START.md sha256:c02ab113dd6e7954b2c86387f4398f160a5a6255402c1b2ccf0aac001a8ce535 -->
 
 # Agent start: one page, then by address
 
@@ -25,7 +25,7 @@ aren't described there. The reference's silence proves nothing. The source is th
 | Task | Read (in order) |
 |---|---|
 | Connect to Extella on this machine | `rules/H108.md`, `rules/H110.md`, then `git clone` this repository and from its root `python3 tools/connect_mcp.py --client claude` (or `codex`); the proof is a `list_profiles` call from the client's session |
-| Build an agent and its capabilities | `rules/H5.md`, then `AGENT_BUILD_GUIDE.md` — it's large, take it section by section |
+| Build an agent and its capabilities | `rules/H5.md`, then `AGENT_BUILD_GUIDE.md` — it's large, take it section by section; what actually works among the agent's parts — `AGENT_METHOD.md` |
 | A page-type app in an OS window | `rules/H106.md`, `rules/H107.md`, `rules/H54.md`, `rules/H17.md` |
 | Publish to the store | `RUNBOOK_STORE_PUBLISH.md`, `rules/H109.md`, `rules/H20.md` |
 | Installer and delivery to a device | `INSTALLER_CANON.md`, `rules/H98.md`, `rules/H103.md` |

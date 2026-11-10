@@ -23,7 +23,7 @@
 | Задача | Читать (по порядку) |
 |---|---|
 | Подключиться к Extella на этой машине | `rules/H108.md`, `rules/H110.md`, затем `git clone` этого репозитория и из его корня `python3 tools/connect_mcp.py --клиент claude` (или `codex`); доказательство — вызов `list_profiles` из сессии клиента |
-| Построить агента и его способности | `rules/H5.md`, затем `AGENT_BUILD_GUIDE.md` — он крупный, бери разделами |
+| Построить агента и его способности | `rules/H5.md`, затем `AGENT_BUILD_GUIDE.md` — он крупный, бери разделами; что из частей агента реально работает — `AGENT_METHOD.md` |
 | Страничное приложение в окне ОС | `rules/H106.md`, `rules/H107.md`, `rules/H54.md`, `rules/H17.md` |
 | Выложить в магазин | `RUNBOOK_STORE_PUBLISH.md`, `rules/H109.md`, `rules/H20.md` |
 | Установщик и доставка на устройство | `INSTALLER_CANON.md`, `rules/H98.md`, `rules/H103.md` |

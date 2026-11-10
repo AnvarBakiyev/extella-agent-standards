@@ -166,6 +166,7 @@ docs:
   - {ru: OS_CAPABILITIES.md, en: en/OS_CAPABILITIES.md}
   - {ru: FAILURE_CLASSES.md, en: en/FAILURE_CLASSES.md}
   - {ru: LAB.md, en: en/LAB.md}
+  - {ru: AGENT_METHOD.md, en: en/AGENT_METHOD.md}
   - {ru: TEAM_PROTOCOL.md, en: en/TEAM_PROTOCOL.md}
   - {ru: PUBLISH_YOUR_AGENT.md, en: en/PUBLISH_YOUR_AGENT.md}
   - {ru: RUNBOOK_STORE_PUBLISH.md, en: en/RUNBOOK_STORE_PUBLISH.md}
