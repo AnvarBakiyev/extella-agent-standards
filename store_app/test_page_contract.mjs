@@ -9,14 +9,16 @@ const template = await readFile(new URL("./page.template.html", import.meta.url)
 const строкиОболочки = JSON.parse(
   await readFile(new URL("./shell.json", import.meta.url), "utf8")).строки;
 
-test("Builder is a separate tab; existing screens and default entry remain", () => {
+test("«Агент на максимум» is a separate tab in place of the Builder; default entry remains", () => {
   const nav = template.match(/<nav class="меню"[\s\S]*?<\/nav>/)?.[0] || "";
   assert.deepEqual([...nav.matchAll(/class="вкладка" data-экран="([^"]+)"/g)].map(m => m[1]),
-    ["начало", "проба", "конструктор", "поиск", "ещё"]);
+    ["начало", "проба", "агенты", "поиск", "ещё"]);
   assert.match(template, /имя = есть \? имя : 'начало'/);
-  assert.match(template, /роль.*!== 'конструктор'/);
-  assert.match(template, /последнееТелоКонструктора/,
-    "search rerenders the guide without resetting the builder");
+  assert.match(template, /роль.*!== 'агенты'/);
+  assert.match(template, /последнееТелоМетода/,
+    "search rerenders the guide without resetting the tab's switches");
+  // Конструктор повторял главную extella.dev и снят 10.11.2026 целиком.
+  assert.doesNotMatch(template, /XTL_(?!FONTS)|ExtellaConstructor|конструктор-содержимое/);
 });
 
 test("guide search does not hide unrelated sections or headings", () => {
@@ -42,31 +44,32 @@ test("guide search does not hide unrelated sections or headings", () => {
   assert.equal(builder.style.display, undefined);
 });
 
-test("Builder content has both languages and no executable content", async () => {
+test("«Агент на максимум»: both languages, same structure, no executable content, honest limits", async () => {
   const data = JSON.parse(await readFile(new URL("./content.json", import.meta.url), "utf8"));
-  const landing = data.разделы.filter(section => section.роль === "конструктор");
-  assert.equal(landing.length, 1);
-  const ids = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]).sort();
+  const tab = data.разделы.filter(section => section.роль === "агенты");
+  assert.equal(tab.length, 1);
+  assert.equal(data.разделы.filter(section => section.роль === "конструктор").length, 0);
+  const shape = html => [...html.matchAll(/data-(выбор|панель)="([^"]+)"/g)].map(m => m[0]).join(" ");
   for (const field of ["тело", "тело_en"]) {
-    const html = landing[0][field];
-    assert.ok(html.length > 1000);
-    assert.doesNotMatch(html, /<script|\son\w+\s*=|javascript:|<iframe/i);
-    assert.equal(new Set(ids(html)).size, ids(html).length, `${field}: IDs are unique`);
-    for (const marker of ["DESKTOP", "CHAT"]) assert.ok(html.includes(`@@XTL_${marker}_POSTER@@`));
-    const fallback = html.split('<template data-xtl-template>')[0];
-    assert.ok(fallback.length < html.length, "new interactive markup stays inert in shell 4");
-    assert.match(fallback, /href="https:\/\/extella.dev\/map\/"/);
-    assert.doesNotMatch(fallback, /<button|<video|<img|<dialog|@@XTL/);
+    const html = tab[0][field];
+    assert.ok(html.length > 3000);
+    assert.doesNotMatch(html, /<script|\son\w+\s*=|javascript:|<iframe|<section/i);
+    assert.match(html, /AGENT_METHOD\.md/, `${field}: links the method it is drawn from`);
+    assert.match(html, /class="аг-границы"/, `${field}: states where the numbers stop`);
+    assert.equal((html.match(/<div/g) || []).length, (html.match(/<\/div>/g) || []).length);
   }
-  assert.deepEqual(ids(landing[0].тело), ids(landing[0].тело_en));
-  assert.equal(data.оболочка_минимум, 5);
+  assert.equal(shape(tab[0].тело), shape(tab[0].тело_en), "switches match across languages");
+  // Новый раздел старым оболочкам не показывается: они остаются на своём снимке.
+  assert.equal(data.оболочка_минимум, 9);
+  const version = Number(template.match(/var ВЕРСИЯ_ОБОЛОЧКИ = (\d+);/)[1]);
+  assert.ok(version >= data.оболочка_минимум, "the shell itself accepts the content it ships with");
 });
 
-test("Builder runtime has no API or token access and no external runtime dependency", async () => {
-  const source = await readFile(new URL("./constructor.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|WebSocket|APP_TOKEN|localStorage/);
-  assert.doesNotMatch(source, /import\s.+from\s|import\s*\(/);
-  assert.match(source, /copy\(/, "use the host clipboard fallback");
+test("tab switches live in the shell: a button shows the panel with its name inside its own block", () => {
+  const handler = template.match(/\/\/ Переключатели вкладки «Агент на максимум»[\s\S]*?\n    \}\);/)?.[0];
+  assert.ok(handler, "switch handler is in the shell");
+  assert.match(handler, /closest\('\[data-выборы\]'\)/);
+  assert.match(handler, /п\.hidden = п\.getAttribute\('data-панель'\) !== имя/);
 });
 
 // Разборщик теперь берёт текст отказов из таблицы строк (H117), поэтому ему
@@ -596,6 +599,11 @@ if scenario == "unclosed-section":
     page = page.replace("</html>", "<section></html>")
 elif scenario == "truncated":
     page = page.replace("</html>", "")
+elif scenario == "escaped-section":
+    # Раздел внутри JSON-снимка экранирован: <\/section>. Прежде его давал
+    # Конструктор; снят 10.11.2026, поэтому регрессия кладёт раздел сама.
+    page = page.replace('"тело":"', '"тело":"<section><p>x<\\/p><\\/section>', 1)
+    assert "<\\/section>" in page
 calls = []
 def no_credentials():
     raise AssertionError("publication test must never access credentials")
@@ -634,9 +642,7 @@ print(json.dumps({"status": status, "calls": calls,
 }
 
 test("выкладка принимает собранный HTML с экранированными разделами снимка", async () => {
-  const page = await readFile(new URL("./index.html", import.meta.url), "utf8");
-  assert.ok(page.includes("<\\/section>"), "регрессия требует разделов внутри JSON-снимка");
-  const result = publicationCheck("generated-page");
+  const result = publicationCheck("escaped-section");
   assert.equal(result.status, 0, result.err);
   assert.deepEqual(result.calls, [
     ["POST", "/api/edit-version/test-version"], ["GET", "/app-page/test-listing"]
