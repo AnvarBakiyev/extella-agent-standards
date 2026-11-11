@@ -105,6 +105,9 @@ section.open .chev{transform:rotate(-135deg)}
 .путь>li[data-открыт="1"] .шаг-тело{display:block}
 .шаг-тело p{font-size:15px}
 .ряд{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0 0}
+/* display:flex сильнее атрибута hidden: без этой строки «Готово, дальше» на шаге
+   ключа стояло всегда, даже после отказа (снимок клиента 11.11.2026). */
+.ряд[hidden]{display:none}
 .путь .btn,.чат-вместо .btn{border-radius:999px;padding:12px 24px;font-size:15px}
 .путь .actions{margin:16px 0 0}
 .ссылка{background:none;border:0;padding:4px;font-size:13px;color:var(--tx2);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
