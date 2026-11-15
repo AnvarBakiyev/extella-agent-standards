@@ -1,4 +1,4 @@
-<!-- source: AGENT_METHOD.md sha256:3a7702d50672e8c73e06ba7181a0c94d76a39b477f90491d41f3395f3d083005 -->
+<!-- source: AGENT_METHOD.md sha256:5655f843c9f2f150344d43f84cccc4a2c7e226b0df81fb89fb72f03173e94430 -->
 
 # Building agents on Extella: what the measurements showed
 
@@ -160,6 +160,64 @@ The measurements above are not the final word. What limits them:
 - **The platform core is closed.** `executor` and `disnet` are compiled. We know the behaviour from outside, not the internals, so we judge the inner mechanism of CSPL with caution.
 
 If a new measurement disagrees with this file, trust the measurement and fix the file.
+
+## 8a. How to accept an agent's work
+
+Compiled on 15.11.2026 on robot33, a language for driving robot joints: thirteen runs in one day, two of which reported work that never happened.
+
+**Rule: acceptance is held by code, not by the text of the answer.** This is the same principle as §3 point 5 on call order, applied to the result. Read an agent's report as a guess about what it did, not as proof.
+
+What actually happened. The agent reported a save time of `2026-11-15T15:06:41` when the real one was `12:11:09`, and the reported time was 25 minutes in the future. The same answer contained a platform error `target unreachable (status: terminated)`, while the device answered a direct request in 3.5 seconds. Not a single tool call was made during the run.
+
+### Four acceptance levers, from strongest to weakest
+
+| lever | what it gives | what it costs |
+|---|---|---|
+| acceptance as a separate file on your side | catches everything, including made-up numbers | half an hour for a set of cases |
+| expectations with numbers written BEFORE the run | tells work apart from coincidence | ten minutes per run |
+| a rule for the agent (`add_rule`) | lowers the frequency, does not remove the class | a minute |
+| the agent's instructions | change them last, see §5 | the field holds the platform core, and a write replaces it whole |
+
+The order is not accidental: in the four-levers measurement, rules give 4–5 of 50 and an expert gives 50 of 50. The rule «do not make up a date» is needed, but it is third by strength, not first.
+
+### What to always check with your own request
+
+- **The modification time.** Note `updatedAt` before the run and compare after. If it did not change, there was no work, and there is no point checking the rest.
+- **The number of tool calls** in the answer's `output`. Zero calls alongside a story about work is exactly this case.
+- **`previous_response_id` in the answer.** `null` means the message went into an empty conversation: nothing it referred to reached the agent.
+- **Every number in the report**, with your own run through the platform.
+
+### A set of cases, not one run
+
+Acceptance is a file that runs the cases itself and prints «N of M match». On robot33 it holds 25 cases, and the exit code gives the verdict: 2 if the expert did not change, 1 if there is a mismatch, 0 if accepted.
+
+Each case is written for a defect that already happened. In one day there were five, all of one class: **a correct `ok`, a wrong number**.
+
+```
+overload 116 %                    ok=true
+typo in a joint name              ok=true, half the time
+joint limit over the whole pulse  three drives of five at the stop
+pulse given as ticks              mid-travel five times past the stop
+relative steps frozen             all steps to one point
+```
+
+This costs an order of magnitude more than a refusal, because it compiles and looks like work. So the language always refuses with a name, a number and a line number instead of substituting a default or silently clipping.
+
+Check the **middle of the range** in the set too, not only the edge. The case «overload 116 % is rejected» passed after the limit in the code went up from 70 to 100: the refusal stayed, but an 85 % load started passing silently. The gap was found by acceptance that added a case exactly between the thresholds.
+
+### The conversation chain
+
+Send a task that needs tool calls **without** `previous_response_id`, as self-contained text. On a long chain the agent stops calling tools and starts retelling the work. Checked by elimination: the setup was intact (47 tools in place), the device was reachable, and the same task in an empty conversation ran with a tool call and the correct date.
+
+The chain does not fail with an error. The run looks like an ordinary completed run, and that is the most expensive thing about it.
+
+### What to write in the agent's rules
+
+Briefly, and only what changes behaviour. The working set on robot33:
+
+1. Write the save time and the run result only from a tool's answer. If you did not call `get_expert`, do not write a date. If a call failed, send the exact text of the error.
+2. Always refuse with a name, a number and a line number instead of substituting a default or silently clipping.
+3. Do not change a threshold or rule nobody asked about. Do not rewrite inside a calculation that lives in another handler.
 
 ## 8. Where the code and data are
 
