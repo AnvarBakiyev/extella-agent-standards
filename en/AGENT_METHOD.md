@@ -1,8 +1,8 @@
-<!-- source: AGENT_METHOD.md sha256:3a7702d50672e8c73e06ba7181a0c94d76a39b477f90491d41f3395f3d083005 -->
+<!-- source: AGENT_METHOD.md sha256:f0ccb572aaaac771cceefc4835a97f5f967355e00e182fe1939e9c2d7a16a23c -->
 
 # Building agents on Extella: what the measurements showed
 
-Instructions for agents (Claude, Codex and others) that build agents and apps on Extella. Compiled on 10.11.2026 from measurements taken September–November 2026. Every rule below was checked in practice; where it rests on a single experience, that is stated.
+Instructions for agents (Claude, Codex and others) that build agents and apps on Extella. Compiled on 10.11.2026 from measurements taken September–November 2026, extended on 15.11.2026 (expert versions in §5, accepting an agent's work in §8a). Every rule below was checked in practice; where it rests on a single experience, that is stated.
 
 **Status: same as `LAB.md`.** The measurements were taken on our own tasks, and the task worlds are synthetic (limits in §7a). This is a method and numbers, not canon: mandatory requirements live in `DEPLOY_REQUIREMENTS.md`. The platform facts in §5 were taken on the live platform; if a fact is more than a month old, re-check it.
 
@@ -135,6 +135,13 @@ Checked on the live platform. If a fact is more than a month old, re-check it be
 **Local model**
 - There is one Ollama on the machine for everyone. Different `num_ctx` values across parallel clients cause starvation. Keep `num_ctx` at 4096 and don't run two heavy runs at once: a model step grows from a minute to 7–20 minutes.
 
+**Expert versions (a separate MCP build, 10.11.2026)**
+- `save_expert` in this build saves an expert as versions (v1, v2, …) with a description of the change, like a commit.
+- `diff_versions` shows the difference between versions: changed lines, how many added and removed, the description.
+- The expert is checked before it is saved. A handler can be run partially, not only as a whole.
+- Seen on the owner's screenshot: a local Qwen3.6-35B-A3B in LM Studio, through MCP, saved expert v1, ran it, saved v2 and showed the diff. We have not called these tools ourselves. Rollback (`rollback`) is not visible on the screenshot.
+- How to use: before replacing an expert, save a new version, run it on the case set (§6, §8a) and compare it with the previous one. Read the diff before accepting a version from a model or an editing agent.
+
 ## 6. How to measure
 
 - Write the prediction before the run, next to the protocol.
@@ -146,7 +153,7 @@ Checked on the live platform. If a fact is more than a month old, re-check it be
 ## 7. What can be said outside
 
 - Allowed: "a small model on the customer's machine with the Extella environment does the job at optimizer level, with one answer per input, without the cloud"; "a large model writes the expert once, a small one runs it every day".
-- Not allowed: "a small model is smarter than a large one"; expert versions and rollback as a finished feature (the platform doesn't have them yet).
+- Not allowed: "a small model is smarter than a large one"; expert rollback as a finished feature until it has been checked. Expert versions and diff exist in a separate MCP build (§5); before mentioning them outside, find out which build has them and for whom.
 
 ## 7a. Limits of these conclusions
 
@@ -161,6 +168,64 @@ The measurements above are not the final word. What limits them:
 
 If a new measurement disagrees with this file, trust the measurement and fix the file.
 
+## 8a. How to accept an agent's work
+
+Compiled on 15.11.2026 on the robot33 language: thirteen runs in one day, two of which reported work that never happened. This is one day and one agent: the rules below were checked on it; re-check them on other tasks.
+
+**Rule: acceptance is held by code, not by the text of the answer.** It is the same principle as §3 item 5 on call order, applied to the result. Read the agent's report as a guess about what it did, not as proof.
+
+What actually happened. The agent reported a save time of `2026-11-15T15:06:41` while the real one was `12:11:09`, and the reported time was 25 minutes in the future. The same answer contained a platform error `target unreachable (status: terminated)`, while the device answered our own request in 3.5 seconds. Not a single tool call was made during the run.
+
+### Four acceptance levers, strongest first
+
+| lever | what it gives | what it costs |
+|---|---|---|
+| acceptance as a separate file on your side | catches everything, including invented numbers | half an hour for the case set |
+| expectations with numbers written down BEFORE the run | tells work apart from coincidence | ten minutes per run |
+| a rule for the agent (`add_rule`) | lowers the frequency, does not remove the class | a minute |
+| the agent's instructions | the author's right (§5), but a weak lever for acceptance: it does not remove the error class | the platform core is replaced entirely; without the instructions kept in a file there is no way back |
+
+The order is not accidental: in the four-lever measurement rules give 4–5 of 50 and an expert gives 50 of 50. A "don't invent the date" rule is needed, but it is third in strength, not first.
+
+### What to check with your own request
+
+- **Modification time.** Note `updatedAt` before the run and compare after. If it did not change, there was no work, and nothing else needs checking.
+- **Number of tool calls** in the answer's `output`. Zero calls alongside a story about the work is exactly this case.
+- **`previous_response_id` in the answer.** `null` means the message went into an empty conversation: nothing it referred to reached the agent.
+- **Every number in the report**, through your own run on the platform.
+
+### A case set, not one run
+
+Acceptance is a file that runs the cases itself and prints "matched N of M". The sample this rule was built on: 25 cases, exit code 2 if the expert did not change, 1 if there is a mismatch, 0 if accepted.
+
+Each case is written for a defect that has already happened. On 15.11 there were five, all of one class: **a correct `ok`, a wrong number**.
+
+```
+overload 116 %                     ok=true
+typo in a joint name               ok=true, time halved
+joint limit over the whole pulse   three drives of five at the stop
+pulse given as ticks               mid-travel five times past the stop
+relative steps frozen              all steps to one point
+```
+
+This costs an order of magnitude more than a refusal, because it compiles and looks like work. So in the language there is always a refusal with the name, the number and the line number instead of a default substitution or silent clipping.
+
+Check the **middle of the range** in the set, not only the edge. The case "overload 116 % is rejected" kept passing after the limit in code was raised from 70 to 100: the refusal stayed, while an 85 % load started to pass silently. The gap was found by acceptance that added a case right between the thresholds.
+
+### Conversation chain
+
+Send a task that needs tool calls **without** `previous_response_id`, as self-contained text. On a long chain the agent stops calling tools and starts retelling the work. Checked by elimination: the setup is intact (47 tools in place), the device is reachable, and the same task in an empty conversation runs with a call and the correct date.
+
+The chain does not fail with an error. The run looks like an ordinary completed run, and that is what makes it most expensive.
+
+### What to write in the agent's rules
+
+Briefly, and only what changes behaviour. The working set on robot33:
+
+1. Write the save time and the run result only from the tool's answer. Did not call `get_expert` — don't write a date. The call failed — send the error text verbatim.
+2. Instead of a default substitution and instead of silent clipping, always a refusal with the name, the number and the line number.
+3. Don't change a threshold or a rule nobody asked about. Don't rewrite a calculation that lives in another handler into this one.
+
 ## 8. Where the code and data are
 
-The test benches, measurement protocols and experts from the tables above live in the team's internal repository and are not published. If you need a sample (a handler, a REST client that waits for deferred tasks, a handler registrar), ask the Extella team for it.
+The test benches, measurement protocols and experts from the tables above live in the team's internal repository and are not published. If you need a sample (a handler, a REST client that waits for deferred tasks, a handler registrar, the acceptance file from §8a), ask the Extella team for it.
