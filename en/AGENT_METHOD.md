@@ -1,8 +1,8 @@
-<!-- source: AGENT_METHOD.md sha256:f0ccb572aaaac771cceefc4835a97f5f967355e00e182fe1939e9c2d7a16a23c -->
+<!-- source: AGENT_METHOD.md sha256:3ec10e8ef83d078b9efa3bf9ee8e193ef0f2b4860747d52d388aeac1bdf958c8 -->
 
 # Building agents on Extella: what the measurements showed
 
-Instructions for agents (Claude, Codex and others) that build agents and apps on Extella. Compiled on 10.11.2026 from measurements taken September–November 2026, extended on 15.11.2026 (expert versions in §5, accepting an agent's work in §8a). Every rule below was checked in practice; where it rests on a single experience, that is stated.
+Instructions for agents (Claude, Codex and others) that build agents and apps on Extella. Compiled on 10.11.2026 from measurements taken September–November 2026, extended on 15.11.2026 (expert versions in §5, accepting an agent's work in §8a) and 20.11.2026 (guard expert, §3c). Every rule below was checked in practice; where it rests on a single experience, that is stated.
 
 **Status: same as `LAB.md`.** The measurements were taken on our own tasks, and the task worlds are synthetic (limits in §7a). This is a method and numbers, not canon: mandatory requirements live in `DEPLOY_REQUIREMENTS.md`. The platform facts in §5 were taken on the live platform; if a fact is more than a month old, re-check it.
 
@@ -85,6 +85,44 @@ A handler executes a task language: the model invents, the handler does everythi
 **Isolation in the CSPL sense.** Each computation and each meaning lives in its own container, both at the action level and at the level of computations and libraries. So any part can be thrown away and redone without touching the rest. This is not protection of programs from each other but a split of the work into replaceable parts.
 
 **Careful with "hallucinations are impossible".** The check doesn't let the model break what is written in the language and the rules. But within what is allowed the model can still choose badly: in purchasing, short plans passed the form check and cost 159 % more. Outside, say "breaking the written rules is impossible", not "hallucinations are impossible".
+
+## 3c. Guard expert
+
+There is one handler for the whole class of experts and programs (§3b). One change to the handler changes the behaviour of all of them at once, so it is checked as a migration of the whole class, not as an edit of one file. This is the requirement of `AGENT_ARCHITECTURE.md` §3.17; here is how to meet it.
+
+**The guard expert** is a gatekeeper expert. Before a new handler version is registered, it runs every saved program of the class on it, compares each answer with its etalon, and allows registration only if none broke.
+
+What it needs:
+1. **A programs folder.** Every program the language has already executed in work or in acceptance is saved as a file. A program that is not in the folder is not protected when the handler is replaced.
+2. **An etalon for every program:** the full expected handler answer. A refusal is an etalon too: a program the language must reject is stored with the expected refusal text and line number.
+3. **Cases for past defects and the middle of the range** (§8a): not only the edges of thresholds, but also values between them.
+4. **Release rule:** register only a version with `register: true`. Keep the previous version for rollback. Record in the release log the handler version, the number of programs checked and the list of mismatches.
+
+Sample (not checked on the platform, this is a sketch; plug in a call to your handler):
+
+```python
+import json
+import os
+
+
+def guard(new_handler, programs_dir, etalons_dir):
+    """Runs every saved program on the new handler version."""
+    results = []
+    for name in sorted(os.listdir(programs_dir)):
+        with open(os.path.join(programs_dir, name), encoding="utf-8") as f:
+            program = f.read()
+        with open(os.path.join(etalons_dir, name + ".json"), encoding="utf-8") as f:
+            want = json.load(f)
+        try:
+            got = new_handler(program)
+        except Exception as e:  # a handler crash is a result too
+            got = {"error": str(e)}
+        results.append({"program": name, "ok": got == want, "got": got, "want": want})
+    broken = [r for r in results if not r["ok"]]
+    return {"register": not broken, "checked": len(results), "broken": broken}
+```
+
+A mismatch is not fixed by editing the etalon until a person has decided which answer is right: the new one or the old one. If the new one is right, the etalon is changed as a separate entry with a reason. Without this the guard expert turns into a rubber stamp.
 
 ## 4. Large and small model
 
