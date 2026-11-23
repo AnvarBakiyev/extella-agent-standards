@@ -1,4 +1,4 @@
-<!-- source: EXTELLA_AI_ONBOARDING.md sha256:0d93052e76bf392c1660d84b746ede7b39aa182edfc28ad89155ec88ea25a544 -->
+<!-- source: EXTELLA_AI_ONBOARDING.md sha256:80faf5306de165b833b8304831d0423953192948d20e789406db101b1e457ea3 -->
 
 # Extella — onboarding for an AI agent (Codex / Claude / any LLM assistant)
 
@@ -27,8 +27,11 @@ Key entities:
 
 ## 2. THE IRON CANON (violation = broken prod or client money)
 
-1. **All client agents are the platform Qwen 3.7.** `agent_extella_default` is Claude Sonnet,
-   and it's PAID: don't use it as the "default" and don't run loops on it. BYOK/gpt-4o are
+1. **All client agents are the platform Qwen 3.7.** Since 23.11.2026 `agent_extella_default` is the single
+   "Extella" agent that replaced the four default ones (Qwen / Minimax / Grok / Claude): it does not
+   spend Extella credits and runs on the user's API key (Anthropic → Alibaba → xAI, whichever key is
+   connected); without a key it shows a "connect an API key" banner. Don't use it as the "default"
+   for client scenarios and don't run loops on it (§11). BYOK/gpt-4o are
    forbidden in client scenarios.
 2. **An agent created via the API is born Pro-BYOK and answers `pro_key_required` on run —
    until the model is configured in the Extella interface.** The reliable path is unchanged:
@@ -70,6 +73,9 @@ Base: `https://api.extella.ai`. Headers: `X-Auth-Token`, `X-Profile-Id: default`
   possible.
 - **[Updated 23 Jul] `agents/list`** — the team was fixing it; on our account we previously saw
   it empty — check it on your own token before using it, fallback is the id in the config.
+- **[23.11.2026] A missing object is HTTP 404, not 500.** `POST /api/expert/get` and the same
+  requests for concepts, rules, targets and pipelines with a non-existent name return 404; a server
+  failure is still 500. Old code that read 500 as "no such expert" needs fixing.
 - MCP endpoint: `https://api.extella.ai/mcp/` (**streamable-http**; the old SSE `/sse/` is
   legacy). If the MCP bridge glitches on save_expert — the fallback to REST
   `/api/expert/save` always works.
@@ -314,3 +320,43 @@ weaken the canon:
 **The main principle:** the platform is rough around the edges in places — it forgives whoever
 verifies artifacts, splits up the work, and keeps the source of truth in files. Don't trust a
 single API response, whether it says success or failure.
+
+## 11. Platform update 23.11.2026: the user path of an installed agent
+
+From the platform team's report on the brief "The path of a user who wants to use an installed agent" (23.11.2026). "From the report": not re-checked live by us. Only what changes the work of an agent or app author is listed here.
+
+**An agent without its own interface**
+- After installation, and for an agent already bought, the agent page has an **Open in Chat** button: chat opens straight in this agent, sign-in is passed from OS. A separate interface just to "open the chat" is no longer needed.
+- Without an API key the agent shows a step-by-step banner: where to get a key (Anthropic, Alibaba Cloud DashScope, xAI, OpenAI) and where to paste it. Provider errors are explained by type: invalid key, no access, provider funds exhausted, rate limit, model unavailable, agent endpoint unavailable ("this is not an agent error"). Raw error HTML is not shown, keys are masked.
+
+**Installing and updating**
+- Under **New agent** and **Existing** the install window explains what happens to Rules, Concepts and Experts (what is added, what is replaced). New agent is the default.
+- **Reinstall into Existing is the same agent:** Agent ID, KV and the purchase are kept. This is how an installed agent is updated.
+- **Reinstall no longer revokes the app's working token** (it used to cause HTTP 401 on `/api/kv/get`).
+
+**Install link**
+- The **Share** button on an agent or app page copies the link `os.extella.ai/get/<id>`. The public page shows the name, icon, description and "Open in Extella", tries to open `extella://listing/<id>`, and offers "Download" if Extella is not installed.
+- Auto-opening via `extella://` will work **only after a new Extella Desktop (Electron) build**; until then the page shows "Download". Inside OS the link opens the Market card directly.
+
+**Asking a person: Question API and `ask_user`**
+- An agent, app or script asks a person a question in an OS dialog: title, description, options, "Other" (`allow_other`), multiple choice. The asker cannot answer itself.
+- Extella MCP has a new **`ask_user`** tool: one call asks the question and returns the person's answer. The Extella MCP timeout in chat was raised to 31 minutes.
+- This is the standard path for "a person confirms" decisions (level A2): don't invent your own dialog.
+
+**Storage and identifiers**
+- The **KV Store section was removed from Library**; **Passwords** does its job; old links lead there. The `/api/kv/*` API for agents and experts did not change.
+- Profile ID and Agent ID are shown on agent and profile cards with a Copy button; the API docs describe where to get them for `X-Profile-Id` and `X-Agent-Id`.
+- A revoked token's status comes from the `revoked` flag. If the server did not revoke the token, an error is shown, not "Token revoked".
+
+**Interface terms (agreed with the product owner)**
+- **Expert** is an action module, not a skill. **iCon** is an interpreted container, a synonym for expert. **CSPL** is the language it is written in. **Fython** is modified Python with `$extens` modules.
+- Technical terms in the interface are always in English, everything else in the interface language. The agent name is shown readable: "Extella Mult v1.1.0" instead of `Extella_Mult_v1_1_0`.
+
+**Theme, language and money**
+- OS sets the theme and language and passes them to every window: chat, Market, Library, settings, payment. Inside OS the chat's own theme and language switches are hidden. An app window in OS should also follow the OS theme and language rather than keep its own.
+- Pricing plans and subscriptions were removed; every entry leads to topping up credits (**Add credits**, a window over the screen). 1 credit = 1000 internal tokenCredits.
+- The platform interface moved to the Extella B brandbook (22.10.2026): Manrope font, "paper" and graphite, an orange primary action. **Divergence:** `DESIGN_CODE.md` §2 of this repository names Nunito as the interface font. Until a design decision is written down, the rule for authors' apps follows `DESIGN_CODE.md`.
+
+**What still waits for a new Electron build**
+- Opening `extella://listing/<id>`.
+- Closing the vulnerability with the `X-User-Id` header on the backend: the fix is ready and will be switched on once users update Electron. Until then don't rely on `X-User-Id` in your code.
