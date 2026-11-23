@@ -134,6 +134,17 @@ section.open .chev{transform:rotate(-135deg)}
 .подкл-подтвердить p{font-size:15px;font-weight:600;color:var(--tx);margin:0 0 12px}
 .подкл-подтвердить .btn{margin:0 8px 8px 0}
 .подкл-адрес{margin:16px 0 0}
+/* Список агентов шага «Агент»: имя крупно, agent_id мелко моноширинным. */
+#агент-поиск{width:100%;margin:16px 0 0}
+.агенты{list-style:none;margin:8px 0 0;padding:0;max-height:320px;overflow:auto;border:1px solid var(--bd);border-radius:12px}
+.агенты li{margin:0;border-bottom:1px solid var(--bd)}
+.агенты li:last-child{border-bottom:0}
+.агенты button{display:block;width:100%;text-align:left;background:transparent;border:0;padding:12px 16px;cursor:pointer;color:var(--tx);font:inherit}
+.агенты button:hover{background:var(--s2)}
+.агенты button:focus-visible{outline:2px solid var(--a);outline-offset:-2px}
+.агенты button[aria-pressed="true"]{background:var(--s3);box-shadow:inset 3px 0 0 var(--a)}
+.агенты b{display:block;font-size:15px;font-weight:600}
+.агенты small{display:block;font-family:var(--mono);font-size:11px;color:var(--tx3);word-break:break-all}
 .cmd-подпись{display:block;font-size:11px;color:var(--tx3);margin-bottom:4px}
 @media (max-width:640px){
   .зачем{grid-template-columns:1fr}
@@ -507,8 +518,22 @@ button,input,select,textarea{font-family:inherit}
         <div class="ряд" id="подкл-ключ-дальше" hidden><button class="btn" data-дальше="" data-t="нач.дальше"></button></div>
       </div>
     </li>
+    <!-- Шаг «Агент» (оболочка 10, 23.11.2026): какого агента аккаунта подключить. По
+         умолчанию основной — тогда промпт и команда прежние. Список лёгкий: только id и
+         имя, не list_agents (на большом аккаунте ~270 КБ). Имена агентов — данные
+         аккаунта, поэтому рисуются textContent, а не разметкой. -->
+    <li data-шаг="агент" data-сост="ждёт">
+      <button class="шаг-голова" type="button"><span class="кружок"><b>3</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span><span class="время" data-t="нач.время.агент"></span></button>
+      <div class="шаг-тело">
+        <p data-t="нач.агент.пояснение"></p>
+        <input id="агент-поиск" type="search" autocomplete="off" spellcheck="false" data-t-подсказка="нач.агент.поиск">
+        <div class="codex-state" id="агент-состояние" role="status" aria-live="polite"></div>
+        <ul class="агенты" id="агент-список"></ul>
+        <div class="ряд"><button class="btn main" data-дальше="" data-t="нач.дальше"></button></div>
+      </div>
+    </li>
     <li data-шаг="промпт" data-сост="ждёт">
-      <button class="шаг-голова" type="button"><span class="кружок"><b>3</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span><span class="время" data-t="нач.время.промпт"></span></button>
+      <button class="шаг-голова" type="button"><span class="кружок"><b>4</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span><span class="время" data-t="нач.время.промпт"></span></button>
       <div class="шаг-тело">
         <p data-для-клиента="claude" data-t="нач.промпт.claude"></p>
         <p data-для-клиента="codex" hidden data-t="нач.промпт.codex"></p>
@@ -549,7 +574,7 @@ button,input,select,textarea{font-family:inherit}
       </div>
     </li>
     <li data-шаг="проверка" data-сост="ждёт">
-      <button class="шаг-голова" type="button"><span class="кружок"><b>4</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span><span class="время" data-t="нач.время.проверка"></span></button>
+      <button class="шаг-голова" type="button"><span class="кружок"><b>5</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span><span class="время" data-t="нач.время.проверка"></span></button>
       <div class="шаг-тело">
         <div data-t="нач.проверка.текст"></div>
         <figure class="схема переписка">
@@ -560,10 +585,11 @@ button,input,select,textarea{font-family:inherit}
         <p class="схема-подпись" data-t="нач.проверка.подпись"></p>
         <div class="ряд"><button class="btn main" data-дальше="нач.итог.связь" data-t="нач.связь_есть"></button><button class="btn" id="подкл-не-вышло" data-t="нач.не_вышло"></button></div>
         <div id="подкл-беда" hidden data-t="нач.беда"></div>
+        <div class="ряд"><button class="ссылка" type="button" id="подкл-ещё-агент" data-t="нач.ещё_агент"></button></div>
       </div>
     </li>
     <li data-шаг="идея" data-сост="ждёт">
-      <button class="шаг-голова" type="button"><span class="кружок"><b>5</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span></button>
+      <button class="шаг-голова" type="button"><span class="кружок"><b>6</b><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 7.5l3 3 6-6.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="шаг-имя"></span><span class="итог"></span></button>
       <div class="шаг-тело">
         <p data-t="нач.идея.текст"></p>
         <div data-t="нач.идея.примеры"></div>
@@ -781,7 +807,7 @@ button,input,select,textarea{font-family:inherit}
 var СНИМОК = /*СОДЕРЖИМОЕ*/null/*КОНЕЦ*/;
 var APP_TOKEN = /*APP_TOKEN*/"";
 var ИСТОЧНИК = "https://raw.githubusercontent.com/AnvarBakiyev/extella-agent-standards/main/store_app/content.json";
-var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняется сама страница, а не текст
+var ВЕРСИЯ_ОБОЛОЧКИ = 10;   // растёт, когда меняется сама страница, а не текст
 
 // Обёртка страницы: внутри фоновое перечитывание содержимого при открытии.
 // Человек его не запускает и повторно нажать не может — блокировать нечего.
@@ -1410,6 +1436,8 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняе�
     // Выбор человека — первой строкой: агент сверит с ним свою среду (F02).
     var компьютер = (подкл.разведка && подкл.разведка.компьютер) || '';
     var выбор = тф(ВЫБОР_В_ПРОМПТ[подкл.клиент], {компьютер: компьютер ? ' «' + компьютер + '»' : ''});
+    // Выбранный агент (шаг «Агент») — отдельной строкой и в команде подключения.
+    if (текст) текст = промпт_с_агентом(текст);
     if (текст && выбор) текст = выбор + '\n\n' + текст;
     if (!текст){
       // Отказ словами: молча скопировать пустоту — худшее из возможного,
@@ -1439,14 +1467,16 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняе�
   // успех прежней не остаётся на кнопке после отказа.
   var ФОРМА_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   var ИМЕНА_КЛИЕНТА = {claude: 'Claude Code', codex: 'Codex'};
-  var ШАГИ = ['подготовка', 'ключ', 'промпт', 'проверка', 'идея'];
+  var ШАГИ = ['подготовка', 'ключ', 'агент', 'промпт', 'проверка', 'идея'];
   // Ключи строк — явные таблицы, не склейка: склейку не видят ни гейт мёртвых
   // строк, ни поиск.
-  var ПОДПИСИ_ШАГОВ = {подготовка: 'подкл.шаг.подготовка', ключ: 'подкл.шаг.ключ', промпт: 'подкл.шаг.промпт',
+  var ПОДПИСИ_ШАГОВ = {подготовка: 'подкл.шаг.подготовка', ключ: 'подкл.шаг.ключ', агент: 'подкл.шаг.агент', промпт: 'подкл.шаг.промпт',
                        проверка: 'подкл.шаг.проверка', идея: 'подкл.шаг.идея'};
   var ВЫБОР_В_ПРОМПТ = {claude: 'промпт.выбор.claude', codex: 'промпт.выбор.codex', чат: 'промпт.выбор.чат'};
   // Итоги шагов хранятся ключами строк: смена языка перерисовывает их.
-  var подкл = {клиент: 'claude', попытка: 0, разведка: null, занято: false, открыт: 'подготовка', итоги: {}};
+  // агент: null — основной агент ключа (прежнее поведение), иначе {id, имя}.
+  var подкл = {клиент: 'claude', попытка: 0, разведка: null, занято: false, открыт: 'подготовка', итоги: {},
+               агент: null, агенты: null, агенты_сост: 'ждёт'};
   // Таблица явная, а не склейка имени: склеенный ключ не виден ни гейту
   // мёртвых строк, ни поиску, и опечатка в коде эксперта молча дала бы пустоту.
   var ИСХОДЫ = {
@@ -1484,6 +1514,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняе�
   // открывает его: вернувшийся человек не проходит путь заново.
   function открыть(имя){
     подкл.открыт = имя;
+    if (имя === 'агент') загрузить_агентов();
     ШАГИ.forEach(function(и){ var у = узел_шага(и); if (у) у.setAttribute('data-открыт', и === имя ? '1' : '0'); });
     подписать_шаги();
     var у = узел_шага(имя);
@@ -1498,6 +1529,134 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняе�
     if (ключ_итога) итог(имя, ключ_итога);
     var следующий = ШАГИ[ШАГИ.indexOf(имя) + 1];
     if (следующий) открыть(следующий);
+  }
+  // ШАГ «АГЕНТ», оболочка 10. Человек выбирает, какого агента аккаунта подключить;
+  // каждый подключённый агент — своя связка MCP (extella_acct_<аккаунт>_<суффикс>).
+  // Основной агент ключа — первый пункт и выбор по умолчанию: тогда промпт и
+  // команда прежние, и результат как до шага. Список лёгкий: id и имя, а не
+  // list_agents (~270 КБ на большом аккаунте). Ни ключа, ни пропуска в списке нет.
+  var ФОРМА_АГЕНТА = /^agent_[A-Za-z0-9_-]{8,128}$/;
+  var АДРЕСА_АГЕНТОВ = [
+    {путь: '/api/my-agents', метод: 'GET'},
+    {путь: '/api/ext/core/api/agent/list', метод: 'POST'}
+  ];
+  // Extella_Mult_v1_1_0 → «Extella Mult v1.1.0», как в магазине, чате и библиотеке.
+  function читаемое_имя(имя, id){
+    var н = String(имя || '').trim();
+    if (!н) н = String(id || '').replace(/^agent_/, '');
+    н = н.replace(/_v(\d+(?:_\d+)*)$/i, function(всё, в){ return ' v' + в.replace(/_/g, '.'); });
+    return н.replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+  // Ответ любого из двух адресов сводится к [{id, имя}]: свои агенты, без общих
+  // платформенных agent_extella_* (у основного свой первый пункт), без повторов.
+  function лёгкий_список(данные){
+    var сырой = Array.isArray(данные) ? данные
+      : (данные && (данные.agents || данные.results || данные.data || данные.items)) || [];
+    if (!Array.isArray(сырой)) return null;
+    var видел = {}, список = [];
+    сырой.forEach(function(а){
+      if (!а || typeof а !== 'object') return;
+      var id = String(а.id || а.agent_id || '');
+      if (!ФОРМА_АГЕНТА.test(id) || /^agent_extella_/.test(id) || видел[id]) return;
+      видел[id] = true;
+      список.push({id: id, имя: читаемое_имя(а.name || а.title, id)});
+    });
+    список.sort(function(x, y){ return x.имя.localeCompare(y.имя); });
+    return список;
+  }
+  function запросить_агентов(номер){
+    var а = АДРЕСА_АГЕНТОВ[номер];
+    if (!а) return Promise.reject(new Error('no agent list'));
+    var заголовки = {'X-App-Token': APP_TOKEN, 'X-Profile-Id': 'default'};
+    var запрос = {method: а.метод, headers: заголовки};
+    if (а.метод === 'POST') { заголовки['Content-Type'] = 'application/json'; запрос.body = '{}'; }
+    return fetch(а.путь, запрос).then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function(данные){
+      var список = лёгкий_список(данные);
+      if (!список) throw new Error('форма');
+      return список;
+    }).catch(function(){ return запросить_агентов(номер + 1); });
+  }
+  function загрузить_агентов(){
+    if (подкл.агенты_сост === 'идёт' || подкл.агенты_сост === 'готово') { рисовать_агентов(); return; }
+    var пропуск = typeof APP_TOKEN === 'string' && APP_TOKEN && APP_TOKEN.indexOf('{' + '{') !== 0;
+    if (typeof fetch !== 'function' || !пропуск) {
+      подкл.агенты_сост = 'отказ';
+      рисовать_агентов();
+      return;
+    }
+    подкл.агенты_сост = 'идёт';
+    рисовать_агентов();
+    запросить_агентов(0).then(function(список){
+      подкл.агенты = список;
+      подкл.агенты_сост = 'готово';
+      рисовать_агентов();
+    }, function(){
+      подкл.агенты_сост = 'отказ';
+      рисовать_агентов();
+    });
+  }
+  function пункты_агентов(){
+    var основной = {id: '', имя: т('нач.агент.основной'), основной: true};
+    var поиск = String((document.getElementById('агент-поиск') || {}).value || '').trim();
+    var н = поиск.toLowerCase();
+    var свои = (подкл.агенты || []).filter(function(а){
+      return !н || а.имя.toLowerCase().indexOf(н) >= 0 || а.id.toLowerCase().indexOf(н) >= 0;
+    });
+    var пункты = (!н || основной.имя.toLowerCase().indexOf(н) >= 0) ? [основной].concat(свои) : свои;
+    // Список не открылся или агента в нём нет — agent_id можно вставить в поиск.
+    if (ФОРМА_АГЕНТА.test(поиск) && !/^agent_extella_/.test(поиск) &&
+        !пункты.some(function(а){ return а.id === поиск; })) {
+      пункты.push({id: поиск, имя: тф('нач.агент.вставленный', {id: поиск})});
+    }
+    return пункты;
+  }
+  function рисовать_агентов(){
+    var сост = {идёт: [т('нач.агент.идёт'), ''], отказ: [т('нач.агент.отказ'), 'bad'],
+                готово: [подкл.агенты && подкл.агенты.length ? '' : т('нач.агент.пусто'), '']}[подкл.агенты_сост];
+    if (сост) состояние('агент-состояние', сост[0], сост[1]);
+    var список = document.getElementById('агент-список');
+    if (!список || typeof document.createElement !== 'function') return;
+    while (список.firstChild) список.removeChild(список.firstChild);
+    var выбран = подкл.агент ? подкл.агент.id : '';
+    пункты_агентов().forEach(function(а){
+      var li = document.createElement('li'), к = document.createElement('button');
+      var имя = document.createElement('b'), номер = document.createElement('small');
+      к.type = 'button';
+      к.setAttribute('aria-pressed', а.id === выбран ? 'true' : 'false');
+      имя.textContent = а.имя;
+      номер.textContent = а.основной ? т('нач.агент.основной_номер') : а.id;
+      к.appendChild(имя); к.appendChild(номер);
+      к.addEventListener('click', function(){ выбрать_агента(а.основной ? null : а); });
+      li.appendChild(к);
+      список.appendChild(li);
+    });
+  }
+  function выбрать_агента(а){
+    подкл.агент = а && ФОРМА_АГЕНТА.test(а.id) ? {id: а.id, имя: а.имя} : null;
+    итог('агент', 'нач.итог.агент', {имя: подкл.агент ? подкл.агент.имя : т('нач.агент.основной')});
+    рисовать_агентов();
+  }
+  // Промпт с выбранным агентом: строка «Агент для подключения» и команда с --агент.
+  // Основной агент — промпт прежний, слово в слово.
+  function промпт_с_агентом(текст){
+    var а = подкл.агент;
+    if (!а || !ФОРМА_АГЕНТА.test(а.id)) return текст;
+    var клиент = подкл.клиент === 'codex' ? 'codex' : 'claude';
+    var имя = String(а.имя || '').replace(/[\r\n«»]+/g, ' ').trim().slice(0, 80);
+    var команда = тф('промпт.агент.команда', {клиент: клиент, id: а.id});
+    текст = текст.replace(/(connect_mcp\.py --(клиент|client) )claude( \((или|or) codex\))?/g,
+      function(всё, начало, флаг){ return начало + клиент + (флаг === 'client' ? ' --agent ' : ' --агент ') + а.id; });
+    return тф('промпт.агент', {имя: имя, id: а.id}) + '\n' + команда + '\n\n' + текст;
+  }
+  // «Подключить ещё одного агента»: ключ уже лежит, заново его не выпускаем —
+  // путь возвращается на шаг «Агент», шаги после него начинаются заново.
+  function ещё_агент(){
+    ['агент', 'промпт', 'проверка', 'идея'].forEach(function(и){ шаг(и, 'ждёт'); delete подкл.итоги[и]; });
+    подкл.агент = null;
+    открыть('агент');
   }
   // Переключение языка переписывает подписи с data-t, в том числе кнопку ключа:
   // всё, что ставит код, пересобирается здесь же, иначе «готово» терялось бы.
@@ -1561,7 +1720,7 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняе�
     состояние('подкл-состояние', строки.join(' · '), 'ok');
     // С оговоркой шаг остаётся открытым, пока человек её не прочтёт.
     if (строки.length > 1) document.getElementById('подкл-ключ-дальше').hidden = false;
-    else открыть('промпт');
+    else открыть('агент');
   }
   function отказ(текст){
     шаг('ключ', 'ошибка');
@@ -1698,6 +1857,8 @@ var ВЕРСИЯ_ОБОЛОЧКИ = 9;   // растёт, когда меняе�
     беда.hidden = !беда.hidden;
   };
   document.getElementById('подключить').onclick = начать;
+  document.getElementById('подкл-ещё-агент').onclick = ещё_агент;
+  document.getElementById('агент-поиск').addEventListener('input', рисовать_агентов);
   document.getElementById('подкл-да').onclick = function(){ выпуск('', false); };
   document.getElementById('подкл-заменить').onclick = function(){ выпуск('', true); };
   document.getElementById('подкл-другой').onclick = function(){
