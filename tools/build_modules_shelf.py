@@ -556,12 +556,6 @@ def selftest() -> int:
                 ошибки.append(f"витрина без агента не должна содержать «{запретное}»")
         if not [о for о in ошибки if "витрина" in о or "разметка" in о or "кнопк" in о or "нет" in о[:4]]:
             print("  ✓ одно главное действие, помощь, буфер, экранирование, без вызовов платформы")
-        import check_brand_copy
-        ош, _ = check_brand_copy.check_text("витрина", с, strict=True)
-        if ош:
-            ошибки.append("бренд: " + "; ".join(str(о) for о in ош[:3]))
-        else:
-            print("  ✓ палитра и слова витрины проходят гейт бренда строго")
         import check_app_scopes, io, contextlib
         буфер = io.StringIO()
         with contextlib.redirect_stdout(буфер):

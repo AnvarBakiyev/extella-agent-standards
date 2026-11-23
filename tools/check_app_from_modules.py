@@ -30,7 +30,6 @@ sys.path.insert(0, str(СЮДА))
 import окно_из_форм as окно  # noqa: E402
 import check_app_scopes  # noqa: E402
 import check_automation_passport  # noqa: E402
-import check_brand_copy  # noqa: E402
 import check_waiting_state  # noqa: E402
 from check_agent_passport import load_passport  # noqa: E402
 from формы import Отказ  # noqa: E402
@@ -121,9 +120,6 @@ def проверить(папка: pathlib.Path, реестр: dict, стади�
                    f"the window contains {запретное!r} — the core token is forbidden on a page")
     for строка, что in check_waiting_state.проверить_текст(окно_текст):
         _issue(беды, "APP_WAITING_INVISIBLE", f"index.html:{строка}: {что}", f"index.html:{строка}: waiting is not visible")
-    ошибки_бренда, _ = check_brand_copy.check_text("index.html", окно_текст, strict=True)
-    for о in ошибки_бренда[:5]:
-        _issue(беды, "APP_BRAND", str(о), str(о))
 
     # 4. Права: существующий гейт, его вывод — в отчёт.
     буфер = io.StringIO()

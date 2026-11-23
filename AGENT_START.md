@@ -27,7 +27,7 @@
 | Страничное приложение в окне ОС | `rules/H106.md`, `rules/H107.md`, `rules/H54.md`, `rules/H17.md` |
 | Выложить в магазин | `RUNBOOK_STORE_PUBLISH.md`, `rules/H109.md`, `rules/H20.md` |
 | Установщик и доставка на устройство | `INSTALLER_CANON.md`, `rules/H98.md`, `rules/H103.md` |
-| Интерфейс, тексты, бренд | `WRITING_RULES.md`, `BRAND_FOR_AGENTS.md`, `DESIGN_CODE.md` |
+| Интерфейс, тексты, бренд | `WRITING_RULES.md`; облик — на выбор автора (`AGENT_BUILD_GUIDE.md` §4.4) |
 | Двуязычие продукта (RU+EN) | `rules/H95.md`, `rules/H111.md` |
 | **Что-то не работает** | `SYMPTOMS.md` — вход по симптому: что видно на экране → куда смотреть |
 | Что доказано, а что лаборатория | `README.md`, раздел статусов; `LAB.md` — читать, не выполнять |

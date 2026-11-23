@@ -1,4 +1,4 @@
-<!-- source: CONTRIBUTING.md sha256:2eeba7b278191b3e56654f8a36ebae122e606c1bfd225eb01554165c3d271f1a -->
+<!-- source: CONTRIBUTING.md sha256:c6e8a4883f599d6add19013fd5d8b79c05aae79610ab65f31f32f49b348a15f8 -->
 
 # How to make changes here
 
@@ -71,16 +71,7 @@ a direct write is not a bug, it's a rule.
 
 ### What matters to know about design rules
 
-The source of appearance rules lives separately — `DESIGN_CODE.md` at the
-root of this repository (the former `DESIGN_RULE_FOR_APPS.md` and
-`UX_CANON.md` sit in `archive/` as history), and here lies a **copy** for
-those building agents. Its completeness (fonts, palette, scales,
-prohibitions) is checked by `tools/check_design_rule.py`.
-
-That means the edit needs to be made **in the source**, and carried over
-here. If you fix it only here, the gate turns red and the fix won't merge:
-that's protection against the two places quietly drifting apart.
-
+Since 23.11.2026 there is no single design code: an app's look is chosen by its author (`AGENT_BUILD_GUIDE.md` §4.4). The previous appearance rules live in `archive/` as history.
 
 ## Several chats editing the canon at the same time — two rules
 

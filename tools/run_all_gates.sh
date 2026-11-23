@@ -97,7 +97,6 @@ run check_state_contract
 run check_masking_policy
 run check_code_canon
 run check_single_source
-run check_brand_copy
 run check_writing_style
 run check_waiting_state
 run check_self_check
@@ -133,10 +132,8 @@ run_command "снимок страницы гида" python3 "$ROOT/store_app/bu
 # чему не применённая, ничего не охраняет.
 run check_screen_rules
 run_command "правила экранов продукта" python3 "$ROOT/tools/check_screen_rules.py" "$ROOT/store_app/index.html"
-run_command "бренд страницы продукта" python3 "$ROOT/tools/check_brand_copy.py" "$ROOT/store_app/index.html"
 run_command "ожидание на странице продукта" python3 "$ROOT/tools/check_waiting_state.py" "$ROOT/store_app/index.html"
 run check_canon_numbers
-run_command "правило по дизайну" python3 "$ROOT/tools/check_design_rule.py"
 run_command "единственный источник" python3 "$ROOT/tools/check_single_source.py"
 run_command "журнал находок" python3 "$ROOT/tools/check_findings_log.py"
 run_command "копии манифестов" python3 "$ROOT/tools/check_manifest_copies.py"
@@ -165,7 +162,6 @@ run_command "английское зеркало" python3 "$ROOT/tools/check_en_
 run_command "вход по симптому" python3 "$ROOT/tools/check_symptom_index.py"
 run_command "перевод не отстал" python3 "$ROOT/tools/check_translation.py" "$ROOT/store_app/content.json"
 run check_translation
-run check_design_rule
 run check_findings_log
 run check_agent_drift
 run register_new_agents

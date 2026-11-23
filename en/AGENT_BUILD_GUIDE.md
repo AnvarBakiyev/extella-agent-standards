@@ -1,4 +1,4 @@
-<!-- source: AGENT_BUILD_GUIDE.md sha256:11bd9f42c0399f80bfefdcef11ce6d27c10a8433e65634532bcac95e50c31027 -->
+<!-- source: AGENT_BUILD_GUIDE.md sha256:a4c19f1d0bb543b54c4249c25439d77ab6caa6080121d43eb950b44917dcb3b1 -->
 
 # How to build an Extella agent
 
@@ -411,51 +411,14 @@ a file next to the installer that nobody runs is the most expensive kind of gree
 `limits` — at least one honest line "what this does NOT do". `help_surface` — where the human
 will read "how this works". Without them release is forbidden by a gate.
 
-### 4.4. What the window must look like
+### 4.4. What the window looks like is the author's call
 
-If your work has an interface, it is part of Extella, not a separate product. Insert the paragraph below
-into the generation rules in full: it is self-contained, the storefront repository is not needed for it.
+**Since 23.11.2026 there is no single design code** (owner's decision). An app's look — fonts, colors, radii, composition — is chosen by whoever builds it and their customer. The previous appearance rules (`DESIGN_CODE.md`, `NO_AI_LOOK.md`, `BRAND_FOR_AGENTS.md`, `BRAND_SURFACES.md`) and their checks live in `archive/` as history and inspiration, not as a requirement.
 
-> The interface is part of Extella, not a separate product. Use only these tokens:
-> fonts **Nunito** (the whole interface: text, buttons, tabs, fields), **Source Serif 4**
-> (headings), **JetBrains Mono** (only section labels and machine text);
-> light theme — background #FAF9F5, surfaces #FFFFFF/#F5F3EC, text #0A0A0A, accent #C57E33,
-> petrol #2F6B66, borders #D7E0DC; dark — background #0A0A0A, surfaces #141414/#181818,
-> text #F5F3EE, accent #D4944A, borders rgba(243,238,229,.09).
-> Font sizes only 11 / 13 / 15 / 20 / 26, nothing smaller than 11px; weights 400 / 500 / 600.
-> Spacing is a multiple of four: 4 · 8 · 12 · 16 · 24 · 32 · 48, there are no values outside the scale.
-> Radii: cards and panels 12, small controls 8, action buttons are pills (999),
-> round icon buttons 50%. There are no other radii.
-> The mandatory rule `button,input,select,textarea{font-family:inherit}` — without it
-> the browser sets buttons in Arial.
-> Bronze is only for action, and there is exactly one main action on a screen; petrol is only for the system.
-> 1px borders instead of shadows, no gradients, no emoji, no all-caps,
-> no full stops in headings, no logo of your own and no theme or language switcher of your own.
-> Headings are set in the serif Source Serif 4 without negative letter-spacing — a bold
-> sans-serif in a heading is forbidden.
-> Take the theme and language from the host messages `etb_theme` and `etb_init` (light = the attribute
-> `data-lm` on `<html>`). Texts address the user informally, a button promises exactly what it does,
-> every error says what to do next.
-
-The author of the rule is Extella's design owner. **The source of truth since 31 Jul 2026 is `DESIGN_CODE.md`; since 04 Sep 2026 it lies in the root of
-this repository (the toolbar repository is closed, tag `toolbar-final-2026-08`).** It is the only one and cancels the former rules: Source Sans 3, radii of 4–6px and
-mono all-caps labels are no longer canon. The former documents (`archive/DESIGN_RULE_FOR_APPS.md`,
-`archive/UX_CANON.md`) remain as history and are not referenced. `DESIGN_CODE.md` is how
-the platform looks; `NO_AI_LOOK.md` is how an app must not look. Both are in the root of
-this repository; a ready prompt insert is the section "Prompt insert" in `NO_AI_LOOK.md`.
-
-**Deviation from the canon — only by the design owner's written decision**, not by the taste of whoever is building.
-If the needed decision is not in `DESIGN_CODE.md`, there is no decision: first the rule as a pull request into
-this file, then the code.
-
-The paragraph above is a copy. Divergence from the source is caught by `tools/check_design_rule.py`: a rule
-that lives in two places drifts apart — this is a recurring class of accidents.
-
-How mandatory this is: a colour outside the palette is a defect, not a trifle. On 29 Jul I myself put into a
-system card a blue `#3D6FA8` that is not in Extella's palette at all, and noticed it only
-when the rule arrived as text.
-
----
+What remains are requirements about how the window works, not about taste:
+- **Theme and language come from OS.** The window follows the theme and language OS passes and keeps no switches of its own (`EXTELLA_AI_ONBOARDING.md` §11).
+- **A button promises exactly what it does; an error says what to do next.** Copy follows `WRITING_RULES.md`.
+- **Waiting is visible** (§4.4c): a button that stays silent is a defect.
 
 ### 4.4b. The card on the storefront: icon, description, tags are part of the product
 
@@ -711,7 +674,6 @@ know" are different things, and the product must distinguish them.
 python3 tools/check_agent_passport.py мой_агент.yaml          # agent passport
 python3 tools/check_automation_passport.py мой_паспорт.yaml   # automation passport
 python3 tools/check_state_contract.py http://127.0.0.1:PORT/api/state
-python3 tools/check_brand_copy.py <файлы интерфейса>
 python3 tools/check_code_canon.py <каталоги с кодом>       # canon in the code, not in the passport
 python3 tools/check_masking_policy.py политика.json        # data protection, if personal data passes through the agent
 ```
@@ -962,7 +924,6 @@ This guide is self-contained. Below is what is loaded as needed, not always:
 |---|---|
 | `AGENT_CABINET_STANDARD.md` | you are making an automation of several agents or a cabinet |
 | `EXTELLA_AI_ONBOARDING.md` | you need details of how the platform works and its traps |
-| `BRAND_FOR_AGENTS.md` | you are writing interface texts |
 | `NAMING.md` | you are unsure what to call a part of the system |
 | `EVOLUTION_PHILOSOPHY.md` | you need to make a decision that is not described here |
 | `AGENT_ARCHITECTURE.md` | you need the full phrasing of a principle with all its caveats |

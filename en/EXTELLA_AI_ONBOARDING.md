@@ -1,4 +1,4 @@
-<!-- source: EXTELLA_AI_ONBOARDING.md sha256:80faf5306de165b833b8304831d0423953192948d20e789406db101b1e457ea3 -->
+<!-- source: EXTELLA_AI_ONBOARDING.md sha256:24beef60d74fb6cafa9cb6c1cbc973310ec6219e562ba988233a7f0ae871b5ca -->
 
 # Extella — onboarding for an AI agent (Codex / Claude / any LLM assistant)
 
@@ -355,7 +355,7 @@ From the platform team's report on the brief "The path of a user who wants to us
 **Theme, language and money**
 - OS sets the theme and language and passes them to every window: chat, Market, Library, settings, payment. Inside OS the chat's own theme and language switches are hidden. An app window in OS should also follow the OS theme and language rather than keep its own.
 - Pricing plans and subscriptions were removed; every entry leads to topping up credits (**Add credits**, a window over the screen). 1 credit = 1000 internal tokenCredits.
-- The platform interface moved to the Extella B brandbook (22.10.2026): Manrope font, "paper" and graphite, an orange primary action. **Divergence:** `DESIGN_CODE.md` §2 of this repository names Nunito as the interface font. Until a design decision is written down, the rule for authors' apps follows `DESIGN_CODE.md`.
+- The platform interface moved to the Extella B brandbook (22.10.2026): Manrope font, "paper" and graphite, an orange primary action. For authors' apps this is not a requirement: since 23.11.2026 the look is the author's choice (`AGENT_BUILD_GUIDE.md` §4.4).
 
 **What still waits for a new Electron build**
 - Opening `extella://listing/<id>`.

@@ -1,4 +1,4 @@
-<!-- source: BUILD_STAGES.md sha256:ab879366f3bb3c484bd3ad7c58e185adc7b4f8132dad753757c03e4c78f96734 -->
+<!-- source: BUILD_STAGES.md sha256:a5dd25815fa0d5c25a0e45b07d08493edb75599d6ffc2f584cbe5a873f546c91 -->
 
 # Build stages: build → prod
 
@@ -67,7 +67,7 @@ is given by `python3 tools/stage_gates.py --stage prod`, and it is not written d
 ours (Nunito / Source Serif 4 / JetBrains Mono, plus
 `button,input,select,textarea{font-family:inherit}`), checked in the inspector on a heading,
 a button and a field. The product picks its own palette and character; what stays shared is
-the fonts and the composition. The full rule is `NO_AI_LOOK.md`.
+the fonts and the composition. Since 23.11.2026 the look is the author's choice; the previous rule is `archive/NO_AI_LOOK.md`.
 
 ---
 
