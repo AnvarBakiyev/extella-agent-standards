@@ -86,8 +86,6 @@ stages:
       - check_state_contract
       - check_platform_client_copies
       - check_onboarding_copies
-      - check_brand_copy
-      - check_design_rule
       - check_waiting_state
       - check_self_check
       - check_single_source

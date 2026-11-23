@@ -31,7 +31,7 @@ from pathlib import Path
 # аккаунтные гейты краснеют на чужих карточках — машина обязана говорить это сразу.
 ОХВАТ_АККАУНТ = frozenset({
     "check_agent_drift", "register_new_agents", "check_surface_classes",
-    "check_design_rule", "check_manifest_copies", "check_platform_client_copies",
+    "check_manifest_copies", "check_platform_client_copies",
     "check_onboarding_copies", "build_agent_cabinet", "build_automation_cabinet",
     "build_capability_registry",
 })

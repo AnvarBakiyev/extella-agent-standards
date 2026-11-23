@@ -52,7 +52,7 @@ python3 tools/<имя_гейта>.py --selftest
 
 `check_agent_drift`, `check_agent_passport`, `check_agent_repo`,
 `check_agent_tools`, `check_app_scopes`, `check_automation_passport`,
-`check_brand_copy`, `check_canon_numbers`, `check_code_canon`, `check_design_rule`,
+`check_canon_numbers`, `check_code_canon`,
 `check_findings_log`, `check_listing_meta`, `check_masking_policy`,
 `check_output_gate`, `check_ready_for_publish`, `check_screen_rules`,
 `check_self_check`, `check_single_source`, `check_state_contract`,

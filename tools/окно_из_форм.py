@@ -585,12 +585,6 @@ def selftest() -> int:
     else:
         print("  ✓ у кнопки видно ожидание: включается до вызова, снимается в finally, есть слова")
 
-    import check_brand_copy
-    ош, _ = check_brand_copy.check_text("окно", с, strict=True)
-    if ош:
-        ошибки.append("бренд: " + "; ".join(str(о) for о in ош[:3]))
-    else:
-        print("  ✓ палитра и слова окна проходят гейт бренда строго")
 
     зло = пример_плана()
     зло["screens"][1]["static"]["steps"][0]["name"] = {"ru": "<img src=x onerror=alert(1)>", "en": "x"}

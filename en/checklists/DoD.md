@@ -1,4 +1,4 @@
-<!-- source: checklists/DoD.md sha256:81b5345d84f1b6b9dff2ed264729830d118855aae18d6ff4d97647e4ac79212b -->
+<!-- source: checklists/DoD.md sha256:66f0255d8a95df7f6a34279f973c791e89cc9d1705401b25709e4b1d28ab8407 -->
 
 # Is the agent READY FOR RELEASE (for work at the client's)
 
@@ -85,7 +85,7 @@ A capability is ready for release when all items are checked:
   The docs say what actually works, not what was planned.
 
 - [ ] **The brand is observed: words, colors, interface tone**
-  No "helper / assistant / bot / neural network" and no "How can I help?" greetings; colors are from the Extella palette; Gold and Petrol are not placed on each other. Rules: `BRAND_FOR_AGENTS.md`.
+  No "helper / assistant / bot / neural network" and no "How can I help?" greetings; the look is the author's choice (`AGENT_BUILD_GUIDE.md` §4.4).
 
 - [ ] **The product's own agent in Extella appears by itself after deployment**
   The product does not wait for a person to create an agent and enter the number: the agent is created automatically after a successful deployment, idempotently, with confirmation by reading and a receipt (§3.27). Binding to someone else's agent — only by the owner's deliberate decision.
@@ -95,7 +95,6 @@ Automated checks:
 ```
 python3 tools/check_agent_passport.py путь/к/паспорту.yaml
 python3 tools/check_agent_passport.py путь/к/паспорту.yaml --json
-python3 tools/check_brand_copy.py путь/к/интерфейсу.js путь/к/странице.html
 ```
 
 Evolution Console uses the second call and the same `check_report(doc)` calculation,

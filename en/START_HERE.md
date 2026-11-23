@@ -1,4 +1,4 @@
-<!-- source: START_HERE.md sha256:db8b3992c5fbb411e0b5dfc0720d988425afa6e0ae2bcf2a0c8b8d116cc69d8e -->
+<!-- source: START_HERE.md sha256:d1de779e099aca8fe58e3db0bd01a08da50c90d177401eb696daaa17fbd6d7a9 -->
 
 # One entry point — README
 
@@ -63,10 +63,7 @@ Read in exactly this order:
 3. **NAMING.md** — what the parts of the system are called (Extella Evolution, Agent Passport,
    Agent Genome, Evolution Console / Lab / Loop). Write and speak using these words — don't
    invent your own.
-4. **BRAND_FOR_AGENTS.md** — the brand in an agent's interface: which words are forbidden,
-   which colors are allowed, how the interface speaks. Checked by machine:
-   `python3 tools/check_brand_copy.py <files>`.
-5. **TEAM_PROTOCOL.md** — rules for working together as a team: who is responsible for what and
+4. **TEAM_PROTOCOL.md** — rules for working together as a team: who is responsible for what and
    how not to get in each other's way.
 
 ## 3. Before starting work

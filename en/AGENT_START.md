@@ -1,4 +1,4 @@
-<!-- source: AGENT_START.md sha256:c02ab113dd6e7954b2c86387f4398f160a5a6255402c1b2ccf0aac001a8ce535 -->
+<!-- source: AGENT_START.md sha256:30933218858d64304218be0cc10930ee64e95d2a2ace4071cbdd76fb5ed7c486 -->
 
 # Agent start: one page, then by address
 
@@ -29,7 +29,7 @@ aren't described there. The reference's silence proves nothing. The source is th
 | A page-type app in an OS window | `rules/H106.md`, `rules/H107.md`, `rules/H54.md`, `rules/H17.md` |
 | Publish to the store | `RUNBOOK_STORE_PUBLISH.md`, `rules/H109.md`, `rules/H20.md` |
 | Installer and delivery to a device | `INSTALLER_CANON.md`, `rules/H98.md`, `rules/H103.md` |
-| Interface, copy, brand | `WRITING_RULES.md`, `BRAND_FOR_AGENTS.md`, `DESIGN_CODE.md` |
+| Interface, copy, brand | `WRITING_RULES.md`; the look is the author's choice (`AGENT_BUILD_GUIDE.md` §4.4) |
 | Product bilinguality (RU+EN) | `rules/H95.md`, `rules/H111.md` |
 | **Something's not working** | `SYMPTOMS.md` — entry by symptom: what you see on screen → where to look |
 | What's proven vs. what's the lab | `README.md`, the status section; `LAB.md` — read, don't execute |
