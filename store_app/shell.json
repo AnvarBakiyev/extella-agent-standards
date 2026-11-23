@@ -985,8 +985,8 @@
       "en": "Connecting: once per computer, about 5 minutes"
     },
     "нач.счёт": {
-      "ru": "шаг {номер} из 5",
-      "en": "step {номер} of 5"
+      "ru": "шаг {номер} из 6",
+      "en": "step {номер} of 6"
     },
     "подкл.шаг.подготовка": {
       "ru": "Поставь {клиент} и войди",
@@ -1143,6 +1143,62 @@
     "копия.готово": {
       "ru": "Скопировано",
       "en": "Copied"
+    },
+    "подкл.шаг.агент": {
+      "ru": "Выбери агента для {клиент}",
+      "en": "Pick the agent for {клиент}"
+    },
+    "нач.время.агент": {
+      "ru": "несколько секунд",
+      "en": "a few seconds"
+    },
+    "нач.агент.пояснение": {
+      "ru": "У каждого агента свои эксперты и память. Выбери, с каким из них будет работать клиент. Не знаешь — оставь основной. Ещё одного агента можно подключить потом, ключ для этого не нужен заново.",
+      "en": "Each agent has its own experts and memory. Pick the one your client will work with. Not sure? Keep the main one. You can connect one more agent later without a new key."
+    },
+    "нач.агент.поиск": {
+      "ru": "Найти агента по имени или agent_id",
+      "en": "Find an agent by name or agent_id"
+    },
+    "нач.агент.основной": {
+      "ru": "Extella (основной)",
+      "en": "Extella (main)"
+    },
+    "нач.агент.основной_номер": {
+      "ru": "агент ключа, как раньше",
+      "en": "the key’s own agent, as before"
+    },
+    "нач.агент.вставленный": {
+      "ru": "Подключить {id}",
+      "en": "Connect {id}"
+    },
+    "нач.агент.идёт": {
+      "ru": "Загружаю список агентов…",
+      "en": "Loading your agents…"
+    },
+    "нач.агент.отказ": {
+      "ru": "Список агентов не открылся. Основной агент работает и без него, а другого можно найти по agent_id: вставь его в поле поиска.",
+      "en": "The agent list did not open. The main agent works without it; for another one, paste its agent_id into the search field."
+    },
+    "нач.агент.пусто": {
+      "ru": "Других агентов в аккаунте нет. Подключится основной.",
+      "en": "There are no other agents in this account. The main one will be connected."
+    },
+    "нач.итог.агент": {
+      "ru": "агент «{имя}»",
+      "en": "agent «{имя}»"
+    },
+    "промпт.агент": {
+      "ru": "Агент для подключения: «{имя}» ({id})",
+      "en": "Agent to connect: «{имя}» ({id})"
+    },
+    "промпт.агент.команда": {
+      "ru": "Команда подключения: python3 tools/connect_mcp.py --клиент {клиент} --агент {id}",
+      "en": "Connect command: python3 tools/connect_mcp.py --client {клиент} --agent {id}"
+    },
+    "нач.ещё_агент": {
+      "ru": "Подключить ещё одного агента",
+      "en": "Connect one more agent"
     }
   }
 }
